@@ -24,6 +24,30 @@ python -m venv .venv
 
 保持服务终端运行，在接口文档中使用 Try it out 和 Execute 发送请求。
 
+## 项目结构
+
+```text
+main.py                 创建 FastAPI 应用、注册文档路由和健康检查
+config.py               集中定义 BASE_DIR 和 DB_PATH
+schemas.py              Document 请求模型及标题、文件类型校验
+database.py            初始化数据库、提供连接依赖
+routers/__init__.py     路由包标记
+routers/documents.py    文档增删改查接口
+practice_db.py          sqlite3 插入与查询练习
+practice_orm.py         SQLAlchemy 会话、消息和 JOIN 练习
+requirements.txt        当前项目虚拟环境的依赖版本
+```
+
+## 连接管理与路由组织
+
+- 五个文档接口通过 Depends(get_connection) 获取独立的 SQLite 连接。
+- get_connection 设置 sqlite3.Row，通过 yield 提供连接，并在 finally 中关闭连接。
+- 创建、修改和删除接口仍自行调用 commit()；连接依赖不自动提交。
+- 同步依赖配置 check_same_thread=False，以适应框架线程调度；不跨请求共享连接。
+- APIRouter 使用 /documents 前缀，在接口文档中归入“文档”分组。
+- main.py 通过 include_router 注册文档接口，schemas.py 独立负责输入校验。
+- config.py 根据自身所在目录计算数据库绝对路径，避免依赖终端的当前目录。
+
 ## 当前接口
 
 | 方法 | 路径 | 用途 | 成功状态码 |
@@ -70,8 +94,8 @@ POST 和 PUT 均须提交以下 JSON 请求体：
 
 ## 数据存储
 
-- 使用 Python 自带的 sqlite3 操作 SQLite，无需额外安装数据库依赖。
-- 数据库文件为 database.py 同目录下的 documents.db，包含 documents 表及 id、title、file_type 三列。
+- 文档接口使用 Python 自带的 sqlite3；独立 ORM 练习使用 SQLAlchemy，安装 requirements.txt 时一并安装。
+- 数据库文件由 config.py 的 DB_PATH 指定，位于项目目录下，名称为 documents.db，包含 documents 表及 id、title、file_type 三列。
 - 服务加载时调用 init_db()，只创建不存在的数据库和表，不清空已有记录。
 - 创建、修改和删除操作提交到数据库，服务重启或自动重载后仍然保留。
 - id 为 INTEGER PRIMARY KEY，由 SQLite 在插入时自动分配；删除后的编号可能被复用。
@@ -92,6 +116,22 @@ POST 和 PUT 均须提交以下 JSON 请求体：
 ```
 
 每次运行 practice_db.py 都会向同一个数据库新增一条练习记录，并查询表中全部记录。
+
+## SQLAlchemy 练习
+
+```powershell
+.\.venv\Scripts\python.exe practice_orm.py
+```
+
+使用同一个 documents.db，创建尚不存在的 chat_sessions 和 chat_messages 表。
+每次运行新增一个聊天会话和两条消息，通过 session_id 外键关联，再用 JOIN 查询本次会话的标题、角色和消息内容。
+引擎在新连接建立时开启 SQLite 外键检查，echo=True 会打印实际执行的 SQL。
+聊天会话和消息目前仅用于独立脚本练习，尚未提供对应的 HTTP 接口。
+
+## 依赖维护
+
+requirements.txt 记录项目虚拟环境中的依赖版本，包含 FastAPI、Uvicorn、Pydantic 和 SQLAlchemy 及其依赖。
+SQLite 的 sqlite3 和 pathlib 属于 Python 标准库，不需要用 pip 安装。
 
 ## 当前限制
 

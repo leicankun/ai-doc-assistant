@@ -1,7 +1,7 @@
 import sqlite3
 
-from database import DB_PATH, init_db
-
+from config import DB_PATH
+from database import init_db
 
 init_db()
 

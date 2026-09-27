@@ -1,0 +1,12 @@
+from typing import Literal
+from pydantic import BaseModel, Field, field_validator
+
+class Document(BaseModel):
+    title: str = Field(..., description="文档标题",min_length=1, max_length=100)
+    file_type: Literal["markdown", "pdf"] = Field(..., description="文档类型")
+    @field_validator("title", mode="before")
+    @classmethod
+    def strip_title(cls, value):
+        if isinstance(value, str):
+            return value.strip()
+        return value

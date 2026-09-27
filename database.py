@@ -1,8 +1,7 @@
 import sqlite3
-from pathlib import Path
+from config import DB_PATH
 
 
-DB_PATH = Path(__file__).resolve().parent / "documents.db"
 
 
 def init_db():
@@ -21,6 +20,17 @@ def init_db():
     finally:
         connection.close()
 
+def get_connection():
+    connection = sqlite3.connect(
+        DB_PATH,
+        check_same_thread=False,
+    )
+    connection.row_factory = sqlite3.Row
+
+    try:
+        yield connection
+    finally:
+        connection.close()
 
 if __name__ == "__main__":
     init_db()
