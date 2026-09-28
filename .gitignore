@@ -6,3 +6,4 @@ documents.db
 documents.db-journal
 documents.db-wal
 documents.db-shm
+/uploads/

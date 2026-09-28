@@ -12,9 +12,23 @@ def init_db():
             CREATE TABLE IF NOT EXISTS documents (
                 id INTEGER PRIMARY KEY,
                 title TEXT NOT NULL,
-                file_type TEXT NOT NULL
+                file_type TEXT NOT NULL,
+                 stored_name TEXT
             )
         """)
+        # 查询当前表的字段信息
+        rows = connection.execute(
+            "PRAGMA table_info(documents)"
+        ).fetchall()
+
+        # 每行的第 2 项是字段名
+        column_names = [row[1] for row in rows]
+
+        # 兼容以前创建的数据库：缺少字段时才添加
+        if "stored_name" not in column_names:
+            connection.execute(
+                "ALTER TABLE documents ADD COLUMN stored_name TEXT"
+            )
 
         connection.commit()
     finally:
