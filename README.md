@@ -1,6 +1,6 @@
 ﻿# 技术文档问答助手
 
-基于 FastAPI 的文档信息管理练习项目，已实现文档信息的创建、查询、修改和删除，使用 SQLite 持久化保存数据，后续增加文件上传和 AI 问答。
+基于 FastAPI 和 Vue 的文档信息管理练习项目，已实现文档信息的创建、查询、修改和删除，使用 SQLite 持久化保存数据，后续增加文件上传和 AI 问答。
 
 ## 环境准备（Windows PowerShell）
 
@@ -24,6 +24,27 @@ python -m venv .venv
 
 保持服务终端运行，在接口文档中使用 Try it out 和 Execute 发送请求。
 
+## 启动前端
+
+保持后端服务运行，另开一个 PowerShell 终端，在项目目录执行：
+
+```powershell
+cd frontend
+npm.cmd install
+npm.cmd run dev
+```
+
+打开终端显示的前端地址（通常是 http://localhost:5173）。前端会请求 `http://127.0.0.1:8000/documents`；后端允许来自 `localhost:5173` 和 `127.0.0.1:5173` 的跨域请求。Node.js 版本需满足 `frontend/package.json` 中的 `engines` 要求。
+
+页面会在打开时加载文档列表；可以新增、编辑、取消编辑、删除文档，也可以手动刷新列表。提交成功后会重新读取列表。新增、编辑和删除会修改 SQLite 中的数据；取消编辑不会发送请求。
+
+检查前端构建：
+
+```powershell
+cd frontend
+npm.cmd run build
+```
+
 ## 项目结构
 
 ```text
@@ -33,6 +54,7 @@ schemas.py              Document 请求模型及标题、文件类型校验
 database.py            初始化数据库、提供连接依赖
 routers/__init__.py     路由包标记
 routers/documents.py    文档增删改查接口
+frontend/               Vue 前端及其独立的 package.json
 practice_db.py          sqlite3 插入与查询练习
 practice_orm.py         SQLAlchemy 会话、消息和 JOIN 练习
 requirements.txt        当前项目虚拟环境的依赖版本
@@ -89,7 +111,6 @@ POST 和 PUT 均须提交以下 JSON 请求体：
 5. 使用合法请求体 PUT 修改已删除的文档，以及再次 DELETE，均应返回 404。
 6. 再创建文档，确认 ID 不与当前已有记录重复。
 7. 测试空标题、纯空格标题、不支持的类型和缺失字段，确认返回 422。
-
 8. 修改后重启服务，确认记录的 ID 和内容保留；删除后重启服务，确认该记录仍返回 404。
 
 ## 数据存储
