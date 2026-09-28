@@ -1,5 +1,5 @@
 import sqlite3
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from database import get_connection
 from schemas import Document
 
@@ -109,4 +109,17 @@ def del_document(
     return {
         "message": "删除成功",
         "id": document_id,
+    }
+
+
+#上传markdown文件
+@router.post("/upload")
+async def upload_document(file: UploadFile):
+    if not file.filename or not file.filename.lower().endswith(".md"):
+        raise HTTPException(status_code=422, detail="请上传 .md 文件")
+
+    content = await file.read()
+    return {
+        "filename": file.filename,
+        "size": len(content),
     }
