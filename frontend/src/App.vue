@@ -19,6 +19,10 @@ const question = ref('')
 const answer = ref('')
 const asking = ref(false)
 const askError = ref('')
+const history = ref([])
+const historyLoading = ref(false)
+const historyError = ref('')
+let historyRequestId = 0
 
 async function loadDocuments() {
   loading.value = true
@@ -169,11 +173,46 @@ async function uploadDocument() {
   }
 }
 
-function startAsk(document) {
+async function startAsk(document) {
+  if (asking.value) return
   askingDocument.value = document
   question.value = ''
   answer.value = ''
   askError.value = ''
+  history.value = []
+  await loadHistory()
+}
+
+async function loadHistory() {
+  if (!askingDocument.value) return
+  const documentId = askingDocument.value.id
+  const requestId = ++historyRequestId
+  historyLoading.value = true
+  historyError.value = ''
+
+  try {
+    const response = await fetch(
+      `http://127.0.0.1:8000/documents/${documentId}/history`,
+    )
+    const data = await response.json()
+    if (!response.ok) {
+      throw new Error(
+        typeof data.detail === 'string' ? data.detail : '历史记录加载失败',
+      )
+    }
+    // 快速切换文档时，忽略较早请求的结果
+    if (requestId === historyRequestId) history.value = data.items
+  } catch (error) {
+    if (requestId === historyRequestId) historyError.value = error.message
+  } finally {
+    if (requestId === historyRequestId) historyLoading.value = false
+  }
+}
+
+function formatHistoryTime(value) {
+  // SQLite CURRENT_TIMESTAMP 保存的是 UTC，展示为本地时间
+  const date = new Date(value.replace(' ', 'T') + 'Z')
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleString('zh-CN')
 }
 
 async function askDocument() {
@@ -214,6 +253,7 @@ async function askDocument() {
     }
 
     answer.value = data.answer
+    await loadHistory()
   } catch (error) {
     askError.value = error.message
   } finally {
@@ -362,6 +402,27 @@ onMounted(loadDocuments)
           <p class="answer-text">{{ answer }}</p>
         </div>
       </div>
+      <section class="history-section" aria-labelledby="history-heading" :aria-busy="historyLoading">
+        <div class="list-header">
+          <h3 id="history-heading">问答历史 <span class="count">{{ history.length }}</span></h3>
+          <button type="button" :disabled="historyLoading || asking" @click="loadHistory">
+            {{ historyLoading ? '加载中…' : '刷新历史' }}
+          </button>
+        </div>
+        <p class="muted">按保存顺序展示，时间为本地时间。历史记录暂不作为模型的对话上下文。</p>
+        <p v-if="historyError" class="message error" role="alert">{{ historyError }}</p>
+        <p v-else-if="historyLoading" class="muted" role="status">正在读取历史记录…</p>
+        <p v-else-if="history.length === 0" class="empty-state">还没有问答记录，发送第一个问题吧。</p>
+        <ol v-else class="history-list">
+          <li v-for="item in history" :key="item.id" class="history-item">
+            <p class="muted">#{{ item.id }} · {{ formatHistoryTime(item.created_at) }}</p>
+            <h4>问题</h4>
+            <p class="answer-text">{{ item.question }}</p>
+            <h4>回答</h4>
+            <p class="answer-text">{{ item.answer }}</p>
+          </li>
+        </ol>
+      </section>
     </section>
   </main>
 </template>
@@ -411,6 +472,11 @@ textarea { width: 100%; min-height: 100px; padding: 12px; border: 1px solid #cbd
 .answer-box { margin-top: 24px; padding: 16px; border-radius: 8px; background: #f8fafc; }
 .answer-box h3 { margin: 0 0 10px; font-size: 16px; }
 .answer-text { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+.history-section { margin-top: 28px; padding-top: 24px; border-top: 1px solid #e8edf3; }
+.history-section h3 { margin: 0; font-size: 16px; }
+.history-list { padding: 0; margin: 16px 0 0; list-style: none; }
+.history-item { padding: 16px; margin-top: 12px; border: 1px solid #e2e8f0; border-radius: 8px; }
+.history-item h4 { margin: 14px 0 6px; font-size: 14px; color: #4338ca; }
 @media (max-width: 760px) {
   .workspace { grid-template-columns: 1fr; }
   .page { padding: 24px 16px 40px; }

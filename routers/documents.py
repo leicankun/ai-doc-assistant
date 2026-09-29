@@ -228,8 +228,57 @@ def ask_document(
     if not answer:
         raise HTTPException(status_code=502, detail="模型没有返回回答")
 
+    # 将这次问答保存到数据库
+    try:
+        connection.execute(
+            """
+            INSERT INTO question_answers (document_id, question, answer)
+            VALUES (?, ?, ?)
+            """,
+            (document_id, request.question, answer),
+        )
+        connection.commit()
+    except sqlite3.Error:
+        connection.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail="模型已回答，但问答记录保存失败",
+        )
+
     return {
         "document_id": document_id,
         "question": request.question,
         "answer": answer,
+    }
+
+
+# 查询指定文档的问答历史
+@router.get("/{document_id}/history")
+def get_document_history(
+    document_id: int,
+    connection: sqlite3.Connection = Depends(get_connection),
+):
+    document = connection.execute(
+        "SELECT id FROM documents WHERE id = ?",
+        (document_id,),
+    ).fetchone()
+
+    if document is None:
+        raise HTTPException(status_code=404, detail="文档不存在")
+
+    # 按记录 ID 升序，先显示较早保存的问答
+    rows = connection.execute(
+        """
+        SELECT id, document_id, question, answer, created_at
+        FROM question_answers
+        WHERE document_id = ?
+        ORDER BY id ASC
+        """,
+        (document_id,),
+    ).fetchall()
+
+    items = [dict(row) for row in rows]
+    return {
+        "items": items,
+        "total": len(items),
     }

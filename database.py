@@ -30,6 +30,16 @@ def init_db():
                 "ALTER TABLE documents ADD COLUMN stored_name TEXT"
             )
 
+        connection.execute("""
+            CREATE TABLE IF NOT EXISTS question_answers (
+                id INTEGER PRIMARY KEY,
+                document_id INTEGER NOT NULL,
+                question TEXT NOT NULL,
+                answer TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+            """)
+
         connection.commit()
     finally:
         connection.close()
