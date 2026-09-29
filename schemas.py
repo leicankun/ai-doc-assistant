@@ -10,3 +10,19 @@ class Document(BaseModel):
         if isinstance(value, str):
             return value.strip()
         return value
+
+
+class QuestionRequest(BaseModel):
+    question: str = Field(
+        ...,
+        min_length=1,
+        max_length=1000,
+        description="用户的问题",
+    )
+
+    @field_validator("question", mode="before")
+    @classmethod
+    def strip_question(cls, value):
+        if isinstance(value, str):
+            return value.strip()
+        return value

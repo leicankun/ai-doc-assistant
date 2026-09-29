@@ -3,7 +3,9 @@ from uuid import uuid4
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from config import UPLOAD_DIR
 from database import get_connection
-from schemas import Document
+from schemas import Document, QuestionRequest
+from llm import answer_question
+from openai import APIError, APITimeoutError
 
 
 router = APIRouter(
@@ -191,4 +193,43 @@ def get_document_content(
         "id": document["id"],
         "title": document["title"],
         "content": content,
+    }
+
+#提问接口
+@router.post("/{document_id}/ask")
+def ask_document(
+    document_id: int,
+    request: QuestionRequest,
+    connection: sqlite3.Connection = Depends(get_connection),
+):
+    # 复用之前写好的函数，查询文档并读取正文
+    document = get_document_content(document_id, connection)
+    content = document["content"]
+
+    if not content.strip():
+        raise HTTPException(status_code=422, detail="文档内容为空")
+
+    # 第一版先处理短文档
+    if len(content) > 20000:
+        raise HTTPException(
+            status_code=422,
+            detail="当前仅支持不超过 20000 个字符的文档",
+        )
+
+    try:
+        answer = answer_question(content, request.question)
+    except APITimeoutError:
+        raise HTTPException(status_code=504, detail="模型回答超时，请稍后重试")
+    except APIError:
+        raise HTTPException(status_code=502, detail="模型调用失败，请检查模型服务配置")
+    except RuntimeError:
+        raise HTTPException(status_code=503, detail="服务尚未配置模型 API Key")
+
+    if not answer:
+        raise HTTPException(status_code=502, detail="模型没有返回回答")
+
+    return {
+        "document_id": document_id,
+        "question": request.question,
+        "answer": answer,
     }

@@ -14,6 +14,11 @@ const selectedFile = ref(null)
 const uploading = ref(false)
 const uploadError = ref('')
 const uploadSuccess = ref('')
+const askingDocument = ref(null)
+const question = ref('')
+const answer = ref('')
+const asking = ref(false)
+const askError = ref('')
 
 async function loadDocuments() {
   loading.value = true
@@ -163,6 +168,58 @@ async function uploadDocument() {
     uploading.value = false
   }
 }
+
+function startAsk(document) {
+  askingDocument.value = document
+  question.value = ''
+  answer.value = ''
+  askError.value = ''
+}
+
+async function askDocument() {
+  if (!askingDocument.value || asking.value) return
+
+  askError.value = ''
+  answer.value = ''
+
+  if (!question.value.trim()) {
+    askError.value = '请输入问题'
+    return
+  }
+
+  asking.value = true
+
+  try {
+    const response = await fetch(
+      `http://127.0.0.1:8000/documents/${askingDocument.value.id}/ask`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          question: question.value,
+        }),
+      },
+    )
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      throw new Error(
+        typeof data.detail === 'string'
+          ? data.detail
+          : `提问失败，状态码：${response.status}`,
+      )
+    }
+
+    answer.value = data.answer
+  } catch (error) {
+    askError.value = error.message
+  } finally {
+    asking.value = false
+  }
+}
 onMounted(loadDocuments)
 </script>
 
@@ -259,6 +316,7 @@ onMounted(loadDocuments)
               <span class="badge">{{ document.file_type === 'markdown' ? 'Markdown' : 'PDF' }}</span>
             </div>
             <div class="row-actions">
+              <button type="button" :disabled="asking" @click="startAsk(document)">提问</button>
               <button type="button" @click="startEdit(document)">编辑</button>
               <button
                 class="danger"
@@ -273,6 +331,37 @@ onMounted(loadDocuments)
         </ul>
         <p v-else class="empty-state">{{ loading ? '正在读取文档…' : '暂无文档，上传一份 Markdown 开始吧。' }}</p>
       </template>
+    </section>
+    <section v-if="askingDocument" class="panel library" aria-labelledby="ask-heading" :aria-busy="asking">
+      <h2 id="ask-heading" class="ask-title">文档问答：{{ askingDocument.title }}</h2>
+      <p class="muted section-description">根据这篇文档的内容回答你的问题。</p>
+      <form @submit.prevent="askDocument">
+        <label class="field" for="question">
+          <span>你的问题</span>
+          <textarea
+            id="question"
+            v-model="question"
+            rows="3"
+            maxlength="1000"
+            placeholder="例如：这篇文档主要讲了什么？"
+            required
+            :disabled="asking"
+          ></textarea>
+        </label>
+        <div class="actions">
+          <button class="primary" type="submit" :disabled="asking">
+            {{ asking ? '正在回答…' : '发送问题' }}
+          </button>
+        </div>
+      </form>
+      <p v-if="askError" class="message error" role="alert">{{ askError }}</p>
+      <div aria-live="polite">
+        <p v-if="asking" class="muted">模型正在阅读文档，请稍候…</p>
+        <div v-if="answer" class="answer-box">
+          <h3>模型回答</h3>
+          <p class="answer-text">{{ answer }}</p>
+        </div>
+      </div>
     </section>
   </main>
 </template>
@@ -299,8 +388,8 @@ button:hover:not(:disabled) { background: #f1f5f9; }
 .primary:hover:not(:disabled) { background: #3730a3; }
 .danger { color: #b91c1c; border-color: #fecaca; }
 .danger:hover:not(:disabled) { background: #fff1f2; }
-button:disabled, input:disabled, select:disabled { opacity: .55; cursor: not-allowed; }
-button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px solid #a5b4fc; outline-offset: 3px; }
+button:disabled, input:disabled, select:disabled, textarea:disabled { opacity: .55; cursor: not-allowed; }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid #a5b4fc; outline-offset: 3px; }
 .library { margin-top: 24px; }
 .list-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
 .list-header > button { flex-shrink: 0; }
@@ -317,6 +406,11 @@ button:focus-visible, input:focus-visible, select:focus-visible { outline: 3px s
 .error { background: #fff1f2; color: #b91c1c; }
 .success { background: #ecfdf5; color: #047857; }
 .empty-state { padding: 36px 12px; text-align: center; color: #64748b; }
+textarea { width: 100%; min-height: 100px; padding: 12px; border: 1px solid #cbd5e1; border-radius: 7px; font: inherit; color: inherit; resize: vertical; }
+.ask-title { overflow-wrap: anywhere; }
+.answer-box { margin-top: 24px; padding: 16px; border-radius: 8px; background: #f8fafc; }
+.answer-box h3 { margin: 0 0 10px; font-size: 16px; }
+.answer-text { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
 @media (max-width: 760px) {
   .workspace { grid-template-columns: 1fr; }
   .page { padding: 24px 16px 40px; }
