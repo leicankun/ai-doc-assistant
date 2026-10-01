@@ -39,6 +39,28 @@ def init_db():
                 created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
             )
             """)
+          # 检查问答表是否已有 session_id 字段
+        rows = connection.execute(
+            "PRAGMA table_info(question_answers)"
+        ).fetchall()
+
+        column_names = [row[1] for row in rows]
+
+        # 为已有数据库补充会话编号
+        if "session_id" not in column_names:
+            connection.execute(
+                "ALTER TABLE question_answers ADD COLUMN session_id INTEGER"
+            )
+
+        # 一篇文档可以创建多个问答会话
+        connection.execute("""
+            CREATE TABLE IF NOT EXISTS document_sessions (
+                id INTEGER PRIMARY KEY,
+                document_id INTEGER NOT NULL,
+                title TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
 
         connection.commit()
     finally:

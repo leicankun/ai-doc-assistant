@@ -3,7 +3,7 @@ from uuid import uuid4
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from config import UPLOAD_DIR
 from database import get_connection
-from schemas import Document, QuestionRequest
+from schemas import Document, QuestionRequest,SessionCreate
 from llm import answer_question
 from openai import APIError, APITimeoutError
 
@@ -19,7 +19,7 @@ router = APIRouter(
 def list_documents(
     connection: sqlite3.Connection = Depends(get_connection),
 ):
-    query_cursor = connection.execute( 
+    query_cursor = connection.execute(
         "SELECT id, title, file_type FROM documents ORDER BY id"
         )
     rows = query_cursor.fetchall()
@@ -55,7 +55,7 @@ def get_document(
 def update_document(document_id: int,
                     new_data: Document,
                     connection: sqlite3.Connection = Depends(get_connection),):
-    
+
     update_cursor = connection.execute(
         """
         UPDATE documents
@@ -206,6 +206,21 @@ def ask_document(
     document = get_document_content(document_id, connection)
     content = document["content"]
 
+    # 确认会话存在，并且属于当前文档
+    session = connection.execute(
+    """
+    SELECT id
+    FROM document_sessions
+    WHERE id = ? AND document_id = ?
+    """,
+    (request.session_id, document_id),
+    ).fetchone()
+
+    if session is None:
+        raise HTTPException(
+            status_code=404,
+            detail="会话不存在或不属于当前文档",
+        )
     if not content.strip():
         raise HTTPException(status_code=422, detail="文档内容为空")
 
@@ -232,10 +247,10 @@ def ask_document(
     try:
         connection.execute(
             """
-            INSERT INTO question_answers (document_id, question, answer)
-            VALUES (?, ?, ?)
+            INSERT INTO question_answers (document_id,session_id, question, answer)
+            VALUES (?, ?, ?,?)
             """,
-            (document_id, request.question, answer),
+            (document_id,request.session_id, request.question, answer),
         )
         connection.commit()
     except sqlite3.Error:
@@ -247,6 +262,7 @@ def ask_document(
 
     return {
         "document_id": document_id,
+        "session_id": request.session_id,
         "question": request.question,
         "answer": answer,
     }
@@ -278,6 +294,127 @@ def get_document_history(
     ).fetchall()
 
     items = [dict(row) for row in rows]
+    return {
+        "items": items,
+        "total": len(items),
+    }
+
+# 为指定文档创建一个会话
+@router.post("/{document_id}/sessions", status_code=201)
+def create_document_session(
+    document_id: int,
+    session: SessionCreate,
+    connection: sqlite3.Connection = Depends(get_connection),
+):
+    # 先确认文档存在
+    document = connection.execute(
+        "SELECT id FROM documents WHERE id = ?",
+        (document_id,),
+    ).fetchone()
+
+    if document is None:
+        raise HTTPException(status_code=404, detail="文档不存在")
+
+    # 保存会话
+    try:
+        cursor = connection.execute(
+            """
+            INSERT INTO document_sessions (document_id, title)
+            VALUES (?, ?)
+            """,
+            (document_id, session.title),
+        )
+        connection.commit()
+    except sqlite3.Error:
+        connection.rollback()
+        raise HTTPException(status_code=500, detail="创建会话失败")
+
+    return {
+        "id": cursor.lastrowid,
+        "document_id": document_id,
+        "title": session.title,
+    }
+
+
+# 查询指定文档的所有会话
+@router.get("/{document_id}/sessions")
+def list_document_sessions(
+    document_id: int,
+    connection: sqlite3.Connection = Depends(get_connection),
+):
+    # 1. 确认文档存在
+    document = connection.execute(
+        "SELECT id FROM documents WHERE id = ?",
+        (document_id,),
+    ).fetchone()
+
+    if document is None:
+        raise HTTPException(status_code=404, detail="文档不存在")
+
+    # 2. 查询这篇文档的会话
+    rows = connection.execute(
+        """
+        SELECT id, document_id, title, created_at
+        FROM document_sessions
+        WHERE document_id = ?
+        ORDER BY id DESC
+        """,
+        (document_id,),
+    ).fetchall()
+
+    # 3. 转换成字典列表并返回
+    items = [dict(row) for row in rows]
+
+    return {
+        "items": items,
+        "total": len(items),
+    }
+
+# 查询指定会话的问答历史
+@router.get("/{document_id}/sessions/{session_id}/history")
+def get_session_history(
+    document_id: int,
+    session_id: int,
+    connection: sqlite3.Connection = Depends(get_connection),
+):
+    # 1. 确认文档存在
+    document = connection.execute(
+        "SELECT id FROM documents WHERE id = ?",
+        (document_id,),
+    ).fetchone()
+
+    if document is None:
+        raise HTTPException(status_code=404, detail="文档不存在")
+
+    # 2. 确认会话存在，并且属于当前文档
+    session = connection.execute(
+        """
+        SELECT id
+        FROM document_sessions
+        WHERE id = ? AND document_id = ?
+        """,
+        (session_id, document_id),
+    ).fetchone()
+
+    if session is None:
+        raise HTTPException(
+            status_code=404,
+            detail="会话不存在或不属于当前文档",
+        )
+
+    # 3. 只查询这个会话中的问答
+    rows = connection.execute(
+        """
+        SELECT id, document_id, session_id, question, answer, created_at
+        FROM question_answers
+        WHERE document_id = ? AND session_id = ?
+        ORDER BY id ASC
+        """,
+        (document_id, session_id),
+    ).fetchall()
+
+    items = [dict(row) for row in rows]
+
     return {
         "items": items,
         "total": len(items),

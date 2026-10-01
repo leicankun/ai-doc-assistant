@@ -23,6 +23,13 @@ const history = ref([])
 const historyLoading = ref(false)
 const historyError = ref('')
 let historyRequestId = 0
+const sessions = ref([])
+const selectedSessionId = ref(null)
+const sessionTitle = ref('')
+const sessionsLoading = ref(false)
+const creatingSession = ref(false)
+const sessionError = ref('')
+let sessionsRequestId = 0
 
 async function loadDocuments() {
   loading.value = true
@@ -174,17 +181,82 @@ async function uploadDocument() {
 }
 
 async function startAsk(document) {
-  if (asking.value) return
+  if (asking.value || creatingSession.value) return
   askingDocument.value = document
+  sessions.value = []
+  selectedSessionId.value = null
+  sessionTitle.value = ''
+  resetConversation()
+  await loadSessions()
+}
+
+function resetConversation() {
+  ++historyRequestId
+  historyLoading.value = false
+  historyError.value = ''
   question.value = ''
   answer.value = ''
   askError.value = ''
   history.value = []
+}
+
+async function changeSession() {
+  resetConversation()
   await loadHistory()
 }
 
-async function loadHistory() {
+async function loadSessions() {
   if (!askingDocument.value) return
+  const documentId = askingDocument.value.id
+  const requestId = ++sessionsRequestId
+  sessionsLoading.value = true
+  sessionError.value = ''
+  try {
+    const response = await fetch(`http://127.0.0.1:8000/documents/${documentId}/sessions`)
+    const data = await response.json()
+    if (!response.ok) throw new Error(typeof data.detail === 'string' ? data.detail : '会话列表加载失败')
+    if (requestId !== sessionsRequestId) return
+    sessions.value = data.items
+    if (!sessions.value.some(item => item.id === selectedSessionId.value)) {
+      selectedSessionId.value = sessions.value[0]?.id ?? null
+    }
+    await changeSession()
+  } catch (error) {
+    if (requestId === sessionsRequestId) sessionError.value = error.message
+  } finally {
+    if (requestId === sessionsRequestId) sessionsLoading.value = false
+  }
+}
+
+async function createSession() {
+  if (!askingDocument.value || creatingSession.value || asking.value || sessionsLoading.value) return
+  sessionError.value = ''
+  if (!sessionTitle.value.trim()) {
+    sessionError.value = '请输入会话名称'
+    return
+  }
+  creatingSession.value = true
+  try {
+    const response = await fetch(`http://127.0.0.1:8000/documents/${askingDocument.value.id}/sessions`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title: sessionTitle.value.trim() }),
+    })
+    const data = await response.json()
+    if (!response.ok) throw new Error(typeof data.detail === 'string' ? data.detail : '创建会话失败')
+    sessions.value.unshift(data)
+    selectedSessionId.value = data.id
+    sessionTitle.value = ''
+    await changeSession()
+  } catch (error) {
+    sessionError.value = error.message
+  } finally {
+    creatingSession.value = false
+  }
+}
+
+async function loadHistory() {
+  if (!askingDocument.value || !selectedSessionId.value) return
   const documentId = askingDocument.value.id
   const requestId = ++historyRequestId
   historyLoading.value = true
@@ -192,7 +264,7 @@ async function loadHistory() {
 
   try {
     const response = await fetch(
-      `http://127.0.0.1:8000/documents/${documentId}/history`,
+      `http://127.0.0.1:8000/documents/${documentId}/sessions/${selectedSessionId.value}/history`,
     )
     const data = await response.json()
     if (!response.ok) {
@@ -216,10 +288,15 @@ function formatHistoryTime(value) {
 }
 
 async function askDocument() {
-  if (!askingDocument.value || asking.value) return
+  if (!askingDocument.value || asking.value || creatingSession.value || sessionsLoading.value) return
 
   askError.value = ''
   answer.value = ''
+
+  if (!selectedSessionId.value) {
+    askError.value = '请先创建或选择会话'
+    return
+  }
 
   if (!question.value.trim()) {
     askError.value = '请输入问题'
@@ -238,6 +315,7 @@ async function askDocument() {
         },
         body: JSON.stringify({
           question: question.value,
+          session_id: selectedSessionId.value,
         }),
       },
     )
@@ -356,12 +434,12 @@ onMounted(loadDocuments)
               <span class="badge">{{ document.file_type === 'markdown' ? 'Markdown' : 'PDF' }}</span>
             </div>
             <div class="row-actions">
-              <button type="button" :disabled="asking" @click="startAsk(document)">提问</button>
+              <button type="button" :disabled="asking || creatingSession" @click="startAsk(document)">提问</button>
               <button type="button" @click="startEdit(document)">编辑</button>
               <button
                 class="danger"
                 type="button"
-                :disabled="deletingId === document.id"
+                :disabled="deletingId === document.id || asking || creatingSession"
                 @click="deleteDocument(document.id)"
               >
                 {{ deletingId === document.id ? '删除中…' : '删除' }}
@@ -375,6 +453,27 @@ onMounted(loadDocuments)
     <section v-if="askingDocument" class="panel library" aria-labelledby="ask-heading" :aria-busy="asking">
       <h2 id="ask-heading" class="ask-title">文档问答：{{ askingDocument.title }}</h2>
       <p class="muted section-description">根据这篇文档的内容回答你的问题。</p>
+      <div class="session-panel">
+        <div class="session-picker">
+          <label class="field" for="session-select">
+            <span>选择会话</span>
+            <select id="session-select" v-model="selectedSessionId" :disabled="asking || creatingSession || sessionsLoading || !sessions.length" @change="changeSession">
+              <option :value="null" disabled>{{ sessionsLoading ? '加载中…' : '请先新建会话' }}</option>
+              <option v-for="session in sessions" :key="session.id" :value="session.id">{{ session.title }}（#{{ session.id }}）</option>
+            </select>
+          </label>
+          <button type="button" :disabled="asking || creatingSession || sessionsLoading" @click="loadSessions">刷新会话</button>
+        </div>
+        <form class="session-picker" @submit.prevent="createSession">
+          <label class="field" for="session-title">
+            <span>新建会话</span>
+            <input id="session-title" v-model="sessionTitle" maxlength="100" required placeholder="例如：基础概念复习" :disabled="asking || creatingSession || sessionsLoading" />
+          </label>
+          <button type="submit" :disabled="asking || creatingSession || sessionsLoading">{{ creatingSession ? '创建中…' : '创建会话' }}</button>
+        </form>
+        <p v-if="sessionError" class="message error" role="alert">{{ sessionError }}</p>
+        <p v-else-if="!sessionsLoading && !sessions.length" class="muted">还没有会话，输入名称创建一个后即可提问。</p>
+      </div>
       <form @submit.prevent="askDocument">
         <label class="field" for="question">
           <span>你的问题</span>
@@ -385,11 +484,11 @@ onMounted(loadDocuments)
             maxlength="1000"
             placeholder="例如：这篇文档主要讲了什么？"
             required
-            :disabled="asking"
+            :disabled="asking || creatingSession || sessionsLoading || !selectedSessionId"
           ></textarea>
         </label>
         <div class="actions">
-          <button class="primary" type="submit" :disabled="asking">
+          <button class="primary" type="submit" :disabled="asking || creatingSession || sessionsLoading || !selectedSessionId">
             {{ asking ? '正在回答…' : '发送问题' }}
           </button>
         </div>
@@ -404,15 +503,16 @@ onMounted(loadDocuments)
       </div>
       <section class="history-section" aria-labelledby="history-heading" :aria-busy="historyLoading">
         <div class="list-header">
-          <h3 id="history-heading">问答历史 <span class="count">{{ history.length }}</span></h3>
-          <button type="button" :disabled="historyLoading || asking" @click="loadHistory">
+          <h3 id="history-heading">当前会话历史 <span class="count">{{ history.length }}</span></h3>
+          <button type="button" :disabled="historyLoading || asking || creatingSession || sessionsLoading || !selectedSessionId" @click="loadHistory">
             {{ historyLoading ? '加载中…' : '刷新历史' }}
           </button>
         </div>
         <p class="muted">按保存顺序展示，时间为本地时间。历史记录暂不作为模型的对话上下文。</p>
         <p v-if="historyError" class="message error" role="alert">{{ historyError }}</p>
         <p v-else-if="historyLoading" class="muted" role="status">正在读取历史记录…</p>
-        <p v-else-if="history.length === 0" class="empty-state">还没有问答记录，发送第一个问题吧。</p>
+        <p v-else-if="!selectedSessionId" class="empty-state">请选择会话查看历史。</p>
+        <p v-else-if="history.length === 0" class="empty-state">这个会话还没有问答记录，发送第一个问题吧。</p>
         <ol v-else class="history-list">
           <li v-for="item in history" :key="item.id" class="history-item">
             <p class="muted">#{{ item.id }} · {{ formatHistoryTime(item.created_at) }}</p>
@@ -469,6 +569,9 @@ button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-
 .empty-state { padding: 36px 12px; text-align: center; color: #64748b; }
 textarea { width: 100%; min-height: 100px; padding: 12px; border: 1px solid #cbd5e1; border-radius: 7px; font: inherit; color: inherit; resize: vertical; }
 .ask-title { overflow-wrap: anywhere; }
+.session-panel { padding: 16px; margin-bottom: 24px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; }
+.session-picker { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; margin-bottom: 16px; }
+.session-picker .field { flex: 1 1 220px; }
 .answer-box { margin-top: 24px; padding: 16px; border-radius: 8px; background: #f8fafc; }
 .answer-box h3 { margin: 0 0 10px; font-size: 16px; }
 .answer-text { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
