@@ -508,7 +508,7 @@ onMounted(loadDocuments)
             {{ historyLoading ? '加载中…' : '刷新历史' }}
           </button>
         </div>
-        <p class="muted">按保存顺序展示，时间为本地时间。历史记录暂不作为模型的对话上下文。</p>
+        <p class="muted">按保存顺序展示，时间为本地时间。提问时会结合当前会话最近 5 轮问答。</p>
         <p v-if="historyError" class="message error" role="alert">{{ historyError }}</p>
         <p v-else-if="historyLoading" class="muted" role="status">正在读取历史记录…</p>
         <p v-else-if="!selectedSessionId" class="empty-state">请选择会话查看历史。</p>

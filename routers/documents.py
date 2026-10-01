@@ -231,8 +231,29 @@ def ask_document(
             detail="当前仅支持不超过 20000 个字符的文档",
         )
 
+    # 查询当前会话最近 5 轮问答
+    history_rows = connection.execute(
+        """
+        SELECT question, answer
+        FROM question_answers
+        WHERE document_id = ? AND session_id = ?
+        ORDER BY id DESC
+        LIMIT 5
+        """,
+        (document_id, request.session_id),
+    ).fetchall()
+
+    # 将最近 5 轮恢复为从旧到新的顺序
+    history = []
+
+    for row in reversed(history_rows):
+        history.append({
+            "question": row["question"],
+            "answer": row["answer"],
+        })
+
     try:
-        answer = answer_question(content, request.question)
+        answer = answer_question(content, request.question,history)
     except APITimeoutError:
         raise HTTPException(status_code=504, detail="模型回答超时，请稍后重试")
     except APIError:
