@@ -62,6 +62,18 @@ def init_db():
             )
         """)
 
+
+        # 保存文档分块
+        connection.execute("""
+            CREATE TABLE IF NOT EXISTS document_chunks (
+                id INTEGER PRIMARY KEY,
+                document_id INTEGER NOT NULL,
+                chunk_index INTEGER NOT NULL,
+                content TEXT NOT NULL,
+                UNIQUE (document_id, chunk_index)
+            )
+        """)
+
         connection.commit()
     finally:
         connection.close()

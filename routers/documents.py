@@ -16,6 +16,7 @@ from fastapi import Request
 from fastapi.responses import StreamingResponse
 from config import DB_PATH
 from llm import stream_answer_question
+from chunking import split_text
 
 router = APIRouter(
     prefix="/documents",
@@ -39,6 +40,7 @@ def list_documents(
         "items":items,
         "total":len(items),
     }
+
 
 # GET /documents：返回指定id文档信息列表
 @router.get("/{document_id}")
@@ -85,6 +87,7 @@ def update_document(document_id: int,
         "file_type": new_data.file_type
     }
 
+
 #增加文档信息
 @router.post("", status_code=201)
 def create_document(
@@ -102,6 +105,7 @@ def create_document(
         "title":document.title,
         "file_type": document.file_type,
     }
+
 
 #删除指定文档信息
 @router.delete("/{document_id}")
@@ -222,6 +226,7 @@ async def upload_document(
         "preview": text[:100],
     }
 
+
 # 根据文档 ID 读取正文
 @router.get("/{document_id}/content")
 def get_document_content(
@@ -312,6 +317,7 @@ def get_document_content(
         "title": document["title"],
         "content": content,
     }
+
 
 #提问接口
 @router.post("/{document_id}/ask")
@@ -405,6 +411,7 @@ def ask_document(
         "question": request.question,
         "answer": answer,
     }
+
 
 #流式提问接口
 @router.post("/{document_id}/ask/stream")
@@ -580,6 +587,7 @@ def ask_document_stream(
         },
     )
 
+
 # 查询指定文档的问答历史
 @router.get("/{document_id}/history")
 def get_document_history(
@@ -610,6 +618,7 @@ def get_document_history(
         "items": items,
         "total": len(items),
     }
+
 
 # 为指定文档创建一个会话
 @router.post("/{document_id}/sessions", status_code=201)
@@ -682,6 +691,7 @@ def list_document_sessions(
         "total": len(items),
     }
 
+
 # 查询指定会话的问答历史
 @router.get("/{document_id}/sessions/{session_id}/history")
 def get_session_history(
@@ -728,6 +738,104 @@ def get_session_history(
     items = [dict(row) for row in rows]
 
     return {
+        "items": items,
+        "total": len(items),
+    }
+
+
+# 为指定文档生成并保存分块
+@router.post("/{document_id}/chunks")
+def create_document_chunks(
+    document_id: int,
+    connection: sqlite3.Connection = Depends(get_connection),
+):
+    # 1. 复用正文读取函数，支持 Markdown 和 PDF
+    document = get_document_content(document_id, connection)
+    content = document["content"]
+
+    if not content.strip():
+        raise HTTPException(
+            status_code=422,
+            detail="文档内容为空，无法分块",
+        )
+
+    # 2. 将正文切分成多个片段
+    chunks = split_text(
+        content,
+        chunk_size=500,
+        overlap=100,
+    )
+
+    try:
+        # 3. 删除当前文档以前的分块，避免重复生成
+        connection.execute(
+            "DELETE FROM document_chunks WHERE document_id = ?",
+            (document_id,),
+        )
+
+        # 4. 保存新的分块，块编号从 1 开始
+        for chunk_index, chunk_content in enumerate(chunks, start=1):
+            connection.execute(
+                """
+                INSERT INTO document_chunks
+                    (document_id, chunk_index, content)
+                VALUES (?, ?, ?)
+                """,
+                (document_id, chunk_index, chunk_content),
+            )
+
+        # 删除旧分块和插入新分块一起提交
+        connection.commit()
+
+    except sqlite3.Error:
+        # 中途失败时，撤销本次修改，保留原来的分块
+        connection.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail="保存文档分块失败",
+        )
+
+    return {
+        "document_id": document_id,
+        "total": len(chunks),
+        "message": "文档分块已生成",
+    }
+
+
+# 查询指定文档的所有分块
+@router.get("/{document_id}/chunks")
+def list_document_chunks(
+    document_id: int,
+    connection: sqlite3.Connection = Depends(get_connection),
+):
+    # 1. 确认文档存在
+    document = connection.execute(
+        "SELECT id FROM documents WHERE id = ?",
+        (document_id,),
+    ).fetchone()
+
+    if document is None:
+        raise HTTPException(
+            status_code=404,
+            detail="文档不存在",
+        )
+
+    # 2. 查询这篇文档的分块，按块编号从小到大排列
+    rows = connection.execute(
+        """
+        SELECT id, document_id, chunk_index, content
+        FROM document_chunks
+        WHERE document_id = ?
+        ORDER BY chunk_index ASC
+        """,
+        (document_id,),
+    ).fetchall()
+
+    # 3. 将每行转换为字典
+    items = [dict(row) for row in rows]
+
+    return {
+        "document_id": document_id,
         "items": items,
         "total": len(items),
     }
