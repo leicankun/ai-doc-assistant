@@ -6,7 +6,16 @@ from database import get_connection
 from schemas import Document, QuestionRequest,SessionCreate
 from llm import answer_question
 from openai import APIError, APITimeoutError
-
+from pathlib import Path
+from io import BytesIO
+from pypdf import PdfReader
+from pypdf.errors import PyPdfError
+import json
+from contextlib import aclosing
+from fastapi import Request
+from fastapi.responses import StreamingResponse
+from config import DB_PATH
+from llm import stream_answer_question
 
 router = APIRouter(
     prefix="/documents",
@@ -116,43 +125,98 @@ def del_document(
     }
 
 
-#上传markdown文件
+#上传markdown，pdf文件
 @router.post("/upload", status_code=201)
-async def upload_document(file: UploadFile,
-                          connection :sqlite3.Connection = Depends(get_connection),
-                          ):
-    if not file.filename or not file.filename.lower().endswith(".md"):
-        raise HTTPException(status_code=422, detail="请上传 .md 文件")
+async def upload_document(
+    file: UploadFile,
+    connection: sqlite3.Connection = Depends(get_connection),
+):
+    # 1. 判断文件类型
+    filename = file.filename or ""
+    suffix = Path(filename).suffix.lower()
 
+    if suffix not in (".md", ".pdf"):
+        raise HTTPException(
+            status_code=422,
+            detail="请上传 .md 或 .pdf 文件",
+        )
+
+    # 2. 读取上传文件的二进制内容
     content = await file.read()
-    try:
-        text = content.decode("utf-8")
-    except UnicodeDecodeError:
-        raise HTTPException(status_code=422, detail="文件必须是 UTF-8 编码")
-    #保存文件
-    UPLOAD_DIR.mkdir(exist_ok=True)
-    stored_name = f"{uuid4().hex}.md"
+
+    if not content:
+        raise HTTPException(status_code=422, detail="上传文件不能为空")
+
+    # 3. 根据类型提取文字
+    if suffix == ".md":
+        file_type = "markdown"
+
+        try:
+            text = content.decode("utf-8")
+        except UnicodeDecodeError:
+            raise HTTPException(
+                status_code=422,
+                detail="Markdown 文件必须是 UTF-8 编码",
+            )
+
+    else:
+        file_type = "pdf"
+
+        try:
+            reader = PdfReader(BytesIO(content))
+
+            if reader.is_encrypted:
+                raise HTTPException(
+                    status_code=422,
+                    detail="暂不支持加密 PDF，请先解除密码保护",
+                )
+
+            page_texts = []
+
+            for page in reader.pages:
+                page_texts.append(page.extract_text() or "")
+
+            text = "\n".join(page_texts)
+
+        except PyPdfError:
+            raise HTTPException(
+                status_code=422,
+                detail="PDF 解析失败，请确认文件有效且未损坏",
+            )
+
+        if not text.strip():
+            raise HTTPException(
+                status_code=422,
+                detail="PDF 未提取到文字，暂不支持纯图片扫描件",
+            )
+
+    # 4. 保存原文件，保留对应的扩展名
+    UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
+
+    stored_name = f"{uuid4().hex}{suffix}"
     file_path = UPLOAD_DIR / stored_name
     file_path.write_bytes(content)
 
+    # 5. 将文件信息保存到数据库
     try:
         insert_cursor = connection.execute(
             """
             INSERT INTO documents (title, file_type, stored_name)
             VALUES (?, ?, ?)
             """,
-            (file.filename, "markdown", stored_name),
+            (filename, file_type, stored_name),
         )
         connection.commit()
+
     except sqlite3.Error:
         connection.rollback()
-        file_path.unlink()  # 数据库保存失败时，清理本次上传的文件
+        file_path.unlink()
         raise
 
     return {
         "id": insert_cursor.lastrowid,
-        "title": file.filename,
-        "file_type": "markdown",
+        "title": filename,
+        "file_type": file_type,
         "stored_name": stored_name,
         "size": len(content),
         "preview": text[:100],
@@ -164,31 +228,85 @@ def get_document_content(
     document_id: int,
     connection: sqlite3.Connection = Depends(get_connection),
 ):
-    # 1. 查询数据库，找到文档关联的文件名
-    query_cursor = connection.execute(
-        "SELECT id, title, stored_name FROM documents WHERE id = ?",
+    # 1. 查询文档信息，同时获取文件类型
+    document = connection.execute(
+        """
+        SELECT id, title, file_type, stored_name
+        FROM documents
+        WHERE id = ?
+        """,
         (document_id,),
-    )
-    document = query_cursor.fetchone()
+    ).fetchone()
 
     if document is None:
-        raise HTTPException(status_code=404, detail="文档不存在")
+        raise HTTPException(
+            status_code=404,
+            detail="文档不存在",
+        )
 
     if not document["stored_name"]:
-        raise HTTPException(status_code=404, detail="该文档尚未上传文件")
+        raise HTTPException(
+            status_code=404,
+            detail="该文档尚未上传文件",
+        )
 
-    # 2. 根据文件名找到磁盘上的文件
+    # 2. 找到原文件的保存路径
     file_path = UPLOAD_DIR / document["stored_name"]
 
-    # 3. 读取文件内容
+    # 3. 根据文件类型读取正文
     try:
-        content = file_path.read_text(encoding="utf-8")
-    except FileNotFoundError:
-        raise HTTPException(status_code=404, detail="文档文件不存在")
-    except UnicodeDecodeError:
-        raise HTTPException(status_code=422, detail="文件必须是 UTF-8 编码")
+        if document["file_type"] == "markdown":
+            content = file_path.read_text(encoding="utf-8")
 
-    # 4. 返回文档正文
+        elif document["file_type"] == "pdf":
+            # 使用 with，读取完成后自动关闭文件
+            with file_path.open("rb") as pdf_file:
+                reader = PdfReader(pdf_file)
+
+                if reader.is_encrypted:
+                    raise HTTPException(
+                        status_code=422,
+                        detail="暂不支持加密 PDF",
+                    )
+
+                page_texts = []
+
+                for page in reader.pages:
+                    page_texts.append(page.extract_text() or "")
+
+                content = "\n".join(page_texts)
+
+            if not content.strip():
+                raise HTTPException(
+                    status_code=422,
+                    detail="PDF 未提取到文字，暂不支持纯图片扫描件",
+                )
+
+        else:
+            raise HTTPException(
+                status_code=422,
+                detail="暂不支持读取此文件类型",
+            )
+
+    except FileNotFoundError:
+        raise HTTPException(
+            status_code=404,
+            detail="文档文件不存在",
+        )
+
+    except UnicodeDecodeError:
+        raise HTTPException(
+            status_code=422,
+            detail="文档文字解码失败，请检查文件编码或内容",
+        )
+
+    except PyPdfError:
+        raise HTTPException(
+            status_code=422,
+            detail="PDF 解析失败，请确认文件有效且未损坏",
+        )
+
+    # 4. 无论 Markdown 还是 PDF，都返回相同结构
     return {
         "id": document["id"],
         "title": document["title"],
@@ -288,6 +406,179 @@ def ask_document(
         "answer": answer,
     }
 
+#流式提问接口
+@router.post("/{document_id}/ask/stream")
+def ask_document_stream(
+    document_id: int,
+    request: QuestionRequest,
+    http_request: Request,
+    connection: sqlite3.Connection = Depends(get_connection),
+):
+    # 1. 读取 Markdown 或 PDF 正文
+    document = get_document_content(document_id, connection)
+    content = document["content"]
+
+    # 2. 检查会话是否属于当前文档
+    session = connection.execute(
+        """
+        SELECT id
+        FROM document_sessions
+        WHERE id = ? AND document_id = ?
+        """,
+        (request.session_id, document_id),
+    ).fetchone()
+
+    if session is None:
+        raise HTTPException(
+            status_code=404,
+            detail="会话不存在或不属于当前文档",
+        )
+
+    if not content.strip():
+        raise HTTPException(
+            status_code=422,
+            detail="文档内容为空",
+        )
+
+    if len(content) > 20000:
+        raise HTTPException(
+            status_code=422,
+            detail="当前仅支持不超过 20000 个字符的文档",
+        )
+
+    # 3. 查询最近 5 轮历史
+    rows = connection.execute(
+        """
+        SELECT question, answer
+        FROM question_answers
+        WHERE document_id = ? AND session_id = ?
+        ORDER BY id DESC
+        LIMIT 5
+        """,
+        (document_id, request.session_id),
+    ).fetchall()
+
+    history = [
+        {
+            "question": row["question"],
+            "answer": row["answer"],
+        }
+        for row in reversed(rows)
+    ]
+
+    # 将事件编码为 SSE 格式；空行表示一条事件结束
+    def make_event(data):
+        return f"data: {json.dumps(data, ensure_ascii=False)}\n\n"
+
+    # 4. 逐段生成响应
+    async def generate():
+        parts = []
+
+        try:
+            # aclosing 确保提前退出时也关闭内部生成器
+            async with aclosing(
+                stream_answer_question(
+                    content,
+                    request.question,
+                    history,
+                )
+            ) as text_stream:
+                async for text in text_stream:
+                    # 客户端已经断开，就停止处理
+                    if await http_request.is_disconnected():
+                        return
+
+                    parts.append(text)
+
+                    yield make_event({
+                        "type": "delta",
+                        "content": text,
+                    })
+
+            if await http_request.is_disconnected():
+                return
+
+            answer = "".join(parts)
+
+            if not answer.strip():
+                yield make_event({
+                    "type": "error",
+                    "message": "模型没有返回回答",
+                })
+                return
+
+            # 5. 正常生成结束后，使用独立连接保存完整问答
+            # 不依赖流式响应期间原连接的生命周期
+            save_connection = sqlite3.connect(DB_PATH)
+
+            try:
+                save_connection.execute(
+                    """
+                    INSERT INTO question_answers
+                        (document_id, session_id, question, answer)
+                    VALUES (?, ?, ?, ?)
+                    """,
+                    (
+                        document_id,
+                        request.session_id,
+                        request.question,
+                        answer,
+                    ),
+                )
+                save_connection.commit()
+
+            except sqlite3.Error:
+                save_connection.rollback()
+                raise
+
+            finally:
+                save_connection.close()
+
+            # 6. 保存成功后通知前端结束
+            yield make_event({
+                "type": "done",
+                "document_id": document_id,
+                "session_id": request.session_id,
+            })
+
+        except APITimeoutError:
+            yield make_event({
+                "type": "error",
+                "message": "模型回答超时，请稍后重试",
+            })
+
+        except APIError:
+            yield make_event({
+                "type": "error",
+                "message": "模型调用失败，请稍后重试",
+            })
+
+        except RuntimeError:
+            yield make_event({
+                "type": "error",
+                "message": "服务尚未配置模型 API Key",
+            })
+
+        except ValueError as error:
+            yield make_event({
+                "type": "error",
+                "message": str(error),
+            })
+
+        except sqlite3.Error:
+            yield make_event({
+                "type": "error",
+                "message": "回答已生成，但历史记录保存失败",
+            })
+
+    return StreamingResponse(
+        generate(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 # 查询指定文档的问答历史
 @router.get("/{document_id}/history")

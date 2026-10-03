@@ -1,5 +1,5 @@
 ﻿<script setup>
-import { onMounted, ref } from 'vue'
+import { onMounted, onBeforeUnmount, ref } from 'vue'
 
 const documents = ref([])
 const loading = ref(false)
@@ -19,6 +19,8 @@ const question = ref('')
 const answer = ref('')
 const asking = ref(false)
 const askError = ref('')
+const streamStatus = ref('')
+let askController = null
 const history = ref([])
 const historyLoading = ref(false)
 const historyError = ref('')
@@ -135,14 +137,20 @@ function selectFile(event) {
   selectedFile.value = event.target.files[0] ?? null
   uploadError.value = ''
   uploadSuccess.value = ''
+  if (selectedFile.value && !/\.(md|pdf)$/i.test(selectedFile.value.name)) {
+    uploadError.value = '请选择 .md 或 .pdf 文件'
+    selectedFile.value = null
+    event.target.value = ''
+  }
 }
 
 async function uploadDocument() {
+  if (uploading.value) return
   uploadError.value = ''
   uploadSuccess.value = ''
 
   if (!selectedFile.value) {
-    uploadError.value = '请先选择 Markdown 文件'
+    uploadError.value = '请先选择 Markdown 或 PDF 文件'
     return
   }
 
@@ -191,6 +199,7 @@ async function startAsk(document) {
 }
 
 function resetConversation() {
+  streamStatus.value = ''
   ++historyRequestId
   historyLoading.value = false
   historyError.value = ''
@@ -292,6 +301,7 @@ async function askDocument() {
 
   askError.value = ''
   answer.value = ''
+  streamStatus.value = ''
 
   if (!selectedSessionId.value) {
     askError.value = '请先创建或选择会话'
@@ -304,12 +314,17 @@ async function askDocument() {
   }
 
   asking.value = true
+  const controller = new AbortController()
+  askController = controller
+  let reader
+  let completed = false
 
   try {
     const response = await fetch(
-      `http://127.0.0.1:8000/documents/${askingDocument.value.id}/ask`,
+      `http://127.0.0.1:8000/documents/${askingDocument.value.id}/ask/stream`,
       {
         method: 'POST',
+        signal: controller.signal,
         headers: {
           'Content-Type': 'application/json',
         },
@@ -320,9 +335,8 @@ async function askDocument() {
       },
     )
 
-    const data = await response.json()
-
     if (!response.ok) {
+      const data = await response.json().catch(() => ({}))
       throw new Error(
         typeof data.detail === 'string'
           ? data.detail
@@ -330,14 +344,68 @@ async function askDocument() {
       )
     }
 
-    answer.value = data.answer
+    if (!response.body) throw new Error('浏览器无法读取流式响应')
+    reader = response.body.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ''
+
+    // 网络分段不等于 SSE 事件分段：缓存到空行后再解析。
+    function consumeEvents() {
+      let boundary
+      while ((boundary = /\r?\n\r?\n/.exec(buffer))) {
+        const block = buffer.slice(0, boundary.index)
+        buffer = buffer.slice(boundary.index + boundary[0].length)
+        const data = block.split(/\r?\n/)
+          .filter(line => line.startsWith('data:'))
+          .map(line => line.slice(5).replace(/^ /, ''))
+          .join('\n')
+        if (!data) continue
+        const event = JSON.parse(data)
+        if (event.type === 'delta') {
+          answer.value += event.content
+        } else if (event.type === 'error') {
+          throw new Error(event.message || '生成失败，请重试')
+        } else if (event.type === 'done') {
+          completed = true
+          return
+        }
+      }
+    }
+
+    while (!completed) {
+      const { value, done } = await reader.read()
+      if (controller.signal.aborted) throw new DOMException('已停止', 'AbortError')
+      buffer += done ? decoder.decode() : decoder.decode(value, { stream: true })
+      consumeEvents()
+      if (done) break
+    }
+    if (!completed) throw new Error('连接提前结束，回答可能不完整，请重试')
+    streamStatus.value = '回答已完成并保存'
+    askController = null
     await loadHistory()
   } catch (error) {
-    askError.value = error.message
+    if (controller.signal.aborted) {
+      streamStatus.value = '已停止接收，已显示的文字保留；历史记录以刷新结果为准'
+      await loadHistory()
+    } else {
+      askError.value = error.message
+      streamStatus.value = answer.value ? '回答未完成或保存失败' : ''
+    }
   } finally {
+    if (reader) {
+      await reader.cancel().catch(() => {})
+      reader.releaseLock()
+    }
+    if (askController === controller) askController = null
     asking.value = false
   }
 }
+
+function stopGeneration() {
+  askController?.abort()
+}
+
+onBeforeUnmount(stopGeneration)
 onMounted(loadDocuments)
 </script>
 
@@ -351,13 +419,13 @@ onMounted(loadDocuments)
     <div class="workspace">
       <section class="panel" aria-labelledby="upload-heading">
         <h2 id="upload-heading">上传文档</h2>
-        <p class="muted section-description">选择 UTF-8 编码的 Markdown 文件，上传后自动加入列表。</p>
+        <p class="muted section-description">支持 UTF-8 Markdown 和可提取文字的 PDF，上传后自动加入列表。暂不支持加密 PDF 或纯图片扫描件。</p>
         <label class="field" for="document-file">
-          <span>Markdown 文件</span>
+          <span>Markdown 或 PDF 文件</span>
           <input
             id="document-file"
             type="file"
-            accept=".md"
+            accept=".md,.pdf"
             :disabled="uploading"
             @change="selectFile"
           />
@@ -447,12 +515,12 @@ onMounted(loadDocuments)
             </div>
           </li>
         </ul>
-        <p v-else class="empty-state">{{ loading ? '正在读取文档…' : '暂无文档，上传一份 Markdown 开始吧。' }}</p>
+        <p v-else class="empty-state">{{ loading ? '正在读取文档…' : '暂无文档，上传一份 Markdown 或 PDF 开始吧。' }}</p>
       </template>
     </section>
     <section v-if="askingDocument" class="panel library" aria-labelledby="ask-heading" :aria-busy="asking">
       <h2 id="ask-heading" class="ask-title">文档问答：{{ askingDocument.title }}</h2>
-      <p class="muted section-description">根据这篇文档的内容回答你的问题。</p>
+      <p class="muted section-description">根据这篇文档的内容回答你的问题，当前支持正文不超过 20000 字符的 Markdown 或 PDF。</p>
       <div class="session-panel">
         <div class="session-picker">
           <label class="field" for="session-select">
@@ -491,11 +559,15 @@ onMounted(loadDocuments)
           <button class="primary" type="submit" :disabled="asking || creatingSession || sessionsLoading || !selectedSessionId">
             {{ asking ? '正在回答…' : '发送问题' }}
           </button>
+          <button v-if="asking" type="button" class="danger" @click="stopGeneration">
+            停止生成
+          </button>
         </div>
       </form>
       <p v-if="askError" class="message error" role="alert">{{ askError }}</p>
+      <p v-if="streamStatus" class="muted" role="status">{{ streamStatus }}</p>
       <div aria-live="polite">
-        <p v-if="asking" class="muted">模型正在阅读文档，请稍候…</p>
+        <p v-if="asking" class="muted">{{ answer ? '正在生成回答…' : '模型正在阅读文档，请稍候…' }}</p>
         <div v-if="answer" class="answer-box">
           <h3>模型回答</h3>
           <p class="answer-text">{{ answer }}</p>
