@@ -74,6 +74,21 @@ def init_db():
             )
         """)
 
+        # 旧分块的来源未知，新增字段保留 NULL；重新生成后填充。
+        chunk_columns = {
+            row[1] for row in connection.execute("PRAGMA table_info(document_chunks)")
+        }
+        for name, column_type in (
+            ("source_name", "TEXT"),
+            ("page_number", "INTEGER"),
+            ("start_char", "INTEGER"),
+            ("end_char", "INTEGER"),
+        ):
+            if name not in chunk_columns:
+                connection.execute(
+                    f"ALTER TABLE document_chunks ADD COLUMN {name} {column_type}"
+                )
+
         connection.commit()
     finally:
         connection.close()

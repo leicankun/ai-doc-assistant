@@ -1,3 +1,11 @@
+import sys
+from pathlib import Path
+
+# 支持直接运行 practice 目录中的脚本，并导入项目根目录模块。
+PROJECT_ROOT = Path(__file__).resolve().parents[1]
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
 from sqlalchemy import (
     create_engine,
     Integer,

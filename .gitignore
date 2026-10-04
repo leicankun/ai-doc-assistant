@@ -7,3 +7,4 @@ documents.db-journal
 documents.db-wal
 documents.db-shm
 /uploads/
+chroma_data/

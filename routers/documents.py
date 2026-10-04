@@ -16,8 +16,9 @@ from fastapi import Request
 from fastapi.responses import StreamingResponse
 from config import DB_PATH
 from llm import stream_answer_question
-from chunking import split_text
-
+from chunking import split_text_with_offsets
+from schemas import SearchRequest
+from bm25 import search_bm25, tokenize
 router = APIRouter(
     prefix="/documents",
     tags=["文档"],
@@ -759,12 +760,34 @@ def create_document_chunks(
             detail="文档内容为空，无法分块",
         )
 
-    # 2. 将正文切分成多个片段
-    chunks = split_text(
-        content,
-        chunk_size=500,
-        overlap=100,
-    )
+    source = connection.execute(
+        "SELECT title, file_type, stored_name FROM documents WHERE id = ?",
+        (document_id,),
+    ).fetchone()
+
+    # PDF 保留物理页码（从 1 开始），字符位置相对于该页提取文本。
+    # Markdown 字符位置相对于整篇正文，范围为 [start_char, end_char)。
+    sections = [(None, content)]
+    if source["file_type"] == "pdf":
+        try:
+            with (UPLOAD_DIR / source["stored_name"]).open("rb") as pdf_file:
+                reader = PdfReader(pdf_file)
+                sections = [
+                    (page_number, page.extract_text() or "")
+                    for page_number, page in enumerate(reader.pages, start=1)
+                ]
+        except FileNotFoundError:
+            raise HTTPException(status_code=404, detail="文档文件不存在")
+        except PyPdfError:
+            raise HTTPException(status_code=422, detail="PDF 解析失败")
+
+    chunks = []
+    for page_number, text in sections:
+        for chunk in split_text_with_offsets(text, chunk_size=500, overlap=100):
+            chunks.append({**chunk, "page_number": page_number})
+
+    if not chunks:
+        raise HTTPException(status_code=422, detail="文档内容为空，无法分块")
 
     try:
         # 3. 删除当前文档以前的分块，避免重复生成
@@ -774,14 +797,16 @@ def create_document_chunks(
         )
 
         # 4. 保存新的分块，块编号从 1 开始
-        for chunk_index, chunk_content in enumerate(chunks, start=1):
+        for chunk_index, chunk in enumerate(chunks, start=1):
             connection.execute(
                 """
                 INSERT INTO document_chunks
-                    (document_id, chunk_index, content)
-                VALUES (?, ?, ?)
+                    (document_id, chunk_index, content, source_name,
+                     page_number, start_char, end_char)
+                VALUES (?, ?, ?, ?, ?, ?, ?)
                 """,
-                (document_id, chunk_index, chunk_content),
+                (document_id, chunk_index, chunk["content"], source["title"],
+                 chunk["page_number"], chunk["start_char"], chunk["end_char"]),
             )
 
         # 删除旧分块和插入新分块一起提交
@@ -823,7 +848,8 @@ def list_document_chunks(
     # 2. 查询这篇文档的分块，按块编号从小到大排列
     rows = connection.execute(
         """
-        SELECT id, document_id, chunk_index, content
+        SELECT id, id AS chunk_id, document_id, chunk_index, content,
+               source_name, page_number, start_char, end_char
         FROM document_chunks
         WHERE document_id = ?
         ORDER BY chunk_index ASC
@@ -836,6 +862,48 @@ def list_document_chunks(
 
     return {
         "document_id": document_id,
+        "items": items,
+        "total": len(items),
+    }
+
+
+#检索分块
+@router.post("/{document_id}/search")
+def search_document(
+    document_id: int,
+    request: SearchRequest,
+    connection: sqlite3.Connection = Depends(get_connection),
+):
+    # 1. 根据文档 ID，从数据库读取已保存的分块。
+    # 复用现有函数，文档不存在时会返回 404。
+    chunk_result = list_document_chunks(document_id, connection)
+    chunks = chunk_result["items"]
+
+    if not chunks:
+        raise HTTPException(
+            status_code=409,
+            detail="该文档尚未生成分块，请先生成分块",
+        )
+
+    # 2. 拒绝只有标点等无法提取检索词的问题。
+    if not tokenize(request.question):
+        raise HTTPException(
+            status_code=422,
+            detail="问题中没有可检索的词语",
+        )
+
+    # 3. 计算分数、排序，取前 top_k 个分块。
+    items = search_bm25(
+        chunks=chunks,
+        question=request.question,
+        top_k=request.top_k,
+    )
+
+    # 4. 每个结果已包含正文、来源、分数、命中词和排名。
+    return {
+        "document_id": document_id,
+        "question": request.question,
+        "mode": request.mode,
         "items": items,
         "total": len(items),
     }

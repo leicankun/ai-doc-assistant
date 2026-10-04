@@ -48,3 +48,16 @@ class SessionCreate(BaseModel):
         if isinstance(value, str):
             return value.strip()
         return value
+
+
+class SearchRequest(BaseModel):
+    question: str = Field(min_length=1, max_length=1000)
+    top_k: int = Field(default=5, ge=1, le=20)
+    mode: Literal["bm25"] = "bm25"
+
+    @field_validator("question", mode="before")
+    @classmethod
+    def strip_question(cls, value):
+        if isinstance(value, str):
+            return value.strip()
+        return value
