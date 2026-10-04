@@ -70,16 +70,21 @@ npm.cmd run build
 
 ```text
 main.py                 创建 FastAPI 应用、注册文档路由和健康检查
-config.py               集中定义 BASE_DIR 和 DB_PATH
-schemas.py              Document、QuestionRequest 请求模型和字段校验
+config.py               项目根目录、SQLite、上传文件和 Chroma 路径
+schemas.py              文档、会话、问答和搜索请求校验
 database.py            初始化数据库、提供连接依赖
 routers/__init__.py     路由包标记
 routers/documents.py    文档增删改查、上传、读取正文和问答接口
 llm.py                  DeepSeek 调用封装
-practice_llm.py         独立模型调用练习
+chunking.py             文本分块及字符位置
+bm25.py                 中文分词、词频统计、BM25 排序
+embedding.py            百炼向量调用，分批处理及结果校验
+vector_store.py         本地 Chroma 集合配置
+tests/test_retrieval.py  隔离数据库及模拟模型的回归测试
+practice/practice_llm.py         独立模型调用练习
 frontend/               Vue 前端及其独立的 package.json
-practice_db.py          sqlite3 插入与查询练习
-practice_orm.py         SQLAlchemy 会话、消息和 JOIN 练习
+practice/practice_db.py          sqlite3 插入与查询练习
+practice/practice_orm.py         SQLAlchemy 会话、消息和 JOIN 练习
 requirements.txt        当前项目虚拟环境的依赖版本
 ```
 
@@ -165,15 +170,15 @@ POST 和 PUT 均须提交以下 JSON 请求体：
 运行插入和查询练习：
 
 ```powershell
-.\.venv\Scripts\python.exe practice_db.py
+.\.venv\Scripts\python.exe practice/practice_db.py
 ```
 
-每次运行 practice_db.py 都会向同一个数据库新增一条练习记录，并查询表中全部记录。
+每次运行 practice/practice_db.py 都会向同一个数据库新增一条练习记录，并查询表中全部记录。
 
 ## SQLAlchemy 练习
 
 ```powershell
-.\.venv\Scripts\python.exe practice_orm.py
+.\.venv\Scripts\python.exe practice/practice_orm.py
 ```
 
 使用同一个 documents.db，创建尚不存在的 chat_sessions 和 chat_messages 表。
@@ -212,14 +217,14 @@ SQLite 的 sqlite3 和 pathlib 属于 Python 标准库，不需要用 pip 安装
 
 ## 文档分块接口
 
-`chunking.py` 提供按字符切分正文的 `split_text()`，当前接口每块最多 500 个字符，相邻窗口重叠 100 个字符，跳过纯空白片段。Markdown 和 PDF 都复用正文读取函数。
+`chunking.py` 的 `split_text_with_offsets()` 返回正文及字符位置，`split_text()` 保留纯文本列表接口供练习使用。每块最多 500 个字符，相邻窗口重叠 100 个字符，跳过纯空白片段。PDF 按页分块，不跨页拼接。
 
 | 方法 | 路径 | 用途 |
 | --- | --- | --- |
 | POST | /documents/{document_id}/chunks | 无需请求体，重新生成并保存当前文档的分块，返回 document_id、total、message |
 | GET | /documents/{document_id}/chunks | 按 chunk_index 升序查询，返回 document_id、items、total |
 
-`document_chunks` 保存 id、document_id、chunk_index、content；块编号从 1 开始，同一文档的块编号唯一。重新生成时，在同一事务中删除旧分块并插入新分块，失败会回滚。文档存在但未分块时查询返回空列表；文档不存在返回 404，空白正文生成返回 422。
+`document_chunks` 保存 id、document_id、chunk_index、content、source_name、page_number、start_char、end_char。查询额外返回 chunk_id（id 的别名）。PDF 页码从 1 开始，字符范围相对于该页提取文本；Markdown 页码为空，字符范围相对于整篇正文。范围均为左闭右开。旧表启动时自动补字段，旧记录来源字段为 NULL，需要重新生成分块。块序号从 1 开始，同一文档的块序号唯一；重新生成后数据库 ID 不保证不变。重新生成时，在同一事务中删除旧分块并插入新分块，失败会回滚。文档存在但未分块时查询返回空列表；文档不存在返回 404，空白正文生成返回 422。
 
 这一步仅保存分块，尚未接入向量检索或替换现有全文问答。分块接口没有分页，删除文档也尚未级联清理分块；当前未声明分块表的外键约束。
 
@@ -250,3 +255,59 @@ SQLite 的 sqlite3 和 pathlib 属于 Python 标准库，不需要用 pip 安装
 PDF 通过 pypdf 逐页提取正文，再复用同一套问答与会话逻辑。正文仍限制为 20000 字符，历史携带最近 5 轮。
 
 验证（2026-10-03）：临时数据库及独立本地 HTTP 服务测试通过；真实 DeepSeek 两轮分别返回 29、16 个文字片段，连续追问及完整历史保存通过。模拟慢模型并真实断开 HTTP 连接，确认生成器关闭且半截回答不入库；中途错误事件测试通过。前端分段解析、停止请求逻辑测试及类型检查、生产构建通过。未进行浏览器点击验收。
+
+
+## 练习脚本
+
+独立练习脚本统一放在 `practice/`，正式业务模块保留在项目根目录。
+从项目根目录运行，例如：
+
+```powershell
+.\.venv\Scripts\python.exe practice/practice_chunk.py
+.\.venv\Scripts\python.exe practice/practice_embedding.py
+```
+
+练习脚本继续使用项目根目录的 `.env`、`uploads/` 和数据库。模型练习会调用真实 API，数据库练习会写入数据。
+
+
+## BM25 检索
+
+先上传文件，调用 `POST /documents/{document_id}/chunks` 保存分块，再调用 `POST /documents/{document_id}/search`：
+
+```json
+{"question":"SQLite 如何保存数据？","mode":"bm25","top_k":5}
+```
+
+目前仅支持 bm25，top_k 为 1—20，默认 5。问题去除首尾空白后为 1—1000 字符。接口从 SQLite 读取指定文档的分块，返回 document_id、question、mode、items、total。每项包含正文、来源、score、matched_terms 和从 1 开始的 rank。无匹配返回空列表；未分块返回 409，文档不存在返回 404，非法输入及纯标点问题返回 422。
+
+中文使用 jieba 搜索分词，英文标识符转小写，使用正值 IDF 的 BM25 评分。统计结果按完整语料缓存，最多 8 组；分块变化时重新统计。评分只代表词语匹配程度，不代表资料足以回答问题。尚未配置停用词或专有名词词典。
+
+## 百炼 Embedding 与 Chroma
+
+在根目录 `.env` 增加：
+
+```dotenv
+DASHSCOPE_API_KEY=填写百炼密钥
+DASHSCOPE_BASE_URL=填写对应地域的OpenAI兼容基础地址
+EMBEDDING_MODEL=text-embedding-v4
+```
+
+基础地址以 `/compatible-mode/v1` 结尾，不追加 `/embeddings`，以账号控制台对应地域配置为准。不要将真实密钥提交到 Git。
+
+`embedding.embed_texts(texts)` 接收非空白文本列表，每批最多 10 条，返回与输入顺序一致的 1024 维向量。空列表直接返回空列表。函数校验返回编号、数量、维度、有限数值及非零向量，当前固定支持 text-embedding-v4。调用有 30 秒超时配置，不自动重试；调用失败由调用方处理。
+
+`vector_store.get_collection()` 打开 `chroma_data/` 下的持久化集合 `document_chunks_v4_1024`，使用 cosine 距离，禁用自动 Embedding，写入时需自行提供向量。这个目录已被 Git 忽略。
+
+当前仅完成 Embedding 函数和 Chroma 集合配置；尚未实现正式文档入库流程、索引 HTTP 接口、dense 检索或 RRF 融合。现有问答仍使用全文。练习脚本生成并打印向量，不自动写入 Chroma。
+
+## 当前回归测试
+
+在项目根目录执行：
+
+```powershell
+.\.venv\Scripts\python.exe -m unittest discover -s tests -v
+```
+
+测试使用临时数据库和模拟 Embedding 响应，不依赖真实付费模型。覆盖旧表迁移、重复初始化、上传与重复分块、字符来源、PDF 空白页页码（模拟解析器）、BM25 排名及文档隔离、错误输入，以及 Embedding 跨批顺序和异常响应。
+
+验证（2026-10-04）：上述 3 个测试方法及 Python 语法检查通过；pip check 无依赖冲突。另行真实调用百炼，返回 2 个有效的 1024 维向量；在临时 Chroma 目录验证重复 upsert 不增加条数、独立进程重开后正文保留，以及按文档过滤的向量查询。这些 Chroma 检查使用合成向量，不代表正式入库流程已经实现。
