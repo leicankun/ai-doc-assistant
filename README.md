@@ -80,6 +80,8 @@ chunking.py             文本分块及字符位置
 bm25.py                 中文分词、词频统计、BM25 排序
 embedding.py            百炼向量调用，分批处理及结果校验
 vector_store.py         本地 Chroma 集合配置
+indexing.py             读取 SQLite 分块、生成向量并更新 Chroma
+tests/test_indexing.py  入库、清理、隔离和失败处理回归测试
 tests/test_retrieval.py  隔离数据库及模拟模型的回归测试
 practice/practice_llm.py         独立模型调用练习
 frontend/               Vue 前端及其独立的 package.json
@@ -298,7 +300,7 @@ EMBEDDING_MODEL=text-embedding-v4
 
 `vector_store.get_collection()` 打开 `chroma_data/` 下的持久化集合 `document_chunks_v4_1024`，使用 cosine 距离，禁用自动 Embedding，写入时需自行提供向量。这个目录已被 Git 忽略。
 
-当前仅完成 Embedding 函数和 Chroma 集合配置；尚未实现正式文档入库流程、索引 HTTP 接口、dense 检索或 RRF 融合。现有问答仍使用全文。练习脚本生成并打印向量，不自动写入 Chroma。
+已完成 Embedding 函数、Chroma 集合配置和 index_document() 文档入库函数；尚未添加索引 HTTP 接口、dense 检索或 RRF 融合。现有问答仍使用全文。练习脚本生成并打印向量，不自动写入 Chroma。
 
 ## 当前回归测试
 
@@ -311,3 +313,19 @@ EMBEDDING_MODEL=text-embedding-v4
 测试使用临时数据库和模拟 Embedding 响应，不依赖真实付费模型。覆盖旧表迁移、重复初始化、上传与重复分块、字符来源、PDF 空白页页码（模拟解析器）、BM25 排名及文档隔离、错误输入，以及 Embedding 跨批顺序和异常响应。
 
 验证（2026-10-04）：上述 3 个测试方法及 Python 语法检查通过；pip check 无依赖冲突。另行真实调用百炼，返回 2 个有效的 1024 维向量；在临时 Chroma 目录验证重复 upsert 不增加条数、独立进程重开后正文保留，以及按文档过滤的向量查询。这些 Chroma 检查使用合成向量，不代表正式入库流程已经实现。
+
+
+## 文档向量入库函数
+
+`indexing.index_document(document_id, connection)` 接收文档 ID 和设置了 `sqlite3.Row` 的 SQLite 连接。它读取该文档已保存的分块，调用 `embed_texts()` 生成向量，再通过 `get_collection()` 写入本地 Chroma。
+
+- 记录 ID 为 `doc:{document_id}:chunk:{chunk_id}`，保存向量、正文以及分块来源。没有页码等信息时省略对应元数据字段。
+- 每批最多写入 100 条；`upsert` 更新已有 ID 或新增记录，重复执行不会增加相同 ID 的记录，但会重新调用 Embedding API。
+- 新记录全部写入后，清理仅属于当前文档且已经失效的旧块 ID，最后检查保存的 ID 集合。
+- 返回 document_id、indexed_chunks、removed_chunks 和 message。文档不存在或没有分块时抛出 ValueError；API、数据库及 Chroma 失败向调用方传播。
+- 同一文档需串行处理，入库期间不要重新分块。多批写入及删除不是整体事务；失败可能留下部分更新，应重试。同一时刻删除文档、多个调用并发入库以及向量索引版本切换尚未处理。
+- 如果文档完全没有分块，函数报错，不自动删除旧向量。正式删除流程后续需要单独接入。
+
+验证（2026-10-04）：完整回归套件 6 个测试方法通过。新增测试使用内存 SQLite、真实临时 Chroma 集合及模拟 Embedding，覆盖向量与正文、来源对应，重复入库，正文更新，旧块清理，文档隔离，缺失文档、无分块、Embedding 失败或数量错误、205 块跨批写入、写入失败后重试及跨批清理。
+
+另行以只读方式读取项目数据库的文档 5，真实调用百炼，通过 index_document 将 3 个分块保存为 3 个 1024 维向量到临时 Chroma 目录。独立进程重新打开后读取成功，并通过自身向量查询命中对应块。测试未修改项目文档或正式 Chroma 数据；临时目录已清理。此验证是入库及持久化验证，不代表问题检索质量评测。
