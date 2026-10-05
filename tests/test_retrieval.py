@@ -86,7 +86,7 @@ class RetrievalTests(unittest.TestCase):
                 self.assertEqual(result['items'][0]['rank'], 1)
                 self.assertGreater(result['items'][0]['score'], 0)
                 self.assertEqual(client.post(url+'/search', json={'question':'legacy'}).json()['items'], [])
-                for body in [{'question':' '}, {'question':'!!!'}, {'question':'test','top_k':0}, {'question':'test','mode':'dense'}]:
+                for body in [{'question':' '}, {'question':'!!!'}, {'question':'test','top_k':0}, {'question':'test','mode':'invalid'}]:
                     self.assertEqual(client.post(url+'/search',json=body).status_code,422)
                 self.assertEqual(client.post('/documents/999/search',json={'question':'test'}).status_code,404)
                 class Page:

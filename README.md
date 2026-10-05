@@ -280,7 +280,7 @@ PDF 通过 pypdf 逐页提取正文，再复用同一套问答与会话逻辑。
 {"question":"SQLite 如何保存数据？","mode":"bm25","top_k":5}
 ```
 
-目前仅支持 bm25，top_k 为 1—20，默认 5。问题去除首尾空白后为 1—1000 字符。接口从 SQLite 读取指定文档的分块，返回 document_id、question、mode、items、total。每项包含正文、来源、score、matched_terms 和从 1 开始的 rank。无匹配返回空列表；未分块返回 409，文档不存在返回 404，非法输入及纯标点问题返回 422。
+支持 bm25 和 dense，默认 bm25。top_k 为 1—20，默认 5。问题去除首尾空白后为 1—1000 字符。接口从 SQLite 读取指定文档的分块，返回 document_id、question、mode、items、total。每项包含正文、来源、score、matched_terms 和从 1 开始的 rank。无匹配返回空列表；未分块返回 409，文档不存在返回 404，非法输入返回 422；BM25 模式下纯标点问题也返回 422。
 
 中文使用 jieba 搜索分词，英文标识符转小写，使用正值 IDF 的 BM25 评分。统计结果按完整语料缓存，最多 8 组；分块变化时重新统计。评分只代表词语匹配程度，不代表资料足以回答问题。尚未配置停用词或专有名词词典。
 
@@ -300,7 +300,7 @@ EMBEDDING_MODEL=text-embedding-v4
 
 `vector_store.get_collection()` 打开 `chroma_data/` 下的持久化集合 `document_chunks_v4_1024`，使用 cosine 距离，禁用自动 Embedding，写入时需自行提供向量。这个目录已被 Git 忽略。
 
-已完成 Embedding 函数、Chroma 集合配置和 index_document() 文档入库函数；尚未添加索引 HTTP 接口、dense 检索或 RRF 融合。现有问答仍使用全文。练习脚本生成并打印向量，不自动写入 Chroma。
+已完成 Embedding、Chroma 持久化、文档入库 HTTP 接口、dense 检索和前端检索展示。尚未实现 RRF 融合，现有问答仍使用全文，检索结果尚未接入回答生成。练习脚本生成并打印向量，不自动写入 Chroma。
 
 ## 当前回归测试
 
@@ -329,3 +329,31 @@ EMBEDDING_MODEL=text-embedding-v4
 验证（2026-10-04）：完整回归套件 6 个测试方法通过。新增测试使用内存 SQLite、真实临时 Chroma 集合及模拟 Embedding，覆盖向量与正文、来源对应，重复入库，正文更新，旧块清理，文档隔离，缺失文档、无分块、Embedding 失败或数量错误、205 块跨批写入、写入失败后重试及跨批清理。
 
 另行以只读方式读取项目数据库的文档 5，真实调用百炼，通过 index_document 将 3 个分块保存为 3 个 1024 维向量到临时 Chroma 目录。独立进程重新打开后读取成功，并通过自身向量查询命中对应块。测试未修改项目文档或正式 Chroma 数据；临时目录已清理。此验证是入库及持久化验证，不代表问题检索质量评测。
+
+## 向量检索与前端操作
+
+启动前后端后，在“文档检索”区域选择已上传的文档：
+
+1. 点击“生成 / 更新分块”，保存当前文本分块。
+2. 点击“向量入库”，调用 `POST /documents/{document_id}/index`。成功返回 indexed_chunks 和 removed_chunks；重复操作会再次调用 Embedding 模型。
+3. 输入问题，选择 BM25 或向量检索，设置 Top-K（1—20），点击“开始检索”。
+4. 查看原文、来源、页码、排名。BM25 分数越大越靠前；dense 余弦距离越小越靠前，距离不代表正确率。
+
+向量检索请求示例：
+
+```http
+POST /documents/5/search
+Content-Type: application/json
+
+{"question":"FastAPI 如何使用依赖注入？","mode":"dense","top_k":3}
+```
+
+`embed_query()` 使用相同模型生成问题向量，`search_dense()` 按 document_id 限定 Chroma 检索范围。dense 结果包含 distance，BM25 结果包含 score 和 matched_terms。向量检索返回最近的分块，没有相关性阈值，因此不相关问题也可能返回结果。
+
+未分块或 dense 未入库返回 409；文档不存在返回 404；模型超时返回 504，模型 API 错误返回 502，内部错误返回 500。入库接口未分块返回 422。重新分块后需重新入库；当前没有自动检查索引是否过期。页面展示加载、失败和空结果提示，切换文档会清空旧结果。
+
+### 验证（2026-10-05）
+
+- 后端 unittest：16 项通过（包含复用的入库测试），覆盖真实内存 Chroma 的向量排序、Top-K、文档隔离、重复入库、旧记录清理和接口错误响应；Embedding 使用模拟数据，不调用付费模型。
+- 前端 `cd frontend; npm run build`：Vue 类型检查及生产构建通过。
+- Playwright / Edge 无头浏览器交互检查：分块、入库、BM25/dense 请求和结果、加载时禁用提交、原文 HTML 转义、409 提示、空结果、切换文档清空结果通过；390px 手机宽度无横向溢出，没有捕获到页面 JavaScript 异常。浏览器使用模拟 HTTP 响应，未进行真实模型端到端联调。

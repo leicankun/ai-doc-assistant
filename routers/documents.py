@@ -19,6 +19,12 @@ from llm import stream_answer_question
 from chunking import split_text_with_offsets
 from schemas import SearchRequest
 from bm25 import search_bm25, tokenize
+import logging
+from indexing import index_document
+from retrieval import search_dense
+
+logger = logging.getLogger(__name__)
+
 router = APIRouter(
     prefix="/documents",
     tags=["文档"],
@@ -867,15 +873,15 @@ def list_document_chunks(
     }
 
 
-#检索分块
+# 检索分块：支持 BM25 和向量检索
 @router.post("/{document_id}/search")
 def search_document(
     document_id: int,
     request: SearchRequest,
     connection: sqlite3.Connection = Depends(get_connection),
 ):
-    # 1. 根据文档 ID，从数据库读取已保存的分块。
-    # 复用现有函数，文档不存在时会返回 404。
+    # 检查文档是否存在，并读取分块。
+    # 文档不存在时，list_document_chunks 会抛出 404。
     chunk_result = list_document_chunks(document_id, connection)
     chunks = chunk_result["items"]
 
@@ -885,21 +891,61 @@ def search_document(
             detail="该文档尚未生成分块，请先生成分块",
         )
 
-    # 2. 拒绝只有标点等无法提取检索词的问题。
-    if not tokenize(request.question):
-        raise HTTPException(
-            status_code=422,
-            detail="问题中没有可检索的词语",
+    if request.mode == "bm25":
+        # BM25 依赖分词后的词语匹配。
+        if not tokenize(request.question):
+            raise HTTPException(
+                status_code=422,
+                detail="问题中没有可检索的词语",
+            )
+
+        items = search_bm25(
+            chunks=chunks,
+            question=request.question,
+            top_k=request.top_k,
         )
 
-    # 3. 计算分数、排序，取前 top_k 个分块。
-    items = search_bm25(
-        chunks=chunks,
-        question=request.question,
-        top_k=request.top_k,
-    )
+    else:
+        # dense：问题向量与文档分块向量进行相似度检索。
+        try:
+            items = search_dense(
+                document_id=document_id,
+                question=request.question,
+                top_k=request.top_k,
+            )
+        except APITimeoutError as exc:
+            raise HTTPException(
+                status_code=504,
+                detail="问题向量生成超时，请稍后重试",
+            ) from exc
+        except APIError as exc:
+            raise HTTPException(
+                status_code=502,
+                detail="向量模型调用失败，请检查模型服务配置",
+            ) from exc
+        except ValueError as exc:
+            # 当前 search_dense 用 ValueError 表示未入库。
+            # 只将这个已知错误转换为 409。
+            if str(exc) == "该文档尚未向量入库，请先调用入库接口":
+                raise HTTPException(
+                    status_code=409,
+                    detail=str(exc),
+                ) from exc
 
-    # 4. 每个结果已包含正文、来源、分数、命中词和排名。
+            logger.exception(
+                "向量检索参数或配置错误，document_id=%s", document_id
+            )
+            raise HTTPException(
+                status_code=500,
+                detail="向量检索失败，请查看后端日志",
+            ) from exc
+        except Exception as exc:
+            logger.exception("向量检索失败，document_id=%s", document_id)
+            raise HTTPException(
+                status_code=500,
+                detail="向量检索失败，请查看后端日志",
+            ) from exc
+
     return {
         "document_id": document_id,
         "question": request.question,
@@ -907,3 +953,53 @@ def search_document(
         "items": items,
         "total": len(items),
     }
+
+
+#将文档分块向量写入 Chroma
+@router.post("/{document_id}/index")
+def index_document_vectors(
+    document_id: int,
+    connection: sqlite3.Connection = Depends(get_connection),
+):
+    # 1. 检查文档是否存在。
+    document = connection.execute(
+        "SELECT id FROM documents WHERE id = ?",
+        (document_id,),
+    ).fetchone()
+
+    if document is None:
+        raise HTTPException(status_code=404, detail="文档不存在")
+
+    # 2. 检查是否已经生成分块。
+    chunk = connection.execute(
+        "SELECT id FROM document_chunks WHERE document_id = ? LIMIT 1",
+        (document_id,),
+    ).fetchone()
+
+    if chunk is None:
+        raise HTTPException(
+            status_code=422,
+            detail="该文档尚未生成分块，请先调用分块接口",
+        )
+
+    # 3. 调用入库函数，生成向量并保存到 Chroma。
+    try:
+        result = index_document(document_id, connection)
+    except APITimeoutError as exc:
+        raise HTTPException(
+            status_code=504,
+            detail="向量生成超时，请稍后重试",
+        ) from exc
+    except APIError as exc:
+        raise HTTPException(
+            status_code=502,
+            detail="向量模型调用失败，请检查模型服务配置",
+        ) from exc
+    except Exception as exc:
+        logger.exception("文档向量入库失败，document_id=%s", document_id)
+        raise HTTPException(
+            status_code=500,
+            detail="文档向量入库失败，请查看后端日志",
+        ) from exc
+
+    return result

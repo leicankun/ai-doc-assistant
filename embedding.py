@@ -12,7 +12,7 @@ load_dotenv(BASE_DIR / ".env")
 EMBEDDING_DIMENSIONS = 1024
 BATCH_SIZE = 10
 
-
+#调用 Embedding 模型，把文本转换成向量。
 def embed_texts(texts: list[str]) -> list[list[float]]:
     # 没有文本时，不调用 API。
     if not texts:
@@ -80,3 +80,16 @@ def embed_texts(texts: list[str]) -> list[list[float]]:
                 vectors.append(vector)
 
     return vectors
+
+
+#将用户输入转换成向量
+def embed_query(question: str) -> list[float]:
+    # 1. 校验问题。
+    if not isinstance(question, str) or not question.strip():
+        raise ValueError("问题不能为空")
+
+    # 2. embed_texts 接收文本列表，返回向量列表。
+    vectors = embed_texts([question.strip()])
+
+    # 3. 这里只有一个问题，取出它对应的向量。
+    return vectors[0]
