@@ -13,7 +13,7 @@ from fastapi.testclient import TestClient
 
 import database
 import embedding
-from routers import documents
+from routers import documents, document_management, chunks as chunks_router
 
 
 class EmbeddingTests(unittest.TestCase):
@@ -66,7 +66,7 @@ class RetrievalTests(unittest.TestCase):
             app = FastAPI()
             app.include_router(documents.router)
             app.dependency_overrides[database.get_connection] = connection
-            with patch.object(documents, 'UPLOAD_DIR', root), TestClient(app) as client:
+            with patch.object(document_management, 'UPLOAD_DIR', root), patch.object(chunks_router, 'UPLOAD_DIR', root), TestClient(app) as client:
                 text = 'SQLite 保存数据。' + '甲' * 600 + 'FastAPI 提供接口。'
                 r = client.post('/documents/upload', files={'file': ('guide.md', text.encode(), 'text/markdown')})
                 self.assertEqual(r.status_code, 201)
@@ -93,7 +93,7 @@ class RetrievalTests(unittest.TestCase):
                     def __init__(self, text): self.text = text
                     def extract_text(self): return self.text
                 reader = SimpleNamespace(is_encrypted=False, pages=[Page('First page'), Page(''), Page('Third page')])
-                with patch.object(documents, 'PdfReader', return_value=reader):
+                with patch.object(document_management, 'PdfReader', return_value=reader), patch.object(chunks_router, 'PdfReader', return_value=reader):
                     pdf = client.post('/documents/upload', files={'file':('guide.pdf',b'test','application/pdf')}).json()['id']
                     self.assertEqual(client.post(f'/documents/{pdf}/chunks').status_code,200)
                     rows = client.get(f'/documents/{pdf}/chunks').json()['items']

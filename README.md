@@ -74,7 +74,13 @@ config.py               项目根目录、SQLite、上传文件和 Chroma 路径
 schemas.py              文档、会话、问答和搜索请求校验
 database.py            初始化数据库、提供连接依赖
 routers/__init__.py     路由包标记
-routers/documents.py    文档增删改查、上传、读取正文和问答接口
+routers/documents.py    聚合各业务路由，供 main.py 注册
+routers/document_management.py  文档增删改查、上传和正文读取
+routers/chunks.py       文档分块生成和读取
+routers/search.py       BM25/dense/hybrid 检索和向量入库
+routers/sessions.py     会话创建、列表和问答历史
+routers/question_answering.py   全文普通问答和流式问答
+routers/rag.py          单轮带引用的 RAG 问答
 llm.py                  DeepSeek 调用封装
 chunking.py             文本分块及字符位置
 bm25.py                 中文分词、词频统计、BM25 排序

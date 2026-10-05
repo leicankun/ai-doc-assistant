@@ -8,6 +8,7 @@ from openai import APIError, APITimeoutError
 import llm
 import retrieval
 from routers import documents
+from routers import rag as business
 import test_indexing_api
 
 
@@ -67,7 +68,7 @@ class RagApiTests(test_indexing_api.IndexingApiTests):
             for error, status in [(APITimeoutError(request=request), 504),
                                   (APIError('failure', request=request, body=None), 502),
                                   (RuntimeError('failure'), 500)]:
-                with patch.object(documents, 'answer_with_chunks', side_effect=error), patch.object(documents, 'logger'):
+                with patch.object(business, 'answer_with_chunks', side_effect=error), patch.object(business, 'logger'):
                     self.assertEqual(self.client.post('/documents/1/ask-rag', json={'question': 'First'}).status_code, status)
         for path, body, status in [('/documents/999/ask-rag', {'question': 'First'}, 404),
                                    ('/documents/2/ask-rag', {'question': 'First'}, 409),

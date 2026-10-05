@@ -20,13 +20,7 @@ init_db()
 
 app.include_router(documents_router)
 
-# GET /health：检查服务是否能响应请求
+# 检查服务是否正常响应，返回健康状态。
 @app.get("/health")
 def health_check():
     return {"status": "ok"}
-
-
-
-
-    
-    

@@ -5,6 +5,7 @@ import httpx
 from openai import APIError, APITimeoutError
 import retrieval
 from routers import documents
+from routers import search as business
 import test_indexing_api
 
 
@@ -41,7 +42,7 @@ class DenseApiTests(test_indexing_api.IndexingApiTests):
         for error, status in [(APITimeoutError(request=request), 504),
                               (APIError('failure', request=request, body=None), 502),
                               (ValueError('bad config'), 500), (RuntimeError('store failed'), 500)]:
-            with patch.object(documents, 'search_dense', side_effect=error), patch.object(documents, 'logger'):
+            with patch.object(business, 'search_dense', side_effect=error), patch.object(business, 'logger'):
                 self.assertEqual(self.client.post('/documents/1/search', json=body).status_code, status)
         self.assertEqual(self.client.post('/documents/999/search', json=body).status_code, 404)
         self.assertEqual(self.client.post('/documents/2/search', json=body).status_code, 409)

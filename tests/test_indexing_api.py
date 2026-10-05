@@ -13,6 +13,7 @@ from openai import APIError, APITimeoutError
 import indexing
 from database import get_connection
 from routers import documents
+from routers import search as business
 
 
 class IndexingApiTests(unittest.TestCase):
@@ -89,7 +90,7 @@ class IndexingApiTests(unittest.TestCase):
         ]:
             with self.subTest(status=status):
                 self.embed.side_effect = error
-                with self.assertLogs(documents.logger, level='ERROR') if status == 500 else patch.object(documents, 'logger'):
+                with self.assertLogs(business.logger, level='ERROR') if status == 500 else patch.object(business, 'logger'):
                     response = self.client.post('/documents/1/index')
                 self.assertEqual(response.status_code, status, response.text)
                 self.assertNotIn('synthetic', response.text)
@@ -97,7 +98,7 @@ class IndexingApiTests(unittest.TestCase):
 
     def test_chroma_write_failure(self):
         with patch.object(self.collection, 'upsert', side_effect=RuntimeError('write failed')):
-            with self.assertLogs(documents.logger, level='ERROR') as logs:
+            with self.assertLogs(business.logger, level='ERROR') as logs:
                 response = self.client.post('/documents/1/index')
         self.assertEqual(response.status_code, 500)
         self.assertTrue(any('document_id=1' in line for line in logs.output))
