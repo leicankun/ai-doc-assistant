@@ -1,7 +1,8 @@
 from embedding import embed_query
 from vector_store import get_collection
+from bm25 import search_bm25
 
-
+#深度检索 稠密嵌入
 def search_dense(
     document_id: int,
     question: str,
@@ -51,3 +52,124 @@ def search_dense(
         })
 
     return items
+
+
+#混合检索 hybrid
+def fuse_rrf(
+    bm25_items: list[dict],
+    dense_items: list[dict],
+    top_k: int = 5,
+    rrf_k: int = 60,
+) -> list[dict]:
+    # 按文档 ID 和分块 ID 合并同一个分块。
+    merged = {}
+
+    for mode, items in (
+        ("bm25", bm25_items),
+        ("dense", dense_items),
+    ):
+        # 两路结果已经按相关程度排序，排名从 1 开始。
+        seen = set()
+
+        for rank, item in enumerate(items, start=1):
+            key = (item["document_id"], item["chunk_id"])
+
+            # 同一路中，同一个分块只贡献一次分数。
+            if key in seen:
+                continue
+            seen.add(key)
+
+            if key not in merged:
+                # 复制原文和来源，避免修改原始检索结果。
+                entry = dict(item)
+                entry.pop("rank", None)
+                entry.pop("score", None)
+                entry.pop("distance", None)
+                entry.pop("matched_terms", None)
+
+                entry.update({
+                    "rrf_score": 0.0,
+                    "bm25_rank": None,
+                    "dense_rank": None,
+                    "bm25_score": None,
+                    "dense_distance": None,
+                    "matched_terms": [],
+                })
+                merged[key] = entry
+
+            entry = merged[key]
+
+            # 每一路根据自己的排名贡献 RRF 分数。
+            entry["rrf_score"] += 1.0 / (rrf_k + rank)
+
+            if mode == "bm25":
+                entry["bm25_rank"] = rank
+                entry["bm25_score"] = item["score"]
+                entry["matched_terms"] = item.get("matched_terms", [])
+            else:
+                entry["dense_rank"] = rank
+                entry["dense_distance"] = item["distance"]
+                entry["record_id"] = item["record_id"]
+
+    # RRF 分数越大越靠前；同分时按 ID 排序，保证结果稳定。
+    results = sorted(
+        merged.values(),
+        key=lambda item: (
+            -item["rrf_score"],
+            item["document_id"],
+            item["chunk_id"],
+        ),
+    )[:top_k]
+
+    for rank, item in enumerate(results, start=1):
+        item["rank"] = rank
+
+    return results
+
+
+def search_hybrid(
+    document_id: int,
+    chunks: list[dict],
+    question: str,
+    top_k: int = 5,
+) -> list[dict]:
+    if not isinstance(question, str) or not question.strip():
+        raise ValueError("问题不能为空")
+
+    if (
+        not isinstance(top_k, int)
+        or isinstance(top_k, bool)
+        or top_k < 1
+    ):
+        raise ValueError("top_k 必须是正整数")
+
+    # 只使用当前文档的分块。
+    document_chunks = [
+        chunk for chunk in chunks
+        if chunk["document_id"] == document_id
+    ]
+
+    if not document_chunks:
+        return []
+
+    # 两路先各取较多候选，融合后再截取最终 Top-K。
+    candidate_k = max(20, top_k)
+
+    bm25_items = search_bm25(
+        chunks=document_chunks,
+        question=question,
+        top_k=candidate_k,
+    )
+
+    dense_items = search_dense(
+        document_id=document_id,
+        question=question,
+        top_k=candidate_k,
+    )
+
+    return fuse_rrf(
+        bm25_items=bm25_items,
+        dense_items=dense_items,
+        top_k=top_k,
+        rrf_k=60,
+    )

@@ -10,6 +10,7 @@ const busy = ref('')
 const error = ref('')
 const notice = ref('')
 const result = ref(null)
+const modeNames = { bm25: 'BM25', dense: '向量检索', hybrid: '混合检索（RRF）' }
 const selected = computed(() => props.documents.find(doc => doc.id === documentId.value))
 let controller
 let generation = 0
@@ -75,7 +76,7 @@ function metric(value) {
 <template>
   <section class="search-panel" aria-labelledby="retrieval-heading" :aria-busy="Boolean(busy)">
     <h2 id="retrieval-heading">文档检索</h2>
-    <p class="hint">先生成分块；使用向量检索时，再完成向量入库。检索结果展示相关原文。</p>
+    <p class="hint">先生成分块；使用向量或混合检索时，再完成向量入库。检索结果展示相关原文。</p>
     <label class="field">
       <span>选择文档</span>
       <select v-model="documentId" :disabled="Boolean(busy)">
@@ -98,6 +99,7 @@ function metric(value) {
           <select v-model="mode" :disabled="Boolean(busy)">
             <option value="bm25">BM25 · 词语匹配</option>
             <option value="dense">向量检索 · 语义匹配</option>
+            <option value="hybrid">混合检索 · BM25 + 向量（RRF）</option>
           </select>
         </label>
         <label class="field"><span>返回数量（Top-K）</span>
@@ -109,14 +111,17 @@ function metric(value) {
     <p v-if="error" class="error" role="alert">{{ error }}</p>
     <p v-if="notice" class="success" role="status">{{ notice }}</p>
     <div v-if="result" class="results" aria-live="polite">
-      <h3>检索结果 · {{ result.total }} 条 · {{ result.mode === 'dense' ? '向量检索' : 'BM25' }}</h3>
+      <h3>检索结果 · {{ result.total }} 条 · {{ modeNames[result.mode] }}</h3>
       <p class="hint">问题：{{ result.question }}</p>
       <p v-if="result.mode === 'dense'" class="hint">余弦距离越小，向量越接近；距离不代表答案正确率。</p>
+      <p v-if="result.mode === 'hybrid'" class="hint">RRF 根据两路排名融合，分数越大越靠前；未进入某一路候选的分块，在该路不贡献分数。</p>
       <p v-if="!result.items.length" class="hint">未找到相关分块，请换个关键词重试。</p>
       <article v-for="item in result.items" :key="item.record_id || item.chunk_id" class="result-card">
         <div class="result-title"><strong>第 {{ item.rank }} 名 · 分块 {{ item.chunk_index ?? item.chunk_id }}</strong>
-          <span>{{ result.mode === 'dense' ? '距离' : 'BM25 分数' }}：{{ metric(result.mode === 'dense' ? item.distance : item.score) }}</span>
+          <span v-if="result.mode === 'hybrid'">RRF 分数：{{ Number.isFinite(item.rrf_score) ? item.rrf_score.toFixed(6) : '—' }}</span>
+          <span v-else>{{ result.mode === 'dense' ? '距离' : 'BM25 分数' }}：{{ metric(result.mode === 'dense' ? item.distance : item.score) }}</span>
         </div>
+        <p v-if="result.mode === 'hybrid'" class="hint">BM25 排名：{{ item.bm25_rank ?? '未进入候选' }} · 分数：{{ metric(item.bm25_score) }}<br />向量排名：{{ item.dense_rank ?? '未进入候选' }} · 距离：{{ metric(item.dense_distance) }}</p>
         <p class="hint">来源：{{ item.source_name || selected?.title || '未知来源' }}<span v-if="item.page_number != null"> · 第 {{ item.page_number }} 页</span><span v-if="item.start_char != null"> · 字符 {{ item.start_char }}–{{ item.end_char }}</span></p>
         <p v-if="item.matched_terms?.length" class="hint">命中词：{{ item.matched_terms.join('、') }}</p>
         <p class="original">{{ item.content }}</p>

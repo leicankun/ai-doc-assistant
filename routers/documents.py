@@ -21,7 +21,7 @@ from schemas import SearchRequest
 from bm25 import search_bm25, tokenize
 import logging
 from indexing import index_document
-from retrieval import search_dense
+from retrieval import search_dense, search_hybrid
 
 logger = logging.getLogger(__name__)
 
@@ -905,27 +905,38 @@ def search_document(
             top_k=request.top_k,
         )
 
+    # 3. dense 或 hybrid：需要调用向量检索。
     else:
-        # dense：问题向量与文档分块向量进行相似度检索。
         try:
-            items = search_dense(
-                document_id=document_id,
-                question=request.question,
-                top_k=request.top_k,
-            )
+            if request.mode == "dense":
+                items = search_dense(
+                    document_id=document_id,
+                    question=request.question,
+                    top_k=request.top_k,
+                )
+            else:
+                # SearchRequest 限定了三种模式，
+                # 排除 bm25 和 dense 后，这里就是 hybrid。
+                items = search_hybrid(
+                    document_id=document_id,
+                    chunks=chunks,
+                    question=request.question,
+                    top_k=request.top_k,
+                )
+
         except APITimeoutError as exc:
             raise HTTPException(
                 status_code=504,
                 detail="问题向量生成超时，请稍后重试",
             ) from exc
+
         except APIError as exc:
             raise HTTPException(
                 status_code=502,
                 detail="向量模型调用失败，请检查模型服务配置",
             ) from exc
+
         except ValueError as exc:
-            # 当前 search_dense 用 ValueError 表示未入库。
-            # 只将这个已知错误转换为 409。
             if str(exc) == "该文档尚未向量入库，请先调用入库接口":
                 raise HTTPException(
                     status_code=409,
@@ -933,19 +944,27 @@ def search_document(
                 ) from exc
 
             logger.exception(
-                "向量检索参数或配置错误，document_id=%s", document_id
+                "检索参数或配置错误，document_id=%s，mode=%s",
+                document_id,
+                request.mode,
             )
             raise HTTPException(
                 status_code=500,
-                detail="向量检索失败，请查看后端日志",
-            ) from exc
-        except Exception as exc:
-            logger.exception("向量检索失败，document_id=%s", document_id)
-            raise HTTPException(
-                status_code=500,
-                detail="向量检索失败，请查看后端日志",
+                detail="检索失败，请查看后端日志",
             ) from exc
 
+        except Exception as exc:
+            logger.exception(
+                "检索失败，document_id=%s，mode=%s",
+                document_id,
+                request.mode,
+            )
+            raise HTTPException(
+                status_code=500,
+                detail="检索失败，请查看后端日志",
+            ) from exc
+
+    # 4. 统一返回结构。
     return {
         "document_id": document_id,
         "question": request.question,
