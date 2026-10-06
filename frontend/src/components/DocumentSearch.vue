@@ -11,6 +11,7 @@ const error = ref('')
 const notice = ref('')
 const result = ref(null)
 const ragResult = ref(null)
+const streamStatus = ref('')
 const modeNames = { bm25: 'BM25', dense: '向量检索', hybrid: '混合检索（RRF）' }
 const selected = computed(() => props.documents.find(doc => doc.id === documentId.value))
 let controller
@@ -24,6 +25,7 @@ function reset() {
   notice.value = ''
   result.value = null
   ragResult.value = null
+  streamStatus.value = ''
 }
 
 watch(documentId, reset)
@@ -34,7 +36,7 @@ onBeforeUnmount(reset)
 
 async function run(action) {
   if (busy.value || !selected.value) return
-  const isQuestion = action === 'search' || action === 'ask-rag'
+  const isQuestion = action === 'search' || action === 'ask-rag' || action === 'ask-rag/stream'
   if (isQuestion && (!question.value.trim() || question.value.trim().length > 1000 || !Number.isInteger(topK.value) || topK.value < 1 || topK.value > 20)) {
     error.value = '请输入问题，返回数量应为 1 到 20 的整数。'
     return
@@ -46,6 +48,7 @@ async function run(action) {
   notice.value = ''
   result.value = null
   ragResult.value = null
+  streamStatus.value = ''
   try {
     const response = await fetch(`http://127.0.0.1:8000/documents/${documentId.value}/${action}`, {
       method: 'POST',
@@ -55,6 +58,10 @@ async function run(action) {
         body: JSON.stringify({ question: question.value.trim(), mode: mode.value, top_k: topK.value }),
       } : {}),
     })
+    if (action === 'ask-rag/stream' && response.ok) {
+      await readRagStream(response, version)
+      return
+    }
     const data = await response.json()
     if (!response.ok) {
       const detail = typeof data.detail === 'string' ? data.detail
@@ -67,9 +74,65 @@ async function run(action) {
     else if (action === 'chunks') notice.value = `已生成 ${data.total} 个分块。使用向量检索前，请点击“向量入库”更新索引。`
     else notice.value = `向量入库成功：${data.indexed_chunks} 个分块，清理 ${data.removed_chunks} 条旧记录。`
   } catch (err) {
-    if (version === generation && err.name !== 'AbortError') error.value = err.message || '请求失败，请稍后重试。'
+    if (version === generation) {
+      if (err.name === 'AbortError') streamStatus.value = '已停止，回答未完成，引用未校验。'
+      else {
+        error.value = err.message || '请求失败，请稍后重试。'
+        if (action === 'ask-rag/stream') streamStatus.value = '生成失败，回答未完成，引用未校验。'
+      }
+    }
   } finally {
     if (version === generation) busy.value = ''
+  }
+}
+
+function stopStream() {
+  controller?.abort()
+}
+
+async function readRagStream(response, version) {
+  if (!response.body || !response.headers.get('content-type')?.includes('text/event-stream')) {
+    throw new Error('服务未返回有效的流式响应。')
+  }
+  ragResult.value = { question: question.value.trim(), mode: mode.value, answer: '', citations: [], retrieved_chunks: null }
+  streamStatus.value = '正在生成，引用将在完成后显示。'
+  const reader = response.body.getReader()
+  const decoder = new TextDecoder()
+  let buffer = ''
+  let complete = false
+  function consume(block) {
+    const payload = block.split(/\r?\n/).filter(line => line.startsWith('data:')).map(line => line.slice(5).trimStart()).join('\n')
+    if (!payload) return
+    const event = JSON.parse(payload)
+    if (event.type === 'error') throw new Error(event.message || '生成失败')
+    if (event.type === 'delta') {
+      if (typeof event.content !== 'string') throw new Error('流式文本格式错误')
+      ragResult.value.answer += event.content
+    } else if (event.type === 'done') {
+      if (!Array.isArray(event.citations)) throw new Error('引用格式错误')
+      ragResult.value.citations = event.citations
+      ragResult.value.retrieved_chunks = event.retrieved_chunks
+      complete = true
+      streamStatus.value = '回答已完成。'
+    }
+  }
+  try {
+    while (!complete) {
+      const { value, done } = await reader.read()
+      if (version !== generation) return
+      buffer += done ? decoder.decode() : decoder.decode(value, { stream: true })
+      let separator
+      while (!complete && (separator = /\r?\n\r?\n/.exec(buffer))) {
+        const block = buffer.slice(0, separator.index)
+        buffer = buffer.slice(separator.index + separator[0].length)
+        consume(block)
+      }
+      if (done) break
+    }
+    if (!complete) throw new Error('连接提前结束，未收到完成事件，请重试。')
+  } finally {
+    try { await reader.cancel() } catch { /* Connection may already be closed. */ }
+    reader.releaseLock()
   }
 }
 
@@ -112,16 +175,19 @@ function metric(value) {
         </label>
         <button class="primary" type="submit" :disabled="!selected || Boolean(busy) || !question.trim()">{{ busy === 'search' ? '检索中…' : '开始检索' }}</button>
         <button class="primary" type="button" :disabled="!selected || Boolean(busy) || !question.trim()" @click="run('ask-rag')">{{ busy === 'ask-rag' ? '检索并生成回答中…' : '根据资料回答' }}</button>
+        <button class="primary" type="button" :disabled="!selected || Boolean(busy) || !question.trim()" @click="run('ask-rag/stream')">{{ busy === 'ask-rag/stream' ? '流式生成中…' : '流式回答' }}</button>
+        <button v-if="busy === 'ask-rag/stream'" type="button" @click="stopStream">停止生成</button>
       </div>
     </form>
     <p v-if="error" class="error" role="alert">{{ error }}</p>
     <p v-if="notice" class="success" role="status">{{ notice }}</p>
+    <p v-if="streamStatus" class="hint" role="status">{{ streamStatus }}</p>
     <section v-if="ragResult" class="rag-result results" aria-live="polite">
       <h3>资料回答 · {{ modeNames[ragResult.mode] }}</h3>
-      <p class="hint">问题：{{ ragResult.question }} · 检索到 {{ ragResult.retrieved_chunks }} 个分块</p>
+      <p class="hint">问题：{{ ragResult.question }}<span v-if="ragResult.retrieved_chunks != null"> · 检索到 {{ ragResult.retrieved_chunks }} 个分块</span></p>
       <p class="original rag-answer">{{ ragResult.answer }}</p>
       <h4>引用原文</h4>
-      <p v-if="!ragResult.citations.length" class="hint">本次回答未提供引用。</p>
+      <p v-if="!ragResult.citations.length && (!streamStatus || streamStatus === '回答已完成。')" class="hint">本次回答未提供引用。</p>
       <details v-for="citation in ragResult.citations" :key="citation.citation_id" class="result-card">
         <summary>[{{ citation.citation_id }}] {{ citation.source_name || selected?.title || '未知来源' }}<span v-if="citation.page_number != null"> · 第 {{ citation.page_number }} 页</span></summary>
         <p class="hint">分块 {{ citation.chunk_id }}<span v-if="citation.start_char != null"> · 字符 {{ citation.start_char }}–{{ citation.end_char }}</span></p>
