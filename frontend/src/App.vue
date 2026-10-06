@@ -111,9 +111,19 @@ async function deleteDocument(id) {
     )
 
     if (!response.ok) {
-      throw new Error(`删除失败，状态码：${response.status}`)
+      const data = await response.json().catch(() => ({}))
+      throw new Error(data.detail || `删除失败，状态码：${response.status}`)
     }
 
+    if (askingDocument.value?.id === id) {
+      stopGeneration()
+      askingDocument.value = null
+      ++sessionsRequestId
+      sessions.value = []
+      selectedSessionId.value = null
+      resetConversation()
+    }
+    if (editingId.value === id) cancelEdit()
     await loadDocuments()
   } catch (error) {
     errorMessage.value = error.message

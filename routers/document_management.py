@@ -1,5 +1,6 @@
 """文档管理接口。"""
 import sqlite3
+import logging
 from uuid import uuid4
 from pathlib import Path
 from io import BytesIO
@@ -9,6 +10,9 @@ from pypdf.errors import PyPdfError
 from config import UPLOAD_DIR
 from database import get_connection
 from schemas import Document
+from document_deletion import DocumentNotFoundError, delete_document
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/documents", tags=["文档管理"])
 
@@ -96,26 +100,22 @@ def create_document(
     }
 
 
-# 删除指定文档的信息记录；当前不级联删除文件、分块、向量或历史。
+# 删除文档、上传原文件、SQLite 分块、Chroma 向量及两类问答历史和会话。
 @router.delete("/{document_id}")
 def del_document(
     document_id: int,
     connection :sqlite3.Connection = Depends(get_connection),
     ):
-    del_cursor = connection.execute(
-            "DELETE FROM documents WHERE id = ?",
-            (document_id,),
-            )
-    if del_cursor.rowcount == 0 :
+    try:
+        return delete_document(document_id, connection, UPLOAD_DIR)
+    except DocumentNotFoundError as exc:
+        raise HTTPException(status_code=404, detail="文档不存在") from exc
+    except Exception as exc:
+        logger.exception("文档删除失败，document_id=%s", document_id)
         raise HTTPException(
-                status_code=404,
-                detail="文档不存在",
-            )
-    connection.commit()
-    return {
-        "message": "删除成功",
-        "id": document_id,
-    }
+            status_code=500,
+            detail="文档清理未完成，请重试删除；如仍失败请查看后端日志",
+        ) from exc
 
 
 # 上传 Markdown 或文本型 PDF，校验并保存原文件和文档信息，返回正文预览。
