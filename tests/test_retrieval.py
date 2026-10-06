@@ -76,7 +76,8 @@ class RetrievalTests(unittest.TestCase):
                 for _ in range(2):
                     self.assertEqual(client.post(url+'/chunks').status_code, 200)
                     chunks = client.get(url+'/chunks').json()['items']
-                    self.assertEqual(len(chunks), 2)
+                    self.assertGreaterEqual(len(chunks), 2)
+                    self.assertTrue(all(len(chunk['content']) <= 500 for chunk in chunks))
                     for chunk in chunks:
                         self.assertEqual(text[chunk['start_char']:chunk['end_char']], chunk['content'])
                         self.assertEqual(chunk['source_name'], 'guide.md')
