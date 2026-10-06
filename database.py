@@ -89,6 +89,26 @@ def init_db():
                     f"ALTER TABLE document_chunks ADD COLUMN {name} {column_type}"
                 )
 
+        # RAG 历史单独保存，避免与全文问答历史混用。
+        connection.execute("""
+            CREATE TABLE IF NOT EXISTS rag_turns (
+                id INTEGER PRIMARY KEY,
+                document_id INTEGER NOT NULL,
+                session_id INTEGER NOT NULL,
+                question TEXT NOT NULL,
+                retrieval_question TEXT NOT NULL,
+                answer TEXT NOT NULL,
+                citations_json TEXT NOT NULL,
+                mode TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            )
+        """)
+
+        connection.execute("""
+            CREATE INDEX IF NOT EXISTS idx_rag_turns_session
+            ON rag_turns(document_id, session_id, id)
+        """)
+
         connection.commit()
     finally:
         connection.close()

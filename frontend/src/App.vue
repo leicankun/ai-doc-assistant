@@ -1,6 +1,7 @@
 ﻿<script setup>
 import { onMounted, onBeforeUnmount, ref } from 'vue'
 import DocumentSearch from './components/DocumentSearch.vue'
+import RagChat from './components/RagChat.vue'
 
 const documents = ref([])
 const loading = ref(false)
@@ -520,6 +521,7 @@ onMounted(loadDocuments)
       </template>
     </section>
     <DocumentSearch :documents="documents" />
+    <RagChat :documents="documents" />
     <section v-if="askingDocument" class="panel library" aria-labelledby="ask-heading" :aria-busy="asking">
       <h2 id="ask-heading" class="ask-title">文档问答：{{ askingDocument.title }}</h2>
       <p class="muted section-description">根据这篇文档的内容回答你的问题，当前支持正文不超过 20000 字符的 Markdown 或 PDF。</p>

@@ -61,3 +61,8 @@ class SearchRequest(BaseModel):
         if isinstance(value, str):
             return value.strip()
         return value
+
+
+
+class RagChatRequest(SearchRequest):
+    session_id: int = Field(gt=0)

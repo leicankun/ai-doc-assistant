@@ -130,7 +130,11 @@ async def stream_answer_question(
 
 
 
-def answer_with_chunks(question: str, chunks: list[dict]) -> dict:
+def answer_with_chunks(
+        question: str,
+        chunks: list[dict],
+        history: list[dict] | None = None,
+        ) -> dict:
     # 没有检索结果时，不调用模型。
     if not chunks:
         return {
@@ -156,6 +160,17 @@ def answer_with_chunks(question: str, chunks: list[dict]) -> dict:
             "end_char": chunk.get("end_char"),
             "content": chunk["content"],
         })
+    # 清除上一轮的引用编号，避免与本轮 [1]、[2] 混淆。
+    history_text = json.dumps(
+        [
+            {
+                "question": turn["question"],
+                "answer": re.sub(r"\[\d+\]", "", turn["answer"]),
+            }
+            for turn in (history or [])
+        ],
+        ensure_ascii=False,
+    )
 
     messages = [
         {
@@ -167,12 +182,15 @@ def answer_with_chunks(question: str, chunks: list[dict]) -> dict:
                 "有资料依据的回答，在对应句子末尾标注引用，例如 [1]。"
                 "只能使用资料中提供的 citation_id，不得编造引用编号。"
                 "没有依据时不要添加引用。"
+                "历史对话只用于理解追问，不作为事实依据。"
+                "回答的事实依据和引用必须来自本次参考资料。"
             ),
         },
         {
             "role": "user",
             "content": (
-                f"参考资料（JSON）：\n"
+                f"历史对话（仅用于理解问题）：\n{history_text}\n\n"
+                f"本次参考资料（JSON）：\n"
                 f"{json.dumps(sources, ensure_ascii=False)}\n\n"
                 f"用户问题：{question}"
             ),
@@ -228,6 +246,7 @@ def answer_with_chunks(question: str, chunks: list[dict]) -> dict:
 async def stream_answer_with_chunks(
     question: str,
     chunks: list[dict],
+    history: list[dict] | None = None,
 ):
     # 没有资料时，不调用模型。
     if not chunks:
@@ -259,6 +278,8 @@ async def stream_answer_with_chunks(
             "end_char": chunk.get("end_char"),
             "content": chunk["content"],
         })
+
+    history_text = json.dumps([{ "question": t["question"], "answer": re.sub(r"\[\d+\]", "", t["answer"]) } for t in (history or [])], ensure_ascii=False)
 
     messages = [
         {

@@ -5,16 +5,21 @@ import logging
 from fastapi import APIRouter, Depends, HTTPException
 from openai import APIError, APITimeoutError
 from database import get_connection
+from config import DB_PATH
+from starlette.concurrency import run_in_threadpool
 from schemas import SearchRequest
 from llm import answer_with_chunks
 from routers.search import search_document
 import json
-from contextlib import aclosing
+from contextlib import aclosing, closing
 
 from fastapi import Request
 from fastapi.responses import StreamingResponse
 
 from llm import stream_answer_with_chunks
+
+from schemas import RagChatRequest
+from rag_chat import rewrite_question
 
 logger = logging.getLogger(__name__)
 
@@ -178,3 +183,312 @@ def ask_document_rag_stream(
             "X-Accel-Buffering": "no",
         },
     )
+
+
+# 多轮 RAG：读取历史、改写追问、重新检索、回答并保存引用。
+@router.post("/{document_id}/ask-rag/chat")
+def ask_document_rag_chat(
+    document_id: int,
+    request: RagChatRequest,
+    connection: sqlite3.Connection = Depends(get_connection),
+):
+    session = connection.execute(
+        """
+        SELECT id FROM document_sessions
+        WHERE id = ? AND document_id = ?
+        """,
+        (request.session_id, document_id),
+    ).fetchone()
+
+    if session is None:
+        raise HTTPException(
+            status_code=404,
+            detail="会话不存在或不属于当前文档",
+        )
+
+    if not os.getenv("DEEPSEEK_API_KEY"):
+        raise HTTPException(
+            status_code=503,
+            detail="服务尚未配置回答模型 API Key",
+        )
+
+    # 读取最近 5 轮，再恢复为从旧到新的顺序。
+    rows = connection.execute(
+        """
+        SELECT question, answer
+        FROM rag_turns
+        WHERE document_id = ? AND session_id = ?
+        ORDER BY id DESC
+        LIMIT 5
+        """,
+        (document_id, request.session_id),
+    ).fetchall()
+
+    history = [dict(row) for row in reversed(rows)]
+
+    try:
+        retrieval_question = rewrite_question(
+            request.question,
+            history,
+        )
+
+        # 使用明确的检索问题，每轮重新查资料。
+        search_result = search_document(
+            document_id=document_id,
+            request=SearchRequest(
+                question=retrieval_question,
+                mode=request.mode,
+                top_k=request.top_k,
+            ),
+            connection=connection,
+        )
+
+        result = answer_with_chunks(
+            question=request.question,
+            chunks=search_result["items"],
+            history=history,
+        )
+
+    except HTTPException:
+        # 保留检索接口的 404、409 等错误。
+        raise
+    except APITimeoutError as exc:
+        raise HTTPException(
+            status_code=504,
+            detail="模型调用超时，请稍后重试",
+        ) from exc
+    except APIError as exc:
+        raise HTTPException(
+            status_code=502,
+            detail="模型调用失败，请稍后重试",
+        ) from exc
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=502,
+            detail=str(exc),
+        ) from exc
+    except Exception as exc:
+        logger.exception("多轮 RAG 失败，document_id=%s", document_id)
+        raise HTTPException(
+            status_code=500,
+            detail="多轮 RAG 失败，请查看后端日志",
+        ) from exc
+
+    # 只有成功生成并通过引用编号校验，才保存本轮。
+    try:
+        cursor = connection.execute(
+            """
+            INSERT INTO rag_turns (
+                document_id, session_id, question,
+                retrieval_question, answer, citations_json, mode
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                document_id,
+                request.session_id,
+                request.question,
+                retrieval_question,
+                result["answer"],
+                json.dumps(result["citations"], ensure_ascii=False),
+                request.mode,
+            ),
+        )
+        connection.commit()
+    except sqlite3.Error as exc:
+        connection.rollback()
+        raise HTTPException(
+            status_code=500,
+            detail="回答已生成，但历史保存失败",
+        ) from exc
+
+    return {
+        "id": cursor.lastrowid,
+        "document_id": document_id,
+        "session_id": request.session_id,
+        "question": request.question,
+        "retrieval_question": retrieval_question,
+        "mode": request.mode,
+        "answer": result["answer"],
+        "citations": result["citations"],
+        "retrieved_chunks": search_result["total"],
+    }
+
+
+# 查询指定会话的 RAG 历史，包含每轮回答对应的引用。
+@router.get("/{document_id}/sessions/{session_id}/rag-history")
+def get_rag_history(
+    document_id: int,
+    session_id: int,
+    connection: sqlite3.Connection = Depends(get_connection),
+):
+    session = connection.execute(
+        """
+        SELECT id FROM document_sessions
+        WHERE id = ? AND document_id = ?
+        """,
+        (session_id, document_id),
+    ).fetchone()
+
+    if session is None:
+        raise HTTPException(
+            status_code=404,
+            detail="会话不存在或不属于当前文档",
+        )
+
+    rows = connection.execute(
+        """
+        SELECT * FROM rag_turns
+        WHERE document_id = ? AND session_id = ?
+        ORDER BY id ASC
+        """,
+        (document_id, session_id),
+    ).fetchall()
+
+    items = []
+
+    for row in rows:
+        item = dict(row)
+        item["citations"] = json.loads(item.pop("citations_json"))
+        items.append(item)
+
+    return {"items": items, "total": len(items)}
+
+
+
+
+# 多轮流式 RAG：引用校验通过后保存本轮，停止或生成失败不保存。
+@router.post("/{document_id}/ask-rag/chat/stream")
+def ask_document_rag_chat_stream(
+    document_id: int,
+    request: RagChatRequest,
+    http_request: Request,
+    connection: sqlite3.Connection = Depends(get_connection),
+):
+    session = connection.execute(
+        """
+        SELECT id FROM document_sessions
+        WHERE id = ? AND document_id = ?
+        """,
+        (request.session_id, document_id),
+    ).fetchone()
+
+    if session is None:
+        raise HTTPException(
+            status_code=404,
+            detail="会话不存在或不属于当前文档",
+        )
+
+    if not os.getenv("DEEPSEEK_API_KEY"):
+        raise HTTPException(
+            status_code=503,
+            detail="服务尚未配置回答模型 API Key",
+        )
+
+    # 读取最近 5 轮，再恢复为从旧到新的顺序。
+    rows = connection.execute(
+        """
+        SELECT question, answer
+        FROM rag_turns
+        WHERE document_id = ? AND session_id = ?
+        ORDER BY id DESC
+        LIMIT 5
+        """,
+        (document_id, request.session_id),
+    ).fetchall()
+
+    history = [dict(row) for row in reversed(rows)]
+
+    try:
+        retrieval_question = rewrite_question(
+            request.question,
+            history,
+        )
+
+        # 使用明确的检索问题，每轮重新查资料。
+        search_result = search_document(
+            document_id=document_id,
+            request=SearchRequest(
+                question=retrieval_question,
+                mode=request.mode,
+                top_k=request.top_k,
+            ),
+            connection=connection,
+        )
+
+    except HTTPException:
+        # 保留检索接口的 404、409 等错误。
+        raise
+    except APITimeoutError as exc:
+        raise HTTPException(
+            status_code=504,
+            detail="模型调用超时，请稍后重试",
+        ) from exc
+    except APIError as exc:
+        raise HTTPException(
+            status_code=502,
+            detail="模型调用失败，请稍后重试",
+        ) from exc
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=502,
+            detail=str(exc),
+        ) from exc
+    except Exception as exc:
+        logger.exception("多轮 RAG 失败，document_id=%s", document_id)
+        raise HTTPException(
+            status_code=500,
+            detail="多轮 RAG 失败，请查看后端日志",
+        ) from exc
+
+
+    def save_turn(answer, citations):
+        with closing(sqlite3.connect(DB_PATH)) as save, save:
+            cursor = save.execute(
+                """INSERT INTO rag_turns(document_id,session_id,question,retrieval_question,answer,citations_json,mode)
+                VALUES(?,?,?,?,?,?,?)""",
+                (document_id,request.session_id,request.question,retrieval_question,
+                 answer,json.dumps(citations,ensure_ascii=False),request.mode),
+            )
+            return cursor.lastrowid
+
+    def encode(event):
+        return f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
+
+    async def generate():
+        parts = []
+        try:
+            if await http_request.is_disconnected():
+                return
+            yield encode({"type":"meta", "retrieval_question":retrieval_question})
+            async with aclosing(stream_answer_with_chunks(
+                request.question, search_result["items"], history=history
+            )) as events:
+                async for event in events:
+                    if await http_request.is_disconnected():
+                        return
+                    if event["type"] == "delta":
+                        parts.append(event["content"])
+                        yield encode(event)
+                    elif event["type"] == "done":
+                        answer = "".join(parts)
+                        turn_id = await run_in_threadpool(save_turn, answer, event["citations"])
+                        yield encode({**event, "id":turn_id, "document_id":document_id,
+                            "session_id":request.session_id, "question":request.question,
+                            "retrieval_question":retrieval_question, "answer":answer,
+                            "mode":request.mode, "retrieved_chunks":search_result["total"]})
+        except APITimeoutError:
+            yield encode({"type":"error", "message":"模型回答超时，请稍后重试"})
+        except APIError:
+            yield encode({"type":"error", "message":"模型调用失败，请稍后重试"})
+        except ValueError as exc:
+            yield encode({"type":"error", "message":str(exc)})
+        except sqlite3.Error:
+            logger.exception("RAG history save failed")
+            yield encode({"type":"error", "message":"回答已生成，但历史保存失败"})
+        except Exception:
+            logger.exception("RAG stream failed")
+            yield encode({"type":"error", "message":"生成失败，请查看后端日志"})
+
+    return StreamingResponse(generate(),media_type="text/event-stream",
+        headers={"Cache-Control":"no-cache", "X-Accel-Buffering":"no"})
