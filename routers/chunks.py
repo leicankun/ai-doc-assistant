@@ -77,6 +77,9 @@ def create_document_chunks(
             )
 
         # 删除旧分块和插入新分块一起提交
+        connection.execute(
+            "UPDATE documents SET chunk_version = chunk_version + 1 WHERE id = ?", (document_id,)
+        )
         connection.commit()
 
     except sqlite3.Error:

@@ -512,6 +512,7 @@ onMounted(loadDocuments)
               <span class="document-id">#{{ document.id }}</span>
               <span class="document-title">{{ document.title }}</span>
               <span class="badge">{{ document.file_type === 'markdown' ? 'Markdown' : 'PDF' }}</span>
+              <span class="badge">{{ document.processing_status_label }} · {{ document.chunk_count }} 块</span>
             </div>
             <div class="row-actions">
               <button type="button" :disabled="asking || creatingSession" @click="startAsk(document)">提问</button>
@@ -530,7 +531,7 @@ onMounted(loadDocuments)
         <p v-else class="empty-state">{{ loading ? '正在读取文档…' : '暂无文档，上传一份 Markdown 或 PDF 开始吧。' }}</p>
       </template>
     </section>
-    <DocumentSearch :documents="documents" />
+    <DocumentSearch :documents="documents" @processing-updated="loadDocuments" />
     <RagChat :documents="documents" />
     <section v-if="askingDocument" class="panel library" aria-labelledby="ask-heading" :aria-busy="asking">
       <h2 id="ask-heading" class="ask-title">文档问答：{{ askingDocument.title }}</h2>

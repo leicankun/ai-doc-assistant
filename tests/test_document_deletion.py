@@ -26,7 +26,7 @@ class DocumentDeletionTests(unittest.TestCase):
         self.db.row_factory = sqlite3.Row
         self.addCleanup(self.db.close)
         for doc in (1, 2):
-            self.db.execute('INSERT INTO documents VALUES (?, ?, ?, ?)',
+            self.db.execute('INSERT INTO documents (id,title,file_type,stored_name) VALUES (?, ?, ?, ?)',
                             (doc, f'{doc}.md', 'markdown', f'{doc}.md'))
             (self.root/f'{doc}.md').write_text('正文', encoding='utf-8')
             self.db.execute('INSERT INTO document_chunks (document_id,chunk_index,content) VALUES (?,1,?)', (doc,'正文'))

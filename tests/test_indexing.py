@@ -14,13 +14,13 @@ class IndexingTests(unittest.TestCase):
         self.connection.row_factory = sqlite3.Row
         self.addCleanup(self.connection.close)
         self.connection.executescript('''
-            CREATE TABLE documents (id INTEGER PRIMARY KEY);
+            CREATE TABLE documents (id INTEGER PRIMARY KEY, chunk_version INTEGER DEFAULT 0, indexed_version INTEGER DEFAULT 0);
             CREATE TABLE document_chunks (
                 id INTEGER PRIMARY KEY, document_id INTEGER, chunk_index INTEGER,
                 content TEXT, source_name TEXT, page_number INTEGER,
                 start_char INTEGER, end_char INTEGER
             );
-            INSERT INTO documents VALUES (1), (2), (3);
+            INSERT INTO documents (id) VALUES (1), (2), (3);
         ''')
         self.connection.executemany(
             'INSERT INTO document_chunks VALUES (?,?,?,?,?,?,?,?)',

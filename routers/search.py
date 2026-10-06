@@ -49,6 +49,11 @@ def search_document(
 
     # 3. dense 或 hybrid：需要调用向量检索。
     else:
+        state = connection.execute(
+            "SELECT chunk_version, indexed_version FROM documents WHERE id = ?", (document_id,)
+        ).fetchone()
+        if state['indexed_version'] is None or state['indexed_version'] != state['chunk_version']:
+            raise HTTPException(status_code=409, detail="向量索引未就绪或已过期，请先重新向量入库")
         try:
             if request.mode == "dense":
                 items = search_dense(

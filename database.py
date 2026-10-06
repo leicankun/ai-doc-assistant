@@ -30,6 +30,10 @@ def init_db():
                 "ALTER TABLE documents ADD COLUMN stored_name TEXT"
             )
 
+        for name, definition in (("chunk_version", "INTEGER NOT NULL DEFAULT 0"), ("indexed_version", "INTEGER")):
+            if name not in column_names:
+                connection.execute(f"ALTER TABLE documents ADD COLUMN {name} {definition}")
+
         connection.execute("""
             CREATE TABLE IF NOT EXISTS question_answers (
                 id INTEGER PRIMARY KEY,

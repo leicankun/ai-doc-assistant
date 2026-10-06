@@ -11,6 +11,7 @@ from config import UPLOAD_DIR
 from database import get_connection
 from schemas import Document
 from document_deletion import DocumentNotFoundError, delete_document
+from document_status import DOCUMENT_SELECT, with_processing_status
 
 logger = logging.getLogger(__name__)
 
@@ -23,12 +24,12 @@ def list_documents(
     connection: sqlite3.Connection = Depends(get_connection),
 ):
     query_cursor = connection.execute(
-        "SELECT id, title, file_type FROM documents ORDER BY id"
+        DOCUMENT_SELECT + " ORDER BY d.id"
         )
     rows = query_cursor.fetchall()
     items = []
     for row in rows:
-        items.append(dict(row))
+        items.append(with_processing_status(row))
     return{
         "items":items,
         "total":len(items),
@@ -42,7 +43,7 @@ def get_document(
     connection: sqlite3.Connection = Depends(get_connection),
     ):
     query_cursor = connection.execute(
-        "SELECT id, title, file_type FROM documents WHERE id = ?",
+        DOCUMENT_SELECT + " WHERE d.id = ?",
         (document_id,),
     )
     row = query_cursor.fetchone()
@@ -51,7 +52,7 @@ def get_document(
             status_code=404,
             detail="文档不存在",
         )
-    return dict(row)
+    return with_processing_status(row)
 
 
 # 根据文档 ID 修改标题和文件类型。

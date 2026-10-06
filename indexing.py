@@ -10,12 +10,13 @@ def index_document(
 ):
     # 1. 检查文档是否存在。
     document = connection.execute(
-        "SELECT id FROM documents WHERE id = ?",
+        "SELECT id, chunk_version FROM documents WHERE id = ?",
         (document_id,),
     ).fetchone()
 
     if document is None:
         raise ValueError("文档不存在")
+    chunk_version = document["chunk_version"]
 
     # 2. 从 SQLite 读取当前文档的分块。
     # connection 需要设置 row_factory = sqlite3.Row。
@@ -72,6 +73,10 @@ def index_document(
     # 5. 打开 Chroma 集合，查询当前文档已有的向量记录。
     collection = get_collection()
 
+    # 后续写入可能部分失败，先撤销“已入库”，避免使用不完整索引。
+    connection.execute("UPDATE documents SET indexed_version = -1 WHERE id = ?", (document_id,))
+    connection.commit()
+
     old_records = collection.get(
         where={"document_id": document_id},
         include=["metadatas"],
@@ -109,6 +114,15 @@ def index_document(
 
     if set(saved_records["ids"]) != set(ids):
         raise RuntimeError("向量入库后的记录与当前分块不一致")
+
+    # 入库期间重新分块时，旧版本不能被标记为最新索引。
+    cursor = connection.execute(
+        "UPDATE documents SET indexed_version = ? WHERE id = ? AND chunk_version = ?",
+        (chunk_version, document_id, chunk_version),
+    )
+    connection.commit()
+    if cursor.rowcount != 1:
+        raise RuntimeError("分块在入库期间发生变化，请重新向量入库")
 
     return {
         "document_id": document_id,

@@ -2,6 +2,7 @@
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 
 const props = defineProps({ documents: { type: Array, required: true } })
+const emit = defineEmits(['processing-updated'])
 const documentId = ref('')
 const question = ref('')
 const mode = ref('bm25')
@@ -73,11 +74,13 @@ async function run(action) {
     else if (action === 'ask-rag') ragResult.value = data
     else if (action === 'chunks') notice.value = `已生成 ${data.total} 个分块。使用向量检索前，请点击“向量入库”更新索引。`
     else notice.value = `向量入库成功：${data.indexed_chunks} 个分块，清理 ${data.removed_chunks} 条旧记录。`
+    if (!isQuestion) emit('processing-updated')
   } catch (err) {
     if (version === generation) {
       if (err.name === 'AbortError') streamStatus.value = '已停止，回答未完成，引用未校验。'
       else {
         error.value = err.message || '请求失败，请稍后重试。'
+        if (!isQuestion) emit('processing-updated')
         if (action === 'ask-rag/stream') streamStatus.value = '生成失败，回答未完成，引用未校验。'
       }
     }
@@ -153,6 +156,7 @@ function metric(value) {
       </select>
     </label>
     <p v-if="!documents.length" class="hint">暂无文档，请先上传 Markdown 或 PDF 文件。</p>
+    <p v-if="selected" class="hint" role="status">处理状态：{{ selected.processing_status_label }} · {{ selected.chunk_count }} 个分块。<span v-if="selected.processing_status === 'not_chunked'">请先生成分块。</span><span v-else-if="selected.processing_status !== 'indexed'">BM25 可用；向量或混合检索前请完成向量入库。</span><span v-else>可使用全部检索方式。</span></p>
     <div class="actions">
       <button type="button" :disabled="!selected || Boolean(busy)" @click="run('chunks')">{{ busy === 'chunks' ? '生成分块中…' : '生成 / 更新分块' }}</button>
       <button type="button" :disabled="!selected || Boolean(busy)" @click="run('index')">{{ busy === 'index' ? '向量入库中…' : '向量入库' }}</button>

@@ -22,13 +22,13 @@ class IndexingApiTests(unittest.TestCase):
         self.db.row_factory = sqlite3.Row
         self.addCleanup(self.db.close)
         self.db.executescript('''
-            CREATE TABLE documents (id INTEGER PRIMARY KEY);
+            CREATE TABLE documents (id INTEGER PRIMARY KEY, chunk_version INTEGER DEFAULT 0, indexed_version INTEGER DEFAULT 0);
             CREATE TABLE document_chunks (
                 id INTEGER PRIMARY KEY, document_id INTEGER, chunk_index INTEGER,
                 content TEXT, source_name TEXT, page_number INTEGER,
                 start_char INTEGER, end_char INTEGER
             );
-            INSERT INTO documents VALUES (1), (2);
+            INSERT INTO documents (id) VALUES (1), (2);
             INSERT INTO document_chunks VALUES
                 (10, 1, 1, 'First chunk', 'guide.pdf', 1, 0, 11),
                 (11, 1, 2, 'Second chunk', 'guide.pdf', 2, 0, 12);
