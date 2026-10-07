@@ -7,6 +7,7 @@ from io import BytesIO
 from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from pypdf import PdfReader
 from pypdf.errors import PyPdfError
+from starlette.concurrency import run_in_threadpool
 from config import UPLOAD_DIR
 from storage.database import get_connection
 from schemas import Document
@@ -16,6 +17,29 @@ from storage.document_status import DOCUMENT_SELECT, with_processing_status
 logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/documents", tags=["文档管理"])
+
+
+def process_uploaded_document(document_id, connection):
+    """顺序完成分块和入库；在线程池运行，避免阻塞异步请求循环。"""
+    # 分块模块复用本文件的正文读取函数，延迟导入避免循环导入。
+    from routers.chunks import create_document_chunks
+    from retrieval.indexing import index_document
+
+    stage = "chunking"
+    try:
+        create_document_chunks(document_id, connection)
+        stage = "indexing"
+        index_document(document_id, connection)
+        return {"processing_completed": True, "processing_error": None}
+    except Exception:
+        connection.rollback()
+        logger.exception("上传后自动处理失败，document_id=%s，stage=%s", document_id, stage)
+        message = (
+            "自动分块失败，请在检索工具中重新生成分块"
+            if stage == "chunking"
+            else "自动向量入库失败，请检查 Embedding 配置后重新入库"
+        )
+        return {"processing_completed": False, "processing_error": message}
 
 
 # 查询所有文档的信息列表，返回文档条目和总数。
@@ -119,7 +143,7 @@ def del_document(
         ) from exc
 
 
-# 上传 Markdown 或文本型 PDF，校验并保存原文件和文档信息，返回正文预览。
+# 上传 Markdown 或文本型 PDF，保存后自动分块、向量入库并返回处理结果。
 @router.post("/upload", status_code=201)
 async def upload_document(
     file: UploadFile,
@@ -207,8 +231,14 @@ async def upload_document(
         file_path.unlink()
         raise
 
+    document_id = insert_cursor.lastrowid
+    processing = await run_in_threadpool(process_uploaded_document, document_id, connection)
+    document = get_document(document_id, connection)
+
     return {
-        "id": insert_cursor.lastrowid,
+        **document,
+        **processing,
+        "id": document_id,
         "title": filename,
         "file_type": file_type,
         "stored_name": stored_name,

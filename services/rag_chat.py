@@ -5,6 +5,7 @@ import re
 from openai import OpenAI
 
 
+
 def rewrite_question(question: str, history: list[dict]) -> str:
     # 第一轮没有历史，直接使用原问题。
     if not history:

@@ -139,7 +139,17 @@ def init_db():
                 turn_id INTEGER NOT NULL, document_id INTEGER NOT NULL,
                 PRIMARY KEY (turn_id, document_id)
             );
+            CREATE TABLE IF NOT EXISTS agent_session_summaries (
+                knowledge_base_id INTEGER NOT NULL, session_id INTEGER NOT NULL,
+                summary_json TEXT NOT NULL, covered_turn_id INTEGER NOT NULL,
+                source_hash TEXT NOT NULL, revision INTEGER NOT NULL DEFAULT 1,
+                updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                PRIMARY KEY (knowledge_base_id, session_id)
+            );
         ''')
+        columns = {row[1] for row in connection.execute('PRAGMA table_info(knowledge_base_turns)')}
+        if 'tool_calls_json' not in columns:
+            connection.execute("ALTER TABLE knowledge_base_turns ADD COLUMN tool_calls_json TEXT NOT NULL DEFAULT '[]'")
         connection.commit()
     finally:
         connection.close()

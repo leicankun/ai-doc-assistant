@@ -1,5 +1,6 @@
 <script setup>
 defineProps({ turn: { type: Object, required: true } })
+const toolNames = { list_documents: '查看文档目录', search_knowledge_base: '检索知识库', read_chunk_context: '读取相邻上下文' }
 </script>
 
 <template>
@@ -12,6 +13,16 @@ defineProps({ turn: { type: Object, required: true } })
     </details>
     <p class="label">资料回答</p>
     <p class="text answer">{{ turn.answer }}</p>
+    <details v-if="turn.tool_calls?.length" class="tool-trace">
+      <summary>工具执行记录 · {{ turn.tool_calls.length }} 次</summary>
+      <ol>
+        <li v-for="(call, index) in turn.tool_calls" :key="index">
+          <strong>{{ toolNames[call.tool] || call.tool }}</strong>
+          <p class="muted">{{ call.result?.error ? '执行失败' : '执行完成' }}<span v-if="call.result?.total != null"> · {{ call.result.total }} 条结果</span></p>
+          <details><summary>查看参数和结果</summary><pre class="text tool-data">{{ JSON.stringify({ arguments: call.arguments, result: call.result }, null, 2) }}</pre></details>
+        </li>
+      </ol>
+    </details>
     <p v-if="turn.status" class="muted" role="status">{{ turn.status }}</p>
     <p v-else-if="!turn.citations?.length" class="muted">本轮未提供引用。</p>
     <details v-for="source in turn.citations || []" :key="source.citation_id" class="citation">
@@ -31,5 +42,8 @@ defineProps({ turn: { type: Object, required: true } })
 .muted, .rewrite { color: #576579; font-size: 14px; }
 .rewrite { margin-bottom: 16px; }
 .citation { padding: 12px; border-top: 1px solid #dce3ed; }
+.tool-trace { margin: 14px 0; padding: 12px; background: #f6f8f4; border-radius: 10px; }
+.tool-trace li { margin: 12px 0; }
+.tool-data { font-size: 12px; max-height: 260px; overflow: auto; }
 summary { cursor: pointer; line-height: 1.6; overflow-wrap: anywhere; }
 </style>

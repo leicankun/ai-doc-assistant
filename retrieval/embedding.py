@@ -13,7 +13,7 @@ EMBEDDING_DIMENSIONS = 1024
 BATCH_SIZE = 10
 
 #调用 Embedding 模型，把文本转换成向量。
-def embed_texts(texts: list[str]) -> list[list[float]]:
+def embed_texts(texts: list[str], timeout: float = 30.0) -> list[list[float]]:
     # 没有文本时，不调用 API。
     if not texts:
         return []
@@ -39,7 +39,7 @@ def embed_texts(texts: list[str]) -> list[list[float]]:
     with OpenAI(
         api_key=api_key,
         base_url=base_url,
-        timeout=30.0,
+        timeout=timeout,
         max_retries=0,
     ) as client:
         # 每批最多发送 10 条文本。
@@ -83,13 +83,14 @@ def embed_texts(texts: list[str]) -> list[list[float]]:
 
 
 #将用户输入转换成向量
-def embed_query(question: str) -> list[float]:
+def embed_query(question: str, timeout: float | None = None) -> list[float]:
     # 1. 校验问题。
     if not isinstance(question, str) or not question.strip():
         raise ValueError("问题不能为空")
 
     # 2. embed_texts 接收文本列表，返回向量列表。
-    vectors = embed_texts([question.strip()])
+    vectors = (embed_texts([question.strip()], timeout=timeout)
+               if timeout is not None else embed_texts([question.strip()]))
 
     # 3. 这里只有一个问题，取出它对应的向量。
     return vectors[0]

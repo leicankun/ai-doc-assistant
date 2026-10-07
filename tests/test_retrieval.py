@@ -66,13 +66,14 @@ class RetrievalTests(unittest.TestCase):
             app = FastAPI()
             app.include_router(documents.router)
             app.dependency_overrides[database.get_connection] = connection
-            with patch.object(document_management, 'UPLOAD_DIR', root), patch.object(chunks_router, 'UPLOAD_DIR', root), TestClient(app) as client:
+            # 此测试关注分块/查询；自动入库使用替身，避免调用外部模型及生产 Chroma。
+            with patch.object(document_management, 'UPLOAD_DIR', root), patch.object(chunks_router, 'UPLOAD_DIR', root), patch('retrieval.indexing.index_document', return_value={}), TestClient(app) as client:
                 text = 'SQLite 保存数据。' + '甲' * 600 + 'FastAPI 提供接口。'
                 r = client.post('/documents/upload', files={'file': ('guide.md', text.encode(), 'text/markdown')})
                 self.assertEqual(r.status_code, 201)
                 doc = r.json()['id']
                 url = f'/documents/{doc}'
-                self.assertEqual(client.post(url+'/search', json={'question':'SQLite'}).status_code, 409)
+                self.assertEqual(client.post(url+'/search', json={'question':'SQLite'}).status_code, 200)
                 for _ in range(2):
                     self.assertEqual(client.post(url+'/chunks').status_code, 200)
                     chunks = client.get(url+'/chunks').json()['items']

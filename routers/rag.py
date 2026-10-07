@@ -20,6 +20,7 @@ from services.llm import stream_answer_with_chunks
 
 from schemas import RagChatRequest
 from services.rag_chat import rewrite_question
+from config import RAG_HISTORY_TURNS
 
 logger = logging.getLogger(__name__)
 
@@ -219,9 +220,9 @@ def ask_document_rag_chat(
         FROM rag_turns
         WHERE document_id = ? AND session_id = ?
         ORDER BY id DESC
-        LIMIT 5
+        LIMIT ?
         """,
-        (document_id, request.session_id),
+        (document_id, request.session_id,RAG_HISTORY_TURNS),
     ).fetchall()
 
     history = [dict(row) for row in reversed(rows)]
@@ -392,9 +393,9 @@ def ask_document_rag_chat_stream(
         FROM rag_turns
         WHERE document_id = ? AND session_id = ?
         ORDER BY id DESC
-        LIMIT 5
+        LIMIT ?
         """,
-        (document_id, request.session_id),
+        (document_id, request.session_id,RAG_HISTORY_TURNS),
     ).fetchall()
 
     history = [dict(row) for row in reversed(rows)]

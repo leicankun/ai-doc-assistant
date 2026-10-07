@@ -6,6 +6,7 @@ from contextlib import closing
 from pathlib import Path
 from unittest.mock import patch
 from uuid import uuid4
+from types import SimpleNamespace
 
 import chromadb
 from fastapi import FastAPI
@@ -64,16 +65,16 @@ class DocumentStatusTests(unittest.TestCase):
         self.assertEqual(response.status_code,200,response.text)
 
     def test_lifecycle_and_stale_retrieval_protection(self):
-        self.assertEqual(self.status()['processing_status'],'not_chunked')
-        self.chunk()
-        self.assertEqual(self.status()['processing_status'],'pending_index')
-        self.assertEqual(self.status()['chunk_version'],1)
-        self.index()
         self.assertEqual(self.status()['processing_status'],'indexed')
-        self.assertEqual(self.status()['indexed_version'],1)
         self.chunk()
         self.assertEqual(self.status()['processing_status'],'index_stale')
         self.assertEqual(self.status()['chunk_version'],2)
+        self.index()
+        self.assertEqual(self.status()['processing_status'],'indexed')
+        self.assertEqual(self.status()['indexed_version'],2)
+        self.chunk()
+        self.assertEqual(self.status()['processing_status'],'index_stale')
+        self.assertEqual(self.status()['chunk_version'],3)
         with patch.object(search,'search_dense') as dense, patch.object(search,'search_hybrid') as hybrid:
             for endpoint in ('search','ask-rag','ask-rag/stream'):
                 for mode in ('dense','hybrid'):
@@ -84,14 +85,73 @@ class DocumentStatusTests(unittest.TestCase):
         self.assertEqual(self.client.post(self.url+'/search',json={'question':'SQLite','mode':'bm25'}).status_code,200)
         self.index()
         self.assertEqual(self.status()['processing_status'],'indexed')
-        self.assertEqual(self.status()['indexed_version'],2)
+        self.assertEqual(self.status()['indexed_version'],3)
 
     def test_embedding_failure_does_not_mark_success(self):
         self.chunk()
         self.embedding.side_effect = RuntimeError('embedding failure')
         with patch.object(search,'logger'):
             self.assertEqual(self.client.post(self.url+'/index').status_code,500)
-        self.assertEqual(self.status()['processing_status'],'pending_index')
+        self.assertEqual(self.status()['processing_status'],'index_stale')
+
+    def test_upload_automatically_chunks_and_indexes(self):
+        response = self.client.post('/documents/upload', files={
+            'file': ('auto.md', ('自动处理资料。' * 100).encode(), 'text/markdown')
+        })
+        self.assertEqual(response.status_code, 201, response.text)
+        result = response.json()
+        self.assertTrue(result['processing_completed'])
+        self.assertIsNone(result['processing_error'])
+        self.assertEqual(result['processing_status'], 'indexed')
+        records = self.collection.get(where={'document_id': result['id']})
+        self.assertEqual(len(records['ids']), result['chunk_count'])
+        self.assertGreater(result['chunk_count'], 1)
+
+    def test_pdf_upload_automatically_indexes_with_page_numbers(self):
+        pages = [SimpleNamespace(extract_text=lambda: '第一页资料。'),
+                 SimpleNamespace(extract_text=lambda: ''),
+                 SimpleNamespace(extract_text=lambda: '第三页资料。')]
+        reader = SimpleNamespace(is_encrypted=False, pages=pages)
+        with patch.object(document_management, 'PdfReader', return_value=reader), \
+                patch.object(chunks, 'PdfReader', return_value=reader):
+            response = self.client.post('/documents/upload', files={
+                'file': ('auto.pdf', b'pdf fixture', 'application/pdf')
+            })
+        result = response.json()
+        self.assertTrue(result['processing_completed'], result)
+        self.assertEqual(result['processing_status'], 'indexed')
+        records = self.collection.get(where={'document_id': result['id']})
+        self.assertEqual(sorted(m['page_number'] for m in records['metadatas']), [1, 3])
+
+    def test_upload_index_failure_preserves_file_and_chunks_for_retry(self):
+        self.embedding.side_effect = RuntimeError('embedding failure')
+        with patch.object(document_management, 'logger'):
+            response = self.client.post('/documents/upload', files={
+                'file': ('retry.md', '保留文档以便重试。'.encode(), 'text/markdown')
+            })
+        result = response.json()
+        self.assertEqual(response.status_code, 201)
+        self.assertFalse(result['processing_completed'])
+        self.assertTrue(result['processing_error'])
+        self.assertEqual(result['processing_status'], 'pending_index')
+        self.assertTrue((self.root / result['stored_name']).is_file())
+        self.embedding.side_effect = lambda texts: [[1., 0.]] * len(texts)
+        retry = self.client.post(f"/documents/{result['id']}/index")
+        self.assertEqual(retry.status_code, 200, retry.text)
+        detail = self.client.get(f"/documents/{result['id']}").json()
+        self.assertEqual(detail['processing_status'], 'indexed')
+
+    def test_upload_chunk_failure_preserves_document_without_calling_embedding(self):
+        before = self.embedding.call_count
+        with patch.object(document_management, 'logger'):
+            response = self.client.post('/documents/upload', files={
+                'file': ('empty.md', b'   ', 'text/markdown')
+            })
+        result = response.json()
+        self.assertEqual(response.status_code, 201)
+        self.assertFalse(result['processing_completed'])
+        self.assertEqual(result['processing_status'], 'not_chunked')
+        self.assertEqual(self.embedding.call_count, before)
 
     def test_partial_vector_failure_invalidates_existing_index(self):
         self.chunk()

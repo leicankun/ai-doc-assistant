@@ -68,6 +68,16 @@ class RagChatRequest(SearchRequest):
     session_id: int = Field(gt=0)
 
 
+class AgentRequest(BaseModel):
+    question: str = Field(min_length=1, max_length=1000)
+    session_id: int | None = Field(default=None, gt=0)
+
+    @field_validator('question', mode='before')
+    @classmethod
+    def strip_question(cls, value):
+        return value.strip() if isinstance(value, str) else value
+
+
 class KnowledgeBaseCreate(SessionCreate):
     pass
 

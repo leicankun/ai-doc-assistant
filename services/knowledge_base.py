@@ -9,8 +9,7 @@ from storage.document_status import DOCUMENT_SELECT, with_processing_status
 from retrieval.embedding import embed_query
 from retrieval.engine import fuse_rrf
 from storage.vector_store import get_collection
-
-
+from config import RAG_HISTORY_TURNS
 def require_base(connection, base_id):
     """查询知识库；不存在时返回 404，存在时返回字典。"""
     row = connection.execute(
@@ -56,10 +55,28 @@ def ready_documents(connection, base_id, mode):
     return documents
 
 
-def search_base(connection, base_id, request):
+def search_base(connection, base_id, request, *, document_ids=None,
+                allow_partial=False, min_dense_similarity=None, timeout=None):
     """在全部成员文档中统一检索，返回整个知识库的 Top-K 分块。"""
     # 1. 检查处理状态，并确定本次允许检索的文档 ID。
-    documents = ready_documents(connection, base_id, request.mode)
+    skipped = []
+    if allow_partial or document_ids is not None:
+        documents = members(connection, base_id)
+        if document_ids is not None:
+            if not set(document_ids).issubset({d['id'] for d in documents}):
+                raise HTTPException(404, '指定文档不存在或不属于当前知识库')
+            documents = [d for d in documents if d['id'] in document_ids]
+        skipped = [d for d in documents if not d['chunk_count'] or
+                   (request.mode != 'bm25' and d['processing_status'] != 'indexed')]
+        if skipped and not allow_partial:
+            raise HTTPException(409, {'message':'知识库资料未就绪','documents':skipped})
+        documents = [d for d in documents if d not in skipped]
+        if not documents:
+            return {'knowledge_base_id':base_id,'question':request.question,'mode':request.mode,
+                    'items':[],'total':0,'skipped_documents':skipped,
+                    'warning':'当前范围没有符合检索条件的文档，不能据此判断资料不存在'}
+    else:
+        documents = ready_documents(connection, base_id, request.mode)
     ids = [d["id"] for d in documents]
 
     # 2. 读取成员文档的所有分块，附上标题以便展示引用来源。
@@ -113,7 +130,8 @@ def search_base(connection, base_id, request):
 
         # 问题转成向量后查询；候选数量不能超过当前范围的实际向量数量。
         result = collection.query(
-            query_embeddings=[embed_query(request.question)],
+            query_embeddings=[embed_query(request.question, timeout=timeout) if timeout is not None
+                              else embed_query(request.question)],
             n_results=min(candidate_k, len(records["ids"])),
             where=where,
             include=["documents", "metadatas", "distances"],
@@ -142,6 +160,8 @@ def search_base(connection, base_id, request):
             )
         ]
 
+        if min_dense_similarity is not None:
+            dense = [item for item in dense if 1 - item['distance'] >= min_dense_similarity]
         # 5. Dense 直接截取；Hybrid 按两路排名进行 RRF 融合后取 Top-K。
         items = (
             dense[:request.top_k]
@@ -155,6 +175,7 @@ def search_base(connection, base_id, request):
         "mode": request.mode,
         "items": items,
         "total": len(items),
+        "skipped_documents": skipped,
     }
 
 
@@ -176,9 +197,9 @@ def session_history(connection, base_id, session_id):
         """
         SELECT question, answer FROM knowledge_base_turns
         WHERE knowledge_base_id = ? AND session_id = ?
-        ORDER BY id DESC LIMIT 5
+        ORDER BY id DESC LIMIT ?
         """,
-        (base_id, session_id),
+        (base_id, session_id,RAG_HISTORY_TURNS),
     ).fetchall()
     # 倒序取最新记录，再反转成模型需要的时间顺序。
     return [dict(row) for row in reversed(rows)]

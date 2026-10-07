@@ -11,6 +11,63 @@ const activeBase = ref(null)
 const documents = ref([])
 const activeDocumentId = ref('')
 const sidebarOpen = ref(false)
+const sidebarWidth = ref(280)
+const resizingSidebar = ref(false)
+const sidebarMaxWidth = ref(520)
+let sidebarDrag = null
+
+function setSidebarWidth(width) {
+  sidebarWidth.value = Math.round(Math.max(220, Math.min(sidebarMaxWidth.value, width)))
+}
+
+function saveSidebarWidth() {
+  try { localStorage.setItem('document-sidebar-width', String(sidebarWidth.value)) } catch { /* Storage may be disabled. */ }
+}
+
+function fitSidebarWidth() {
+  sidebarMaxWidth.value = Math.max(220, Math.min(520, Math.floor(window.innerWidth * 0.45)))
+  setSidebarWidth(sidebarWidth.value)
+}
+
+function startSidebarResize(event) {
+  if (event.button !== 0) return
+  event.preventDefault()
+  sidebarDrag = { x: event.clientX, width: sidebarWidth.value }
+  resizingSidebar.value = true
+  event.currentTarget.setPointerCapture(event.pointerId)
+}
+
+function resizeSidebar(event) {
+  if (sidebarDrag) setSidebarWidth(sidebarDrag.width + event.clientX - sidebarDrag.x)
+}
+
+function stopSidebarResize() {
+  if (!sidebarDrag) return
+  sidebarDrag = null
+  resizingSidebar.value = false
+  saveSidebarWidth()
+}
+
+function resizeSidebarWithKeyboard(event) {
+  const widths = { ArrowLeft: sidebarWidth.value - 20, ArrowRight: sidebarWidth.value + 20, Home: 220, End: sidebarMaxWidth.value }
+  if (!(event.key in widths)) return
+  event.preventDefault()
+  setSidebarWidth(widths[event.key])
+  saveSidebarWidth()
+}
+
+onMounted(() => {
+  try {
+    const savedWidth = Number(localStorage.getItem('document-sidebar-width'))
+    if (savedWidth > 0 && Number.isFinite(savedWidth)) sidebarWidth.value = savedWidth
+  } catch { /* Use the default width when storage is unavailable. */ }
+  fitSidebarWidth()
+  window.addEventListener('resize', fitSidebarWidth)
+})
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', fitSidebarWidth)
+  stopSidebarResize()
+})
 const toolsOpen = ref(false)
 const loading = ref(false)
 const errorMessage = ref('')
@@ -200,7 +257,10 @@ async function uploadDocument() {
     }
 
     const data = await response.json()
-    uploadSuccess.value = `上传成功：${data.title}`
+    uploadSuccess.value = data.processing_completed
+      ? `上传并入库完成：${data.title}（${data.chunk_count} 个分块）`
+      : `文件已上传：${data.title}`
+    if (data.processing_error) uploadError.value = data.processing_error
 
     await loadDocuments()
   } catch (error) {
@@ -432,14 +492,14 @@ onMounted(loadDocuments)
 </script>
 
 <template>
-  <div class="app-shell">
+  <div class="app-shell" :class="{ 'resizing-sidebar': resizingSidebar }" :style="{ '--sidebar-width': `${sidebarWidth}px` }">
     <aside class="sidebar" :class="{ expanded: sidebarOpen }" aria-label="文档侧边栏">
       <header class="brand"><span class="brand-icon">文</span><div><strong>文档问答</strong><small>让资料成为对话</small></div><button class="mobile-close" @click="sidebarOpen = false" aria-label="收起侧边栏">×</button></header>
       <section class="upload-area">
         <label class="upload-label" for="document-file">＋ 添加文档</label>
         <input id="document-file" type="file" accept=".md,.pdf" :disabled="uploading" @change="selectFile" />
         <p class="muted">Markdown / 文字型 PDF</p>
-        <button v-if="selectedFile" class="primary wide" :disabled="uploading" @click="uploadDocument">{{ uploading ? '上传中…' : '上传所选文件' }}</button>
+        <button v-if="selectedFile" class="primary wide" :disabled="uploading" @click="uploadDocument">{{ uploading ? '上传并处理中…' : '上传并自动入库' }}</button>
         <p v-if="uploadError" class="error" role="alert">{{ uploadError }}</p>
         <p v-if="uploadSuccess" class="success" role="status">{{ uploadSuccess }}</p>
       </section>
@@ -471,6 +531,7 @@ onMounted(loadDocuments)
       </details>
       <footer class="sidebar-footer">回答附原文引用，请结合资料核对。</footer>
     </aside>
+    <div class="sidebar-resizer" role="separator" tabindex="0" aria-label="调整侧边栏宽度" aria-orientation="vertical" :aria-valuenow="sidebarWidth" :aria-valuemin="220" :aria-valuemax="sidebarMaxWidth" title="拖动调整宽度，双击恢复默认" @pointerdown="startSidebarResize" @pointermove="resizeSidebar" @pointerup="stopSidebarResize" @pointercancel="stopSidebarResize" @lostpointercapture="stopSidebarResize" @keydown="resizeSidebarWithKeyboard" @dblclick="setSidebarWidth(280); saveSidebarWidth()"></div>
     <main class="main-area">
       <header class="workspace-header"><button class="mobile-toggle" @click="sidebarOpen = !sidebarOpen" :aria-expanded="sidebarOpen" aria-label="展开文档侧边栏">☰</button><span>资料对话</span><button :aria-expanded="toolsOpen" @click="toolsOpen = !toolsOpen">{{ toolsOpen ? '返回对话' : '文档处理与检索' }}</button></header>
       <div v-show="toolsOpen" class="tools-area">
@@ -563,7 +624,8 @@ onMounted(loadDocuments)
   </div>
 </template>
 <style scoped>
-.app-shell{display:grid;grid-template-columns:280px minmax(0,1fr);height:100dvh;background:#fff;color:#25352f}
+.app-shell{display:grid;grid-template-columns:var(--sidebar-width,280px) 6px minmax(0,1fr);height:100dvh;background:#fff;color:#25352f}
+.sidebar-resizer{cursor:col-resize;touch-action:none;background:#f4f6f3;position:relative;outline:none}.sidebar-resizer::after{content:'';position:absolute;inset:0 2px;background:#d9e1d9;transition:background .15s}.sidebar-resizer:hover::after,.sidebar-resizer:focus-visible::after,.resizing-sidebar .sidebar-resizer::after{background:#477e63}.resizing-sidebar,.resizing-sidebar *{cursor:col-resize!important;user-select:none!important}
 .sidebar{display:flex;flex-direction:column;gap:18px;padding:24px 16px;background:#f4f6f3;border-right:1px solid #e3e8e1;overflow:auto}
 .brand{display:flex;align-items:center;gap:12px;padding:0 8px 12px}.brand-icon{display:grid;place-items:center;width:36px;height:36px;background:#315e4b;color:white;border-radius:10px}.brand strong{font-size:18px}.brand small{display:block;color:#78847b;font-size:12px}
 button,input,select,textarea{font:inherit}button{border:1px solid #d9e1d9;border-radius:8px;padding:8px 12px;background:white;cursor:pointer}button:hover:not(:disabled){background:#e8eee7}button:disabled{opacity:.5;cursor:not-allowed}button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible{outline:2px solid #477e63;outline-offset:3px}
@@ -571,5 +633,5 @@ button,input,select,textarea{font:inherit}button{border:1px solid #d9e1d9;border
 .document-list{flex:1;min-height:100px}.document-row{position:relative;display:flex;border-radius:9px;margin:3px 0}.document-row.active{background:#e3ebe1}.document-select{text-align:left;flex:1;min-width:0;border:0;background:transparent;padding:12px}.document-title{display:block;font-size:14px;overflow-wrap:anywhere}.document-select small{display:block;margin-top:4px;font-size:11px;color:#728173}.document-menu{padding:10px 8px}.document-menu summary{cursor:pointer;list-style:none}.menu-actions{position:absolute;z-index:5;right:5px;background:white;padding:6px;box-shadow:0 4px 18px #0002;border-radius:8px;display:grid;min-width:120px}.menu-actions button{border:0;text-align:left}.danger{color:#af3939}.empty-documents{padding:12px}.metadata{font-size:12px;border-top:1px solid #dde4db;padding-top:14px}.metadata summary{cursor:pointer}.metadata label{display:grid;gap:5px;margin:10px 0}.metadata input,.metadata select{width:100%;padding:8px;border:1px solid #d9e1d9;border-radius:6px}.sidebar-footer{font-size:11px;color:#859083;padding:8px}
 .main-area{min-width:0;display:flex;flex-direction:column;overflow:hidden}.workspace-header{height:65px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 32px;border-bottom:1px solid #edf0eb;font-size:14px}.workspace-header>span{flex:1}.workspace-header button{font-size:12px}.tools-area{flex:1;overflow:auto;padding:0 28px 32px}.tools-area :deep(.search-panel){border:0;border-radius:0;margin-top:0;box-shadow:none}.legacy{margin-top:24px}.legacy summary{cursor:pointer}.panel{padding:20px 0}.session-picker,.actions,.list-header{display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin:12px 0}.field{display:grid;gap:6px;flex:1}.panel input,.panel select,.panel textarea{padding:10px;border:1px solid #d9e1d9;border-radius:8px;width:100%}.answer-text{white-space:pre-wrap;overflow-wrap:anywhere}.history-list{list-style:none;padding:0}.history-item{border-top:1px solid #e3e8e1;padding:16px 0}.error{color:#b23d3d;overflow-wrap:anywhere;font-size:13px}.success{color:#315e4b;font-size:12px}.mobile-toggle,.mobile-close{display:none}
 .sidebar > *{flex-shrink:0}.document-list{flex:0 0 auto;min-height:0;max-height:280px;overflow:auto}.document-row{flex-wrap:wrap;align-items:start}.document-select{flex:1 1 0}.document-menu{flex:0 0 32px}.document-menu[open]{flex-basis:100%}.document-menu[open] summary{text-align:right}.menu-actions{position:static;min-width:0;box-shadow:none;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;margin-top:6px}.menu-actions button{font-size:11px;padding:6px 2px;text-align:center}.sidebar{scrollbar-gutter:stable}
-@media(max-width:760px){.app-shell{grid-template-columns:1fr}.sidebar{display:none}.sidebar.expanded{display:flex;position:fixed;inset:0 auto 0 0;width:min(300px,90vw);z-index:20;box-shadow:10px 0 30px #0002}.mobile-toggle,.mobile-close{display:block}.mobile-close{margin-left:auto}.workspace-header{padding:0 16px;gap:12px}.tools-area{padding:0 12px 20px}}
+@media(max-width:760px){.app-shell{grid-template-columns:1fr}.sidebar-resizer{display:none}.sidebar{display:none}.sidebar.expanded{display:flex;position:fixed;inset:0 auto 0 0;width:min(var(--sidebar-width,280px),90vw);z-index:20;box-shadow:10px 0 30px #0002}.mobile-toggle,.mobile-close{display:block}.mobile-close{margin-left:auto}.workspace-header{padding:0 16px;gap:12px}.tools-area{padding:0 12px 20px}}
 </style>

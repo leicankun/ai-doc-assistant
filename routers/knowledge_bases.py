@@ -3,6 +3,8 @@ import json
 import logging
 import os
 import sqlite3
+import asyncio
+import threading
 from contextlib import aclosing, closing
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
@@ -10,18 +12,71 @@ from openai import APIError, APITimeoutError
 from starlette.concurrency import run_in_threadpool
 from config import DB_PATH
 from storage.database import get_connection
-from schemas import KnowledgeBaseCreate, KnowledgeBaseDocuments, SessionCreate, SearchRequest, RagChatRequest
+from schemas import KnowledgeBaseCreate, KnowledgeBaseDocuments, SessionCreate, SearchRequest, RagChatRequest, AgentRequest
 from services.knowledge_base import require_base, members, ready_documents, search_base, session_history, save_turn
 from services.rag_chat import rewrite_question
 from services.llm import answer_with_chunks, stream_answer_with_chunks
+from agent import run_document_agent
+from agent.runner import AgentCancelled
 
 router = APIRouter(prefix='/knowledge-bases', tags=['知识库'])
 logger = logging.getLogger(__name__)
 
 
+@router.post('/{base_id}/agent')
+async def document_agent(base_id:int,body:AgentRequest,http_request:Request,connection=Depends(get_connection)):
+    """断开连接后协作取消，在外部调用结束的检查点终止，不再保存。"""
+    stop = threading.Event()
+    task = asyncio.create_task(run_in_threadpool(_document_agent,base_id,body,connection,stop))
+    try:
+        while not task.done():
+            await asyncio.wait({task},timeout=0.2)
+            if await http_request.is_disconnected():
+                stop.set()
+        return await task
+    finally:
+        stop.set()
+        # 连接由请求依赖持有，必须等待 worker 结束后才能释放。
+        if not task.done():
+            try:
+                await asyncio.shield(task)
+            except Exception:
+                pass
+
+
+def _document_agent(base_id,body,connection,stop):
+    """Agent 问答；提供会话 ID 时加载历史并保存回答、引用和工具记录。"""
+    try:
+        require_base(connection,base_id)
+        if not os.getenv('DEEPSEEK_API_KEY'):
+            raise HTTPException(503,'服务尚未配置回答模型 API Key')
+        previous = session_history(connection,base_id,body.session_id) if body.session_id else []
+        result = run_document_agent(connection,base_id,body.question,history=previous,
+                                    cancelled=stop.is_set,session_id=body.session_id)
+        if stop.is_set():
+            raise AgentCancelled('已停止执行，本轮不保存')
+        turn_id = None
+        if body.session_id:
+            sources = [item for call in result['tool_calls'] for item in call['result'].get('items', [])]
+            request = RagChatRequest(question=body.question,session_id=body.session_id,mode='hybrid')
+            with connection:
+                turn_id = save_turn(connection,base_id,request,body.question,
+                                    result['answer'],result['citations'],sources)
+                connection.execute('UPDATE knowledge_base_turns SET mode=?, tool_calls_json=? WHERE id=?',
+                                   ('agent',json.dumps(result['tool_calls'],ensure_ascii=False),turn_id))
+        return {**result,'knowledge_base_id':base_id,'question':body.question,
+                'session_id':body.session_id,'id':turn_id,'mode':'agent'}
+    except Exception as exc:
+        raise translate_error(exc) from exc
+
+
 def translate_error(exc):
     if isinstance(exc, HTTPException):
         return exc
+    if isinstance(exc,AgentCancelled):
+        return HTTPException(499,'已停止执行，本轮未保存')
+    if isinstance(exc,TimeoutError):
+        return HTTPException(504,'Agent 执行超时，本轮未保存')
     if isinstance(exc, APITimeoutError):
         return HTTPException(504,'模型调用超时，请重试')
     if isinstance(exc, APIError):
@@ -70,7 +125,7 @@ def delete_base(base_id:int,connection=Depends(get_connection)):
     require_base(connection,base_id)
     with connection:
         connection.execute('DELETE FROM knowledge_base_turn_documents WHERE turn_id IN (SELECT id FROM knowledge_base_turns WHERE knowledge_base_id=?)',(base_id,))
-        for table in ('knowledge_base_turns','knowledge_base_sessions','knowledge_base_documents'):
+        for table in ('agent_session_summaries','knowledge_base_turns','knowledge_base_sessions','knowledge_base_documents'):
             connection.execute(f'DELETE FROM {table} WHERE knowledge_base_id=?',(base_id,))
         connection.execute('DELETE FROM knowledge_bases WHERE id=?',(base_id,))
     return {'id':base_id,'message':'知识库删除成功，原文档保留'}
@@ -142,6 +197,7 @@ def history(base_id:int,session_id:int,connection=Depends(get_connection)):
     for row in connection.execute('SELECT * FROM knowledge_base_turns WHERE knowledge_base_id=? AND session_id=? ORDER BY id',(base_id,session_id)):
         item=dict(row)
         item['citations']=json.loads(item.pop('citations_json'))
+        item['tool_calls']=json.loads(item.pop('tool_calls_json'))
         items.append(item)
     return {'items':items,'total':len(items)}
 
