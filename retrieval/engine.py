@@ -1,6 +1,6 @@
-from embedding import embed_query
-from vector_store import get_collection
-from bm25 import search_bm25
+from retrieval.embedding import embed_query
+from storage.vector_store import get_collection
+from retrieval.bm25 import search_bm25
 
 #深度检索 稠密嵌入
 def search_dense(

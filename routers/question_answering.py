@@ -6,9 +6,9 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from openai import APIError, APITimeoutError
 from config import DB_PATH
-from database import get_connection
+from storage.database import get_connection
 from schemas import QuestionRequest
-from llm import answer_question, stream_answer_question
+from services.llm import answer_question, stream_answer_question
 from routers.document_management import get_document_content
 
 router = APIRouter(prefix="/documents", tags=["全文问答"])

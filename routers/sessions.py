@@ -1,7 +1,7 @@
 """会话与历史接口。"""
 import sqlite3
 from fastapi import APIRouter, Depends, HTTPException
-from database import get_connection
+from storage.database import get_connection
 from schemas import SessionCreate
 
 router = APIRouter(prefix="/documents", tags=["会话与历史"])

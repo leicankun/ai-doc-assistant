@@ -2,8 +2,16 @@
 import { onMounted, onBeforeUnmount, ref } from 'vue'
 import DocumentSearch from './components/DocumentSearch.vue'
 import RagChat from './components/RagChat.vue'
+import KnowledgeBases from './components/KnowledgeBases.vue'
+import KnowledgeBaseSearch from './components/KnowledgeBaseSearch.vue'
+import { vClosePopover } from './utils/closePopover'
+const metadataForm = ref(null)
+const activeBase = ref(null)
 
 const documents = ref([])
+const activeDocumentId = ref('')
+const sidebarOpen = ref(false)
+const toolsOpen = ref(false)
 const loading = ref(false)
 const errorMessage = ref('')
 const title = ref('')
@@ -49,6 +57,7 @@ async function loadDocuments() {
 
     const data = await response.json()
     documents.value = data.items
+    if (!documents.value.some(doc => doc.id === activeDocumentId.value)) activeDocumentId.value = documents.value[0]?.id ?? ''
   } catch (error) {
     errorMessage.value = error.message
   } finally {
@@ -92,6 +101,7 @@ async function submitDocument() {
     title.value = ''
     fileType.value = 'markdown'
     editingId.value = null
+    if (metadataForm.value) metadataForm.value.open = false
     await loadDocuments()
   } catch (error) {
     formError.value = error.message
@@ -422,117 +432,51 @@ onMounted(loadDocuments)
 </script>
 
 <template>
-  <main class="page">
-    <header class="page-header">
-      <h1>文档管理</h1>
-      <p class="muted">上传学习资料，管理你的文档。</p>
-    </header>
-
-    <div class="workspace">
-      <section class="panel" aria-labelledby="upload-heading">
-        <h2 id="upload-heading">上传文档</h2>
-        <p class="muted section-description">支持 UTF-8 Markdown 和可提取文字的 PDF，上传后自动加入列表。暂不支持加密 PDF 或纯图片扫描件。</p>
-        <label class="field" for="document-file">
-          <span>Markdown 或 PDF 文件</span>
-          <input
-            id="document-file"
-            type="file"
-            accept=".md,.pdf"
-            :disabled="uploading"
-            @change="selectFile"
-          />
-        </label>
-        <div class="actions">
-          <button
-            class="primary"
-            type="button"
-            :disabled="uploading || !selectedFile"
-            @click="uploadDocument"
-          >
-            {{ uploading ? '上传中…' : '上传文件' }}
+  <div class="app-shell">
+    <aside class="sidebar" :class="{ expanded: sidebarOpen }" aria-label="文档侧边栏">
+      <header class="brand"><span class="brand-icon">文</span><div><strong>文档问答</strong><small>让资料成为对话</small></div><button class="mobile-close" @click="sidebarOpen = false" aria-label="收起侧边栏">×</button></header>
+      <section class="upload-area">
+        <label class="upload-label" for="document-file">＋ 添加文档</label>
+        <input id="document-file" type="file" accept=".md,.pdf" :disabled="uploading" @change="selectFile" />
+        <p class="muted">Markdown / 文字型 PDF</p>
+        <button v-if="selectedFile" class="primary wide" :disabled="uploading" @click="uploadDocument">{{ uploading ? '上传中…' : '上传所选文件' }}</button>
+        <p v-if="uploadError" class="error" role="alert">{{ uploadError }}</p>
+        <p v-if="uploadSuccess" class="success" role="status">{{ uploadSuccess }}</p>
+      </section>
+      <div class="list-heading"><h2>我的文档 <small>{{ documents.length }}</small></h2><button :disabled="loading" @click="loadDocuments" aria-label="刷新文档列表">↻</button></div>
+      <p v-if="errorMessage" class="error" role="alert">{{ errorMessage }}</p>
+      <nav class="document-list" aria-label="选择问答文档">
+        <div v-for="document in documents" :key="document.id" class="document-row" :class="{ active: !activeBase && activeDocumentId === document.id }">
+          <button class="document-select" :aria-pressed="!activeBase && activeDocumentId === document.id" @click="activeDocumentId = document.id; activeBase = null; sidebarOpen = false">
+            <span class="document-title">{{ document.title }}</span>
+            <small>{{ document.file_type === 'markdown' ? 'MD' : 'PDF' }} · {{ document.processing_status_label }} · {{ document.chunk_count }} 块</small>
           </button>
+          <details v-close-popover class="document-menu"><summary :aria-label="`管理 ${document.title}`">···</summary><div class="menu-actions">
+            <button @click="startEdit(document)">编辑信息</button>
+            <button @click="startAsk(document); toolsOpen = true">全文问答</button>
+            <button class="danger" :disabled="deletingId === document.id || asking || creatingSession" @click="deleteDocument(document.id)">{{ deletingId === document.id ? '删除中…' : '删除文档' }}</button>
+          </div></details>
         </div>
-        <p v-if="uploadError" class="message error" role="alert">{{ uploadError }}</p>
-        <p v-if="uploadSuccess" class="message success" role="status">{{ uploadSuccess }}</p>
-      </section>
-
-      <section class="panel" aria-labelledby="form-heading">
-        <h2 id="form-heading">{{ editingId === null ? '新增文档信息' : '编辑文档信息' }}</h2>
-        <p class="muted section-description">{{ editingId === null ? '手动登记标题和类型；上传文件请使用上传区。' : '修改标题和类型后，点击保存修改。' }}</p>
+        <p v-if="!documents.length" class="muted empty-documents">{{ loading ? '正在加载…' : '上传第一份资料，开始对话。' }}</p>
+      </nav>
+      <KnowledgeBases :documents="documents" :active-base="activeBase" @select="activeBase = $event; sidebarOpen = false" @process-document="activeDocumentId = $event; toolsOpen = true; sidebarOpen = false" />
+      <details ref="metadataForm" class="metadata" :open="editingId !== null">
+        <summary>{{ editingId === null ? '登记文档信息' : '编辑文档信息' }}</summary>
         <form @submit.prevent="submitDocument">
-          <div class="form-fields">
-            <label class="field" for="document-title">
-              <span>文档标题</span>
-              <input
-                id="document-title"
-                v-model="title"
-                placeholder="例如：Python 学习笔记"
-                maxlength="100"
-                required
-                :disabled="saving"
-              />
-            </label>
-            <label class="field" for="document-type">
-              <span>文件类型</span>
-              <select id="document-type" v-model="fileType" :disabled="saving">
-                <option value="markdown">Markdown</option>
-                <option value="pdf">PDF</option>
-              </select>
-            </label>
-          </div>
-          <div class="actions">
-            <button class="primary" type="submit" :disabled="saving">
-              {{ saving ? '提交中…' : editingId === null ? '新增文档' : '保存修改' }}
-            </button>
-            <button v-if="editingId !== null" type="button" :disabled="saving" @click="cancelEdit">
-              取消编辑
-            </button>
-          </div>
-          <p v-if="formError" class="message error" role="alert">{{ formError }}</p>
+          <label>标题<input v-model="title" maxlength="100" required :disabled="saving" /></label>
+          <label>类型<select v-model="fileType" :disabled="saving"><option value="markdown">Markdown</option><option value="pdf">PDF</option></select></label>
+          <button :disabled="saving">{{ saving ? '保存中…' : '保存' }}</button><button v-if="editingId !== null" type="button" @click="cancelEdit">取消</button>
+          <p v-if="formError" class="error" role="alert">{{ formError }}</p>
         </form>
-      </section>
-    </div>
-
-    <section class="panel library" aria-labelledby="list-heading" :aria-busy="loading">
-      <div class="list-header">
-        <div>
-          <h2 id="list-heading">文档列表 <span class="count">{{ documents.length }}</span></h2>
-          <p class="muted">已登记和上传的文档都显示在这里。</p>
-        </div>
-        <button type="button" :disabled="loading" @click="loadDocuments">
-          {{ loading ? '加载中…' : '刷新列表' }}
-        </button>
-      </div>
-
-      <p v-if="errorMessage" class="message error" role="alert">{{ errorMessage }}</p>
-      <template v-else>
-        <ul v-if="documents.length > 0" class="document-list">
-          <li v-for="document in documents" :key="document.id" class="document-row">
-            <div class="document-info">
-              <span class="document-id">#{{ document.id }}</span>
-              <span class="document-title">{{ document.title }}</span>
-              <span class="badge">{{ document.file_type === 'markdown' ? 'Markdown' : 'PDF' }}</span>
-              <span class="badge">{{ document.processing_status_label }} · {{ document.chunk_count }} 块</span>
-            </div>
-            <div class="row-actions">
-              <button type="button" :disabled="asking || creatingSession" @click="startAsk(document)">提问</button>
-              <button type="button" @click="startEdit(document)">编辑</button>
-              <button
-                class="danger"
-                type="button"
-                :disabled="deletingId === document.id || asking || creatingSession"
-                @click="deleteDocument(document.id)"
-              >
-                {{ deletingId === document.id ? '删除中…' : '删除' }}
-              </button>
-            </div>
-          </li>
-        </ul>
-        <p v-else class="empty-state">{{ loading ? '正在读取文档…' : '暂无文档，上传一份 Markdown 或 PDF 开始吧。' }}</p>
-      </template>
-    </section>
-    <DocumentSearch :documents="documents" @processing-updated="loadDocuments" />
-    <RagChat :documents="documents" />
+      </details>
+      <footer class="sidebar-footer">回答附原文引用，请结合资料核对。</footer>
+    </aside>
+    <main class="main-area">
+      <header class="workspace-header"><button class="mobile-toggle" @click="sidebarOpen = !sidebarOpen" :aria-expanded="sidebarOpen" aria-label="展开文档侧边栏">☰</button><span>资料对话</span><button :aria-expanded="toolsOpen" @click="toolsOpen = !toolsOpen">{{ toolsOpen ? '返回对话' : '文档处理与检索' }}</button></header>
+      <div v-show="toolsOpen" class="tools-area">
+        <KnowledgeBaseSearch v-if="activeBase" :base="activeBase" />
+        <DocumentSearch :documents="documents" :active-document-id="activeDocumentId" @processing-updated="loadDocuments" />
+        <details class="legacy" :open="Boolean(askingDocument)"><summary>全文问答与历史</summary>
     <section v-if="askingDocument" class="panel library" aria-labelledby="ask-heading" :aria-busy="asking">
       <h2 id="ask-heading" class="ask-title">文档问答：{{ askingDocument.title }}</h2>
       <p class="muted section-description">根据这篇文档的内容回答你的问题，当前支持正文不超过 20000 字符的 Markdown 或 PDF。</p>
@@ -611,70 +555,21 @@ onMounted(loadDocuments)
         </ol>
       </section>
     </section>
-  </main>
-</template>
 
+        </details>
+      </div>
+      <RagChat v-show="!toolsOpen" :documents="documents" :active-document-id="activeDocumentId" :knowledge-base="activeBase" @open-tools="toolsOpen = true" />
+    </main>
+  </div>
+</template>
 <style scoped>
-.page { max-width: 1100px; margin: 0 auto; padding: 40px 24px 64px; }
-.page-header { margin-bottom: 28px; }
-h1 { margin: 0 0 6px; font-size: 28px; }
-h2 { margin: 0; font-size: 18px; }
-.muted { margin: 6px 0 0; color: #64748b; font-size: 14px; }
-.workspace { display: grid; grid-template-columns: 1fr 1.2fr; gap: 20px; }
-.panel { min-width: 0; padding: 24px; border: 1px solid #dce3eb; border-radius: 12px; background: #fff; }
-.section-description { margin-bottom: 22px; }
-.form-fields { display: grid; grid-template-columns: minmax(0, 1fr) 130px; gap: 16px; }
-.field { display: flex; flex-direction: column; gap: 8px; min-width: 0; font-size: 14px; font-weight: 600; }
-input, select { width: 100%; min-width: 0; min-height: 42px; padding: 9px 12px; border: 1px solid #cbd5e1; border-radius: 7px; background: #fff; }
-input[type='file'] { padding: 6px; font-size: 13px; }
-input::file-selector-button { margin-right: 10px; padding: 5px 10px; border: 0; border-radius: 4px; background: #eef2ff; color: #3730a3; cursor: pointer; }
-.actions, .row-actions { display: flex; flex-wrap: wrap; gap: 10px; }
-.actions { margin-top: 20px; }
-button { padding: 9px 16px; border: 1px solid #cbd5e1; border-radius: 7px; background: #fff; font-weight: 500; cursor: pointer; }
-button:hover:not(:disabled) { background: #f1f5f9; }
-.primary { border-color: #4338ca; background: #4338ca; color: #fff; }
-.primary:hover:not(:disabled) { background: #3730a3; }
-.danger { color: #b91c1c; border-color: #fecaca; }
-.danger:hover:not(:disabled) { background: #fff1f2; }
-button:disabled, input:disabled, select:disabled, textarea:disabled { opacity: .55; cursor: not-allowed; }
-button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible { outline: 3px solid #a5b4fc; outline-offset: 3px; }
-.library { margin-top: 24px; }
-.list-header { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 18px; }
-.list-header > button { flex-shrink: 0; }
-.count { display: inline-block; margin-left: 6px; padding: 1px 9px; border-radius: 20px; background: #eef2ff; color: #4338ca; font-size: 13px; vertical-align: middle; }
-.document-list { margin: 0; padding: 0; list-style: none; }
-.document-row { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 16px 0; border-top: 1px solid #e8edf3; }
-.document-info { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; min-width: 0; }
-.document-id { color: #64748b; font-size: 13px; }
-.document-title { overflow-wrap: anywhere; font-weight: 500; }
-.badge { padding: 2px 8px; border-radius: 5px; background: #f1f5f9; color: #475569; font-size: 12px; }
-.row-actions { flex-shrink: 0; }
-.row-actions button { padding: 6px 12px; font-size: 13px; }
-.message { margin: 16px 0 0; padding: 10px 12px; border-radius: 6px; overflow-wrap: anywhere; font-size: 14px; }
-.error { background: #fff1f2; color: #b91c1c; }
-.success { background: #ecfdf5; color: #047857; }
-.empty-state { padding: 36px 12px; text-align: center; color: #64748b; }
-textarea { width: 100%; min-height: 100px; padding: 12px; border: 1px solid #cbd5e1; border-radius: 7px; font: inherit; color: inherit; resize: vertical; }
-.ask-title { overflow-wrap: anywhere; }
-.session-panel { padding: 16px; margin-bottom: 24px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; }
-.session-picker { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px; margin-bottom: 16px; }
-.session-picker .field { flex: 1 1 220px; }
-.answer-box { margin-top: 24px; padding: 16px; border-radius: 8px; background: #f8fafc; }
-.answer-box h3 { margin: 0 0 10px; font-size: 16px; }
-.answer-text { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
-.history-section { margin-top: 28px; padding-top: 24px; border-top: 1px solid #e8edf3; }
-.history-section h3 { margin: 0; font-size: 16px; }
-.history-list { padding: 0; margin: 16px 0 0; list-style: none; }
-.history-item { padding: 16px; margin-top: 12px; border: 1px solid #e2e8f0; border-radius: 8px; }
-.history-item h4 { margin: 14px 0 6px; font-size: 14px; color: #4338ca; }
-@media (max-width: 760px) {
-  .workspace { grid-template-columns: 1fr; }
-  .page { padding: 24px 16px 40px; }
-  .panel { padding: 20px; }
-}
-@media (max-width: 480px) {
-  .form-fields { grid-template-columns: 1fr; }
-  .document-row { align-items: flex-start; flex-direction: column; gap: 12px; }
-  .list-header { align-items: flex-start; flex-wrap: wrap; }
-}
+.app-shell{display:grid;grid-template-columns:280px minmax(0,1fr);height:100dvh;background:#fff;color:#25352f}
+.sidebar{display:flex;flex-direction:column;gap:18px;padding:24px 16px;background:#f4f6f3;border-right:1px solid #e3e8e1;overflow:auto}
+.brand{display:flex;align-items:center;gap:12px;padding:0 8px 12px}.brand-icon{display:grid;place-items:center;width:36px;height:36px;background:#315e4b;color:white;border-radius:10px}.brand strong{font-size:18px}.brand small{display:block;color:#78847b;font-size:12px}
+button,input,select,textarea{font:inherit}button{border:1px solid #d9e1d9;border-radius:8px;padding:8px 12px;background:white;cursor:pointer}button:hover:not(:disabled){background:#e8eee7}button:disabled{opacity:.5;cursor:not-allowed}button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,summary:focus-visible{outline:2px solid #477e63;outline-offset:3px}
+.primary,.upload-label{background:#315e4b;color:white}.wide{width:100%}.upload-label{display:block;text-align:center;padding:10px;border-radius:8px;cursor:pointer}.upload-area input[type=file]{width:100%;font-size:12px;margin-top:10px}.muted{color:#768279;font-size:12px}.upload-area p{margin:6px 0}.list-heading{display:flex;align-items:center;justify-content:space-between;padding:0 8px}.list-heading h2{font-size:13px;margin:0}.list-heading small{color:#819085;margin-left:6px}.list-heading button{border:0;background:transparent}
+.document-list{flex:1;min-height:100px}.document-row{position:relative;display:flex;border-radius:9px;margin:3px 0}.document-row.active{background:#e3ebe1}.document-select{text-align:left;flex:1;min-width:0;border:0;background:transparent;padding:12px}.document-title{display:block;font-size:14px;overflow-wrap:anywhere}.document-select small{display:block;margin-top:4px;font-size:11px;color:#728173}.document-menu{padding:10px 8px}.document-menu summary{cursor:pointer;list-style:none}.menu-actions{position:absolute;z-index:5;right:5px;background:white;padding:6px;box-shadow:0 4px 18px #0002;border-radius:8px;display:grid;min-width:120px}.menu-actions button{border:0;text-align:left}.danger{color:#af3939}.empty-documents{padding:12px}.metadata{font-size:12px;border-top:1px solid #dde4db;padding-top:14px}.metadata summary{cursor:pointer}.metadata label{display:grid;gap:5px;margin:10px 0}.metadata input,.metadata select{width:100%;padding:8px;border:1px solid #d9e1d9;border-radius:6px}.sidebar-footer{font-size:11px;color:#859083;padding:8px}
+.main-area{min-width:0;display:flex;flex-direction:column;overflow:hidden}.workspace-header{height:65px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 32px;border-bottom:1px solid #edf0eb;font-size:14px}.workspace-header>span{flex:1}.workspace-header button{font-size:12px}.tools-area{flex:1;overflow:auto;padding:0 28px 32px}.tools-area :deep(.search-panel){border:0;border-radius:0;margin-top:0;box-shadow:none}.legacy{margin-top:24px}.legacy summary{cursor:pointer}.panel{padding:20px 0}.session-picker,.actions,.list-header{display:flex;flex-wrap:wrap;gap:10px;align-items:end;margin:12px 0}.field{display:grid;gap:6px;flex:1}.panel input,.panel select,.panel textarea{padding:10px;border:1px solid #d9e1d9;border-radius:8px;width:100%}.answer-text{white-space:pre-wrap;overflow-wrap:anywhere}.history-list{list-style:none;padding:0}.history-item{border-top:1px solid #e3e8e1;padding:16px 0}.error{color:#b23d3d;overflow-wrap:anywhere;font-size:13px}.success{color:#315e4b;font-size:12px}.mobile-toggle,.mobile-close{display:none}
+.sidebar > *{flex-shrink:0}.document-list{flex:0 0 auto;min-height:0;max-height:280px;overflow:auto}.document-row{flex-wrap:wrap;align-items:start}.document-select{flex:1 1 0}.document-menu{flex:0 0 32px}.document-menu[open]{flex-basis:100%}.document-menu[open] summary{text-align:right}.menu-actions{position:static;min-width:0;box-shadow:none;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;margin-top:6px}.menu-actions button{font-size:11px;padding:6px 2px;text-align:center}.sidebar{scrollbar-gutter:stable}
+@media(max-width:760px){.app-shell{grid-template-columns:1fr}.sidebar{display:none}.sidebar.expanded{display:flex;position:fixed;inset:0 auto 0 0;width:min(300px,90vw);z-index:20;box-shadow:10px 0 30px #0002}.mobile-toggle,.mobile-close{display:block}.mobile-close{margin-left:auto}.workspace-header{padding:0 16px;gap:12px}.tools-area{padding:0 12px 20px}}
 </style>

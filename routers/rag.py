@@ -4,11 +4,11 @@ import os
 import logging
 from fastapi import APIRouter, Depends, HTTPException
 from openai import APIError, APITimeoutError
-from database import get_connection
+from storage.database import get_connection
 from config import DB_PATH
 from starlette.concurrency import run_in_threadpool
 from schemas import SearchRequest
-from llm import answer_with_chunks
+from services.llm import answer_with_chunks
 from routers.search import search_document
 import json
 from contextlib import aclosing, closing
@@ -16,10 +16,10 @@ from contextlib import aclosing, closing
 from fastapi import Request
 from fastapi.responses import StreamingResponse
 
-from llm import stream_answer_with_chunks
+from services.llm import stream_answer_with_chunks
 
 from schemas import RagChatRequest
-from rag_chat import rewrite_question
+from services.rag_chat import rewrite_question
 
 logger = logging.getLogger(__name__)
 

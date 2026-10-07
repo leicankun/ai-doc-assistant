@@ -1,7 +1,7 @@
 import sqlite3
 
-from embedding import embed_texts
-from vector_store import get_collection
+from retrieval.embedding import embed_texts
+from storage.vector_store import get_collection
 
 
 def index_document(

@@ -1,5 +1,28 @@
 # 技术文档问答助手
 
+## 多文档知识库
+
+侧边栏的“知识库”支持创建、重命名、删除，点击知识库切换到知识库聊天。展开“成员文档”可多选已有文档添加，或移出成员；上传仍从侧边栏完成，上传后再添加到库。文档可属于多个知识库，SQLite 保存关联，Chroma 复用已有分块向量，不重复生成向量。
+
+成员的“处理”按钮进入分块/向量入库；“文档处理与检索”同时提供当前知识库的跨文档检索。BM25 要求全部成员已有分块；dense/hybrid 要求全部成员索引有效。空库或未就绪返回 409，并列出待处理文档；不悄悄跳过。Top-K 是整个库的返回总数，BM25 在全库分块上计算统计量，dense 按成员 document_id 过滤，hybrid 融合全库两路排名。
+
+知识库会话、历史与单文档会话隔离；每轮结合最近 5 轮改写追问、重新检索，支持流式输出。引用包含文档名、document_id、原文和 PDF 页码。冲突资料通过提示词要求分别说明并引用，不包含自动冲突检测。移出成员只解除关联，保留既有历史快照；删除知识库清理其成员关联、会话、历史，保留原文档及向量。实际删除原文档则清理所有库中的关联及曾检索该文档的问答轮次。
+
+| Method | Path | 用途 |
+|---|---|---|
+| GET / POST | `/knowledge-bases` | 列表 / 创建 |
+| GET / PUT / DELETE | `/knowledge-bases/{id}` | 详情 / 重命名 / 删除 |
+| POST | `/knowledge-bases/{id}/documents` | 批量添加，输入 `document_ids` |
+| DELETE | `/knowledge-bases/{id}/documents/{document_id}` | 移出文档 |
+| POST | `/knowledge-bases/{id}/search` | 三种跨文档检索 |
+| POST | `/knowledge-bases/{id}/ask-rag` | 单轮带引用回答 |
+| GET / POST | `/knowledge-bases/{id}/sessions` | 列出 / 创建会话 |
+| GET | `/knowledge-bases/{id}/sessions/{session_id}/rag-history` | 会话历史 |
+| POST | `/knowledge-bases/{id}/ask-rag/chat` | 多轮非流式问答 |
+| POST | `/knowledge-bases/{id}/ask-rag/chat/stream` | 多轮 SSE 问答 |
+
+检索/单轮输入沿用 `SearchRequest`，多轮输入沿用 `RagChatRequest`。流式事件为 `meta`、`delta`、`done`、`error`，正常完成和引用校验成功后才保存历史并发出 done。数据库新增表在启动时自动创建，无需删除旧数据库。
+
 基于 FastAPI 和 Vue 的文档信息管理练习项目，已实现文档信息的创建、查询、修改和删除，使用 SQLite 持久化保存数据，支持 Markdown 和文字型 PDF 文件上传、正文读取和基于 DeepSeek 的单篇文档问答。
 
 ## 环境准备（Windows PowerShell）
@@ -49,6 +72,10 @@ npm.cmd run dev
 
 页面会在打开时加载文档列表；可以新增、编辑、取消编辑、删除文档，也可以手动刷新列表。提交成功后会重新读取列表。新增、编辑和删除会修改 SQLite 中的数据；取消编辑不会发送请求。
 
+页面以对话为主：侧边栏提供上传、文档列表、处理状态和编辑/删除菜单；点击文档同步选择聊天与检索对象。主区域展示多轮流式问答，会话和设置位于顶部，输入框位于底部。分块、入库、检索及单轮问答在“文档处理与检索”中；全文问答从文档菜单进入。手机宽度下侧栏可展开/收起。
+
+侧栏各区按内容顺序排列，文档列表独立滚动，成员文档和行内管理菜单不会覆盖相邻区。新建会话、创建/重命名知识库、添加成员、保存文档信息后自动收起对应表单；失败时保留输入。聊天弹出表单和设置支持点击外部或 Esc 收起，设置另有“完成”按钮。
+
 删除文档会同步清理上传原文件、SQLite 分块、Chroma 中该文档的全部向量（含旧分块向量）、全文问答历史、RAG 历史和文档会话，不影响其他文档。原文件或向量已缺失时仍可删除。清理失败返回错误并回滚 SQLite，文档记录保留以便重试；文件系统和 Chroma 不参与 SQLite 事务，已经完成的外部清理不会回滚。删除选中的文档后，前端会清空对应全文问答及编辑状态。
 
 文档列表和检索面板显示处理状态及分块数。列表/详情接口新增 `chunk_count`、`chunk_version`、`indexed_version`、`processing_status` 和 `processing_status_label`。无分块为“未分块”；有分块、尚无成功索引版本为“待入库”；两个版本相同为“已入库”；版本不同或索引写入中断为“索引过期”。重新分块时版本递增，向量写入、旧记录清理及校验成功后才记录索引版本。过期或待入库的 dense/hybrid 检索（含 RAG）返回 409，BM25 仍可读取当前分块。前端分块/入库后自动刷新状态。
@@ -74,11 +101,15 @@ npm.cmd run build
 
 ## 项目结构
 
+完整目录职责、请求流程和建议阅读顺序见 [项目架构说明](项目架构说明.md)，表字段关系见 [数据库字段与关联速查](数据库字段与关联速查.md)。
+
 ```text
 main.py                 创建 FastAPI 应用、注册文档路由和健康检查
 config.py               项目根目录、SQLite、上传文件和 Chroma 路径
 schemas.py              文档、会话、问答和搜索请求校验
-database.py            初始化数据库、提供连接依赖
+storage/database.py            初始化数据库、提供连接依赖
+storage/document_status.py     文档分块数量与处理状态
+storage/document_deletion.py   文档、分块、向量与关联历史清理
 routers/__init__.py     路由包标记
 routers/documents.py    聚合各业务路由，供 main.py 注册
 routers/document_management.py  文档增删改查、上传和正文读取
@@ -87,12 +118,16 @@ routers/search.py       BM25/dense/hybrid 检索和向量入库
 routers/sessions.py     会话创建、列表和问答历史
 routers/question_answering.py   全文普通问答和流式问答
 routers/rag.py          单轮带引用的 RAG 问答
-llm.py                  DeepSeek 调用封装
-chunking.py             文本分块及字符位置
-bm25.py                 中文分词、词频统计、BM25 排序
-embedding.py            百炼向量调用，分批处理及结果校验
-vector_store.py         本地 Chroma 集合配置
-indexing.py             读取 SQLite 分块、生成向量并更新 Chroma
+routers/knowledge_bases.py     知识库成员、检索、会话和问答接口
+services/llm.py                  DeepSeek 调用封装
+services/rag_chat.py            多轮问题改写
+services/knowledge_base.py      知识库范围检索与历史管理
+retrieval/chunking.py             文本分块及字符位置
+retrieval/bm25.py                 中文分词、词频统计、BM25 排序
+retrieval/embedding.py            百炼向量调用，分批处理及结果校验
+storage/vector_store.py         本地 Chroma 集合配置
+retrieval/indexing.py             读取 SQLite 分块、生成向量并更新 Chroma
+retrieval/engine.py               Dense、Hybrid 检索及 RRF 排名融合
 tests/test_indexing.py  入库、清理、隔离和失败处理回归测试
 tests/test_retrieval.py  隔离数据库及模拟模型的回归测试
 practice/practice_llm.py         独立模型调用练习
@@ -178,7 +213,7 @@ POST 和 PUT 均须提交以下 JSON 请求体：
 单独初始化数据库：
 
 ```powershell
-.\.venv\Scripts\python.exe database.py
+.\.venv\Scripts\python.exe -m storage.database
 ```
 
 运行插入和查询练习：
@@ -231,7 +266,7 @@ SQLite 的 sqlite3 和 pathlib 属于 Python 标准库，不需要用 pip 安装
 
 ## 文档分块接口
 
-`chunking.py` 的 `split_text_with_offsets()` 返回正文及字符位置，`split_text()` 保留纯文本列表接口供练习使用。每块最多 500 个字符，相邻窗口重叠 100 个字符，跳过纯空白片段。PDF 按页分块，不跨页拼接。
+`retrieval/chunking.py` 的 `split_text_with_offsets()` 返回正文及字符位置，`split_text()` 保留纯文本列表接口供练习使用。每块最多 500 个字符，相邻窗口重叠 100 个字符，跳过纯空白片段。PDF 按页分块，不跨页拼接。
 
 | 方法 | 路径 | 用途 |
 | --- | --- | --- |
@@ -246,7 +281,7 @@ SQLite 的 sqlite3 和 pathlib 属于 Python 标准库，不需要用 pip 安装
 
 ## 多轮对话流程
 
-前端继续发送 `session_id` 和 `question`，无需重复上传历史记录。后端按文档和会话编号查询最近 5 条问答，按从旧到新的顺序交给 `llm.py`。消息依次为系统说明、文档正文、历史用户问题与模型回答、当前问题。模型成功回答后，本轮问答才写入数据库。
+前端继续发送 `session_id` 和 `question`，无需重复上传历史记录。后端按文档和会话编号查询最近 5 条问答，按从旧到新的顺序交给 `services/llm.py`。消息依次为系统说明、文档正文、历史用户问题与模型回答、当前问题。模型成功回答后，本轮问答才写入数据库。
 
 不同会话的上下文相互隔离；未关联会话的旧记录不会被带入。每次请求重新构建上下文，并非模型服务自动记住对话。最近 5 轮按记录数量限制，尚未按 token 数动态裁剪。
 

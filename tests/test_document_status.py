@@ -10,8 +10,8 @@ from uuid import uuid4
 import chromadb
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-import database
-import indexing
+from storage import database
+from retrieval import indexing
 from routers import documents, document_management, chunks, search
 
 

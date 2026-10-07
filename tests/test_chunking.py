@@ -1,5 +1,5 @@
 import unittest
-from chunking import split_text_with_offsets, split_text
+from retrieval.chunking import split_text_with_offsets, split_text
 
 
 class ChunkingTests(unittest.TestCase):

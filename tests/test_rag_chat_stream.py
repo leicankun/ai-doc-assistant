@@ -1,6 +1,6 @@
 import json
 from unittest.mock import AsyncMock, MagicMock, patch
-import llm
+from services import llm
 from routers import rag
 from test_rag_chat import RagChatTests
 from test_rag_stream import FakeStream

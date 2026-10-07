@@ -1,7 +1,8 @@
 """删除文档及关联资源；SQLite 最后提交，外部清理失败可重试。"""
 from pathlib import Path
+import json
 
-from vector_store import get_collection
+from storage.vector_store import get_collection
 
 
 class DocumentNotFoundError(LookupError):
@@ -24,6 +25,18 @@ def delete_document(document_id, connection, upload_dir):
             raise ValueError('文档文件路径无效')
 
     try:
+        # 文档实际删除时，清除知识库关联及曾使用该文档的问答轮次。
+        turn_ids = [r[0] for r in connection.execute('SELECT turn_id FROM knowledge_base_turn_documents WHERE document_id=?',(document_id,))]
+        for turn_id in turn_ids:
+            connection.execute('DELETE FROM knowledge_base_turn_documents WHERE turn_id=?',(turn_id,))
+            connection.execute('DELETE FROM knowledge_base_turns WHERE id=?',(turn_id,))
+        # 引用快照也包含原文，因此整轮清理，不仅删除引用编号。
+        rows = connection.execute('SELECT id,citations_json FROM knowledge_base_turns').fetchall()
+        for row in rows:
+            if any(c.get('document_id') == document_id for c in json.loads(row['citations_json'])):
+                connection.execute('DELETE FROM knowledge_base_turn_documents WHERE turn_id=?',(row['id'],))
+                connection.execute('DELETE FROM knowledge_base_turns WHERE id=?',(row['id'],))
+        connection.execute('DELETE FROM knowledge_base_documents WHERE document_id=?',(document_id,))
         # 先修改 SQLite，保持写事务，外部清理成功后一起提交。
         for table in ('question_answers', 'rag_turns', 'document_sessions', 'document_chunks'):
             connection.execute(f'DELETE FROM {table} WHERE document_id = ?', (document_id,))

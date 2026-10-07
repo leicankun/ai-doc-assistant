@@ -66,3 +66,18 @@ class SearchRequest(BaseModel):
 
 class RagChatRequest(SearchRequest):
     session_id: int = Field(gt=0)
+
+
+class KnowledgeBaseCreate(SessionCreate):
+    pass
+
+
+class KnowledgeBaseDocuments(BaseModel):
+    document_ids: list[int] = Field(min_length=1, max_length=200)
+
+    @field_validator('document_ids')
+    @classmethod
+    def positive_ids(cls, value):
+        if any(number <= 0 for number in value):
+            raise ValueError('文档 ID 必须是正整数')
+        return list(dict.fromkeys(value))

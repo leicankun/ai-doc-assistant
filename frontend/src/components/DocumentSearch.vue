@@ -1,7 +1,7 @@
 <script setup>
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
 
-const props = defineProps({ documents: { type: Array, required: true } })
+const props = defineProps({ documents: { type: Array, required: true }, activeDocumentId: { type: [String, Number], default: '' } })
 const emit = defineEmits(['processing-updated'])
 const documentId = ref('')
 const question = ref('')
@@ -30,6 +30,7 @@ function reset() {
 }
 
 watch(documentId, reset)
+watch(() => props.activeDocumentId, id => { documentId.value = id }, { immediate: true })
 watch(() => props.documents, () => {
   if (!selected.value) documentId.value = ''
 })

@@ -5,7 +5,7 @@ from unittest.mock import patch
 from uuid import uuid4
 
 import chromadb
-import indexing
+from retrieval import indexing
 
 
 class IndexingTests(unittest.TestCase):

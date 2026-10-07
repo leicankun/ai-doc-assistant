@@ -11,9 +11,9 @@ import httpx
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from openai import APITimeoutError
-import database
-import llm
-import rag_chat
+from storage import database
+from services import llm
+from services import rag_chat
 from routers import rag
 
 

@@ -1,0 +1,44 @@
+{
+  "documents": [
+    {
+      "ebook_id": 23839,
+      "title": "论语",
+      "source_url": "https://www.gutenberg.org/cache/epub/23839/pg23839.txt",
+      "characters": 24522,
+      "sha256": "0ec76753dc0752e2252636bb75bf56663d29a11a1fb93d39263ddbd945dde241",
+      "document_id": 6,
+      "chunks": 65,
+      "status": "indexed"
+    },
+    {
+      "ebook_id": 7375,
+      "title": "大学章句",
+      "source_url": "https://www.gutenberg.org/cache/epub/7375/pg7375.txt",
+      "characters": 8687,
+      "sha256": "316f57dedaea8b582d939bc1b324e7640dea27a553d0aa9553a90f7d3270f4bd",
+      "document_id": 7,
+      "chunks": 23,
+      "status": "indexed"
+    },
+    {
+      "ebook_id": 7376,
+      "title": "中庸章句",
+      "source_url": "https://www.gutenberg.org/cache/epub/7376/pg7376.txt",
+      "characters": 18394,
+      "sha256": "66570a5e37d2f14920aa2073e7c51d6d6b79bcd1b9095d30f5a6959f02b6b60e",
+      "document_id": 8,
+      "chunks": 48,
+      "status": "indexed"
+    }
+  ],
+  "knowledge_base_id": 2,
+  "verification": {
+    "mode": "hybrid",
+    "top_k": 5,
+    "total": 5,
+    "source_names": [
+      "中庸章句.md",
+      "大学章句.md"
+    ]
+  }
+}

@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 import httpx
 from openai import APIError, APITimeoutError
-import retrieval
+from retrieval import engine as retrieval
 from routers import documents
 from routers import search as business
 import test_indexing_api

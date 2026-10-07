@@ -1,0 +1,19 @@
+{
+  "questions": 30,
+  "retrieval_success": 30,
+  "answer_success": 30,
+  "answerable_questions": 24,
+  "any_evidence_hit": 24,
+  "full_evidence_coverage": 24,
+  "note": "Exact quote coverage is a retrieval diagnostic, not semantic accuracy. Manual review completed; see review.json for two partial answers and limitations.",
+  "manual_review": {
+    "answerable": 24,
+    "fully_correct": 22,
+    "partially_correct": 2,
+    "incorrect": 0,
+    "unanswerable": 6,
+    "correct_refusals": 6,
+    "answerable_citations_supported": 23,
+    "answerable_citations_partially_supported": 1
+  }
+}

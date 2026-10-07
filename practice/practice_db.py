@@ -9,7 +9,7 @@ if str(PROJECT_ROOT) not in sys.path:
 import sqlite3
 
 from config import DB_PATH
-from database import init_db
+from storage.database import init_db
 
 init_db()
 

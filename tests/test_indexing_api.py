@@ -10,8 +10,8 @@ from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from openai import APIError, APITimeoutError
 
-import indexing
-from database import get_connection
+from retrieval import indexing
+from storage.database import get_connection
 from routers import documents
 from routers import search as business
 

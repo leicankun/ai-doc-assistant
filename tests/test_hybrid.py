@@ -2,7 +2,7 @@ import copy
 import unittest
 from unittest.mock import patch
 
-import retrieval
+from retrieval import engine as retrieval
 import test_indexing_api
 
 

@@ -10,8 +10,8 @@ import chromadb
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-import database
-import document_deletion
+from storage import database
+from storage import document_deletion
 from routers import document_management
 
 

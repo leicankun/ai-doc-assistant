@@ -8,10 +8,10 @@ from fastapi import APIRouter, Depends, HTTPException, UploadFile
 from pypdf import PdfReader
 from pypdf.errors import PyPdfError
 from config import UPLOAD_DIR
-from database import get_connection
+from storage.database import get_connection
 from schemas import Document
-from document_deletion import DocumentNotFoundError, delete_document
-from document_status import DOCUMENT_SELECT, with_processing_status
+from storage.document_deletion import DocumentNotFoundError, delete_document
+from storage.document_status import DOCUMENT_SELECT, with_processing_status
 
 logger = logging.getLogger(__name__)
 

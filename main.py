@@ -1,4 +1,4 @@
-from database import init_db
+from storage.database import init_db
 from fastapi import FastAPI
 from routers.documents import router as documents_router
 from fastapi.middleware.cors import CORSMiddleware

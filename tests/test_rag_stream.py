@@ -2,7 +2,7 @@ import os
 import json
 from types import SimpleNamespace as NS
 from unittest.mock import AsyncMock, MagicMock, patch
-import llm
+from services import llm
 from routers import rag
 import test_indexing_api
 

@@ -5,8 +5,8 @@ from unittest.mock import MagicMock, patch
 
 import httpx
 from openai import APIError, APITimeoutError
-import llm
-import retrieval
+from services import llm
+from retrieval import engine as retrieval
 from routers import documents
 from routers import rag as business
 import test_indexing_api

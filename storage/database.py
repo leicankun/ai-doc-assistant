@@ -113,6 +113,33 @@ def init_db():
             ON rag_turns(document_id, session_id, id)
         """)
 
+        connection.executescript('''
+            CREATE TABLE IF NOT EXISTS knowledge_bases (
+                id INTEGER PRIMARY KEY AUTOINCREMENT, title TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE TABLE IF NOT EXISTS knowledge_base_documents (
+                knowledge_base_id INTEGER NOT NULL, document_id INTEGER NOT NULL,
+                PRIMARY KEY (knowledge_base_id, document_id)
+            );
+            CREATE TABLE IF NOT EXISTS knowledge_base_sessions (
+                id INTEGER PRIMARY KEY AUTOINCREMENT, knowledge_base_id INTEGER NOT NULL,
+                title TEXT NOT NULL, created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE TABLE IF NOT EXISTS knowledge_base_turns (
+                id INTEGER PRIMARY KEY AUTOINCREMENT, knowledge_base_id INTEGER NOT NULL,
+                session_id INTEGER NOT NULL, question TEXT NOT NULL,
+                retrieval_question TEXT NOT NULL, answer TEXT NOT NULL,
+                citations_json TEXT NOT NULL, mode TEXT NOT NULL,
+                created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+            );
+            CREATE INDEX IF NOT EXISTS idx_kb_turns_session
+                ON knowledge_base_turns(knowledge_base_id, session_id, id);
+            CREATE TABLE IF NOT EXISTS knowledge_base_turn_documents (
+                turn_id INTEGER NOT NULL, document_id INTEGER NOT NULL,
+                PRIMARY KEY (turn_id, document_id)
+            );
+        ''')
         connection.commit()
     finally:
         connection.close()

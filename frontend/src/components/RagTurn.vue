@@ -23,11 +23,11 @@ defineProps({ turn: { type: Object, required: true } })
 </template>
 
 <style scoped>
-.turn { border: 1px solid #dce3ed; border-radius: 12px; padding: 18px; margin-top: 16px; }
+.turn { padding: 12px 0 24px; margin-top: 12px; }
 .label { font-weight: 600; margin: 0 0 8px; }
 .text { white-space: pre-wrap; overflow-wrap: anywhere; line-height: 1.8; }
-.question { margin-top: 0; }
-.answer { background: #f5f8fc; border-radius: 8px; padding: 12px; }
+.question { margin: 0 0 24px auto; max-width: 85%; width: fit-content; background: #edf2e9; border-radius: 14px; padding: 12px 18px; }
+.answer { margin: 8px 0; padding: 0; }
 .muted, .rewrite { color: #576579; font-size: 14px; }
 .rewrite { margin-bottom: 16px; }
 .citation { padding: 12px; border-top: 1px solid #dce3ed; }

@@ -4,8 +4,8 @@ from fastapi import APIRouter, Depends, HTTPException
 from pypdf import PdfReader
 from pypdf.errors import PyPdfError
 from config import UPLOAD_DIR
-from database import get_connection
-from chunking import split_text_with_offsets
+from storage.database import get_connection
+from retrieval.chunking import split_text_with_offsets
 from routers.document_management import get_document_content
 
 router = APIRouter(prefix="/documents", tags=["文档分块"])

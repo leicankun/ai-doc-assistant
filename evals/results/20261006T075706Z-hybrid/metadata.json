@@ -1,0 +1,28 @@
+{
+  "started_at_utc": "2026-10-06T07:57:06.361026+00:00",
+  "git_commit": "2364853c1e124ce1c277f9a66964929bb027f724",
+  "working_tree": "?? .vscode/\n?? evals/\n?? package-lock.json",
+  "mode": "hybrid",
+  "top_k": 5,
+  "chunk_size": 500,
+  "overlap_max": 100,
+  "rrf_k": 60,
+  "candidate_k": 20,
+  "embedding_model": "text-embedding-v4",
+  "dimensions": 1024,
+  "answer_model": "deepseek-flash",
+  "dataset_sha256": "98ade6a9f1696daca46e1e0c8f56641acfbc7a2f3c19bdaf79eca8e93b186c40",
+  "source_hashes": {
+    "documents/pilot.md": "5c35e2508f2b50fc629418a2a430a36e7e5769f736c57e18d0338cc3b7753c7b"
+  },
+  "code_hashes": {
+    "chunking.py": "5b8ed4c9a1d4f6a9c4222140332c214edc4a5de3d0d5580284a0d0e9705a0b34",
+    "retrieval.py": "5c400609f3059d80596d1a2dc9b47b1af538129160a4fd0d130d6b44e9862b92",
+    "bm25.py": "3c8224aa0368587d77c16c909fadb055cf8c9434619f9c20d61dfe171fe5e8f2",
+    "embedding.py": "b054b8e7136dab77cf61d80048341dc1cfcf2c117e3287a1f424b72650d13e16",
+    "llm.py": "9601a750d082c5b378f4bef68f2626f1a57e5a6eed0b67f2a94430dff036b688",
+    "routers/search.py": "30f41432ae497ea804f8fc2cc78944c84ce18f6e9c18670a2d1f1e1ea9a5fe7d",
+    "routers/rag.py": "19c5db8b12b987ff166f2aa25fbbb9aa6725676bb0319f5663d460b5f3f0d725"
+  },
+  "transport": "FastAPI TestClient; real Embedding and chat APIs; isolated SQLite/Chroma"
+}

@@ -11,8 +11,8 @@ from unittest.mock import MagicMock, patch
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-import database
-import embedding
+from storage import database
+from retrieval import embedding
 from routers import documents, document_management, chunks as chunks_router
 
 

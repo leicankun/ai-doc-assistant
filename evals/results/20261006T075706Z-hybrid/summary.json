@@ -1,0 +1,9 @@
+{
+  "questions": 5,
+  "retrieval_success": 5,
+  "answer_success": 5,
+  "answerable_questions": 3,
+  "any_evidence_hit": 3,
+  "full_evidence_coverage": 3,
+  "note": "Raw outputs all saved. Summary reconstructed after Windows Chroma temp cleanup failed. Runner now uses real in-memory Chroma to avoid file locks. Human review recorded separately."
+}

@@ -1,0 +1,74 @@
+{
+  "documents/pilot.md": {
+    "document_id": 1,
+    "items": [
+      {
+        "id": 1,
+        "chunk_id": 1,
+        "document_id": 1,
+        "chunk_index": 1,
+        "content": "# 文档问答服务试跑资料\n\n",
+        "source_name": "pilot.md",
+        "page_number": null,
+        "start_char": 0,
+        "end_char": 14
+      },
+      {
+        "id": 2,
+        "chunk_id": 2,
+        "document_id": 1,
+        "chunk_index": 2,
+        "content": "## 文档上传\n\n本服务支持上传 UTF-8 编码的 Markdown 文件和可提取文字的 PDF 文件。纯图片扫描型 PDF 和加密 PDF 暂不支持。上传成功后，原文件保存到 uploads 目录，文档信息保存到 SQLite。\n\n",
+        "source_name": "pilot.md",
+        "page_number": null,
+        "start_char": 14,
+        "end_char": 132
+      },
+      {
+        "id": 3,
+        "chunk_id": 3,
+        "document_id": 1,
+        "chunk_index": 3,
+        "content": "## 分块与索引\n\n分块以 500 个字符为长度上限，最多重叠 100 个字符。优先在标题、段落和句子边界切分，超长内容按字符兜底。PDF 按物理页分别分块，保存页码，不跨页重叠。\n\n重新生成分块后，需要再次执行向量入库，更新 Chroma 中的记录。分块向量使用 text-embedding-v4 模型，维度为 1024。问题向量使用相同的模型和维度。\n\n",
+        "source_name": "pilot.md",
+        "page_number": null,
+        "start_char": 132,
+        "end_char": 312
+      },
+      {
+        "id": 4,
+        "chunk_id": 4,
+        "document_id": 1,
+        "chunk_index": 4,
+        "content": "## 检索\n\nBM25 根据词语匹配计算分数，分数越大排名越靠前。dense 使用余弦距离检索分块向量，距离越小排名越靠前。hybrid 使用 RRF 融合两路排名，平滑常数为 60，每路先取至少 20 个候选，最后返回用户指定的 Top-K。Top-K 的允许范围为 1 到 20。\n\n",
+        "source_name": "pilot.md",
+        "page_number": null,
+        "start_char": 312,
+        "end_char": 456
+      },
+      {
+        "id": 5,
+        "chunk_id": 5,
+        "document_id": 1,
+        "chunk_index": 5,
+        "content": "## 回答与引用\n\n模型根据本轮检索的原文回答，并用 [1]、[2] 等编号标注引用。引用编号只对本轮回答有效。后端检查编号是否存在，引用原文和来源由后端提供。资料不足时应说明文档中未提供足够信息。\n\n",
+        "source_name": "pilot.md",
+        "page_number": null,
+        "start_char": 456,
+        "end_char": 557
+      },
+      {
+        "id": 6,
+        "chunk_id": 6,
+        "document_id": 1,
+        "chunk_index": 6,
+        "content": "## 多轮和流式\n\n多轮 RAG 使用最近 5 轮历史理解追问，必要时改写问题后重新检索。用户原问题和用于检索的改写问题分别保存。流式回答通过 SSE 发送 delta、done 和 error 事件。只有正常完成并通过引用编号校验后才保存本轮历史，再发送 done。停止或生成失败的回答不作为成功轮次保存。\n",
+        "source_name": "pilot.md",
+        "page_number": null,
+        "start_char": 557,
+        "end_char": 712
+      }
+    ],
+    "total": 6
+  }
+}

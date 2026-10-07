@@ -1,12 +1,12 @@
 import os
-from pathlib import Path
+from config import BASE_DIR
 
 from dotenv import load_dotenv
 from openai import OpenAI,AsyncOpenAI
 import json
 import re
 
-load_dotenv(Path(__file__).resolve().parent / ".env")
+load_dotenv(BASE_DIR / ".env")
 
 
 def answer_question(content: str, question: str, history: list):
@@ -184,6 +184,7 @@ def answer_with_chunks(
                 "没有依据时不要添加引用。"
                 "历史对话只用于理解追问，不作为事实依据。"
                 "回答的事实依据和引用必须来自本次参考资料。"
+                "不同文档说法冲突时分别说明各自观点并引用来源，不擅自合并或选择。"
             ),
         },
         {
@@ -291,11 +292,13 @@ async def stream_answer_with_chunks(
                 "有资料依据的回答，在对应句子末尾标注引用，例如 [1]。"
                 "只能使用资料中提供的 citation_id，不得编造引用编号。"
                 "没有依据时不要添加引用。"
+                "历史只用于理解追问，不作为事实依据。不同文档说法冲突时分别说明并引用各自来源。"
             ),
         },
         {
             "role": "user",
             "content": (
+                f"历史对话（仅用于理解问题）：\n{history_text}\n\n"
                 f"参考资料（JSON）：\n"
                 f"{json.dumps(sources, ensure_ascii=False)}\n\n"
                 f"用户问题：{question}"

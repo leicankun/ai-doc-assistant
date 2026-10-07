@@ -3,11 +3,11 @@ import sqlite3
 import logging
 from fastapi import APIRouter, Depends, HTTPException
 from openai import APIError, APITimeoutError
-from database import get_connection
+from storage.database import get_connection
 from schemas import SearchRequest
-from bm25 import search_bm25, tokenize
-from retrieval import search_dense, search_hybrid
-from indexing import index_document
+from retrieval.bm25 import search_bm25, tokenize
+from retrieval.engine import search_dense, search_hybrid
+from retrieval.indexing import index_document
 from routers.chunks import list_document_chunks
 
 logger = logging.getLogger(__name__)
