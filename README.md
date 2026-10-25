@@ -1,8 +1,20 @@
 # 技术文档问答助手
 
+## MySQL 运行与迁移
+
+业务存储已切换为 **MySQL 8.0.13+（SQLAlchemy 连接池 + PyMySQL）**。先配置 `.env` 的 `MYSQL_*` 项并创建项目专用空库；已有 `documents.db` 使用迁移工具导入，保留文档及分块 ID。配置、迁移、校验和测试命令见 [MySQL 使用说明](docs/mysql.md)。Chroma 和上传目录仍沿用原路径；历史评测与离线单元测试显式使用隔离 SQLite。
+
+本机已配置项目独立实例 `127.0.0.1:13306` 和账号 `ai_doc_user`。重启电脑后，先执行 `.\.venv\Scripts\python.exe scripts/local_mysql.py start`，再启动后端；密码保存在本机 `.env`，实例数据在被 Git 忽略的 `.local_mysql/`。
+
+## Agentic RAG 真实模型评测
+
+新增 [固定题集与运行说明](evals/agentic_benchmark/README.md)：12 份合成文档、30 道单轮题，真实模型对照普通 RAG 与 Agentic RAG，并补充检索重排消融与两组 8 轮会话测试。运行命令为 `python evals/run_agentic_benchmark.py --workers 3`，使用项目模型配置并产生实际调用费用；测试在隔离存储中执行，保留原始答案、工具过程、供应商 usage 和评分记录。
+
+正式运行报告见 [2026-10-13 评测报告](evals/results/20261013T114543Z-agentic/REPORT.md)。质量分数来自固定规则的同模型自动评审，适用于本合成测试集；评分局限与失败案例一并记录，不作为生产准确率承诺。
+
 ## 多文档知识库
 
-侧边栏的“知识库”支持创建、重命名、删除，点击知识库切换到知识库聊天。展开“成员文档”可多选已有文档添加，或移出成员；上传仍从侧边栏完成，上传后再添加到库。文档可属于多个知识库，SQLite 保存关联，Chroma 复用已有分块向量，不重复生成向量。
+侧边栏的“知识库”支持创建、重命名、删除，点击知识库切换到知识库聊天。展开“成员文档”可多选已有文档添加，或移出成员；上传仍从侧边栏完成，上传后再添加到库。文档可属于多个知识库，MySQL 保存关联，Chroma 复用已有分块向量，不重复生成向量。
 
 成员的“处理”按钮进入分块/向量入库；“文档处理与检索”同时提供当前知识库的跨文档检索。BM25 要求全部成员已有分块；dense/hybrid 要求全部成员索引有效。空库或未就绪返回 409，并列出待处理文档；不悄悄跳过。Top-K 是整个库的返回总数，BM25 在全库分块上计算统计量，dense 按成员 document_id 过滤，hybrid 融合全库两路排名。
 
@@ -20,10 +32,14 @@
 | GET | `/knowledge-bases/{id}/sessions/{session_id}/rag-history` | 会话历史 |
 | POST | `/knowledge-bases/{id}/ask-rag/chat` | 多轮非流式问答 |
 | POST | `/knowledge-bases/{id}/ask-rag/chat/stream` | 多轮 SSE 问答 |
+| POST | `/knowledge-bases/{id}/agent` | Agent 非流式问答 |
+| POST | `/knowledge-bases/{id}/agent/stream` | Agent SSE 问答（当前知识库聊天使用） |
 
 检索/单轮输入沿用 `SearchRequest`，多轮输入沿用 `RagChatRequest`。流式事件为 `meta`、`delta`、`done`、`error`，正常完成和引用校验成功后才保存历史并发出 done。数据库新增表在启动时自动创建，无需删除旧数据库。
 
-基于 FastAPI 和 Vue 的文档信息管理练习项目，已实现文档信息的创建、查询、修改和删除，使用 SQLite 持久化保存数据，支持 Markdown 和文字型 PDF 文件上传、正文读取和基于 DeepSeek 的单篇文档问答。
+当前知识库聊天使用 Agent SSE，输入为 `{"question":"部署需要什么条件？","session_id":1}`。Agent 仍自主选择目录、检索和上下文工具；模型通过流式 API 返回内容，前端逐段展示回答，并实时展示工具执行记录。除上述事件外，Agent 还发送 `status`（进度）、`tool_start`、`tool_call`（已执行的工具结果）和 `reset`（清除需要纠正的临时回答）。回答生成阶段仅展示 JSON 中的 `answer`，完成后按后端引用校验结果更新正文和引用。目录与依据不足提示由后端生成。只有校验和历史保存均成功才发送 `done`；失败发送 `error`，断开连接后协作取消，当前未完成问答不保存。原非流式 Agent 接口保留。
+
+基于 FastAPI 和 Vue 的文档信息管理练习项目，已实现文档信息的创建、查询、修改和删除，使用 MySQL 持久化保存数据，支持 Markdown 和文字型 PDF 文件上传、正文读取和基于 DeepSeek 的单篇文档问答。
 
 ## 环境准备（Windows PowerShell）
 
@@ -70,17 +86,17 @@ npm.cmd run dev
 
 打开终端显示的前端地址（通常是 http://localhost:5173）。前端会请求 `http://127.0.0.1:8000/documents`；后端允许来自 `localhost:5173` 和 `127.0.0.1:5173` 的跨域请求。Node.js 版本需满足 `frontend/package.json` 中的 `engines` 要求。
 
-页面会在打开时加载文档列表；可以新增、编辑、取消编辑、删除文档，也可以手动刷新列表。提交成功后会重新读取列表。新增、编辑和删除会修改 SQLite 中的数据；取消编辑不会发送请求。
+页面会在打开时加载文档列表；可以新增、编辑、取消编辑、删除文档，也可以手动刷新列表。提交成功后会重新读取列表。新增、编辑和删除会修改 MySQL 中的数据；取消编辑不会发送请求。
 
 页面以对话为主：侧边栏提供上传、文档列表、处理状态和编辑/删除菜单；点击文档同步选择聊天与检索对象。主区域展示多轮流式问答，会话和设置位于顶部，输入框位于底部。分块、入库、检索及单轮问答在“文档处理与检索”中；全文问答从文档菜单进入。手机宽度下侧栏可展开/收起。
 
 侧栏各区按内容顺序排列，文档列表独立滚动，成员文档和行内管理菜单不会覆盖相邻区。新建会话、创建/重命名知识库、添加成员、保存文档信息后自动收起对应表单；失败时保留输入。聊天弹出表单和设置支持点击外部或 Esc 收起，设置另有“完成”按钮。
 
-删除文档会同步清理上传原文件、SQLite 分块、Chroma 中该文档的全部向量（含旧分块向量）、全文问答历史、RAG 历史和文档会话，不影响其他文档。原文件或向量已缺失时仍可删除。清理失败返回错误并回滚 SQLite，文档记录保留以便重试；文件系统和 Chroma 不参与 SQLite 事务，已经完成的外部清理不会回滚。删除选中的文档后，前端会清空对应全文问答及编辑状态。
+删除文档会同步清理上传原文件、MySQL 分块、Chroma 中该文档的全部向量（含旧分块向量）、全文问答历史、RAG 历史和文档会话，不影响其他文档。原文件或向量已缺失时仍可删除。清理失败返回错误并回滚 MySQL，文档记录保留以便重试；文件系统和 Chroma 不参与 MySQL 事务，已经完成的外部清理不会回滚。删除选中的文档后，前端会清空对应全文问答及编辑状态。
 
 文档列表和检索面板显示处理状态及分块数。列表/详情接口新增 `chunk_count`、`chunk_version`、`indexed_version`、`processing_status` 和 `processing_status_label`。无分块为“未分块”；有分块、尚无成功索引版本为“待入库”；两个版本相同为“已入库”；版本不同或索引写入中断为“索引过期”。重新分块时版本递增，向量写入、旧记录清理及校验成功后才记录索引版本。过期或待入库的 dense/hybrid 检索（含 RAG）返回 409，BM25 仍可读取当前分块。前端分块/入库后自动刷新状态。
 
-启动后端时会自动为旧数据库补充版本字段，保留原数据；已有分块但没有版本记录的文档保守显示“待入库”，需重新入库一次。状态记录处理流程，不会在每次列表查询时扫描 Chroma；若手动删除/修改 Chroma 或上传文件，请重新生成分块并入库恢复一致性。
+启动后端时自动创建不存在的 MySQL 表；旧 SQLite 通过迁移工具导入并保留处理版本。已有分块但没有版本记录的文档保守显示“待入库”，需重新入库一次。状态记录处理流程，不会在每次列表查询时扫描 Chroma；若手动删除/修改 Chroma 或上传文件，请重新生成分块并入库恢复一致性。
 
 检查前端构建：
 
@@ -88,6 +104,42 @@ npm.cmd run dev
 cd frontend
 npm.cmd run build
 ```
+
+## 检索重排（Reranker）
+
+单文档、知识库及 Agent 检索均已接入 `retrieval/reranker.py`：默认召回最多 30 个候选（可配置），Hybrid 使用 RRF 融合保留候选，再调用百炼文本重排，并用 MMR 选取最终 Top-K。BM25、Dense 复用该流程；无需重新生成文档向量。结果保留 `rerank_score`、`rerank_model`、`retrieval_rank`，`rank` 表示最终返回名次，原有评分和来源保留。
+
+重排前统一清理候选：过滤空白块和明确的纯 Markdown 标题块（`#` 标题或下划线式标题），同一文档内的正文在统一换行和去除首尾空行后精确去重，保留原排名靠前的分块及其来源。保留跨文档相同正文、正文缩进和相邻重叠块，不进行语义去重。关闭重排时仍执行清理。清理只作用于本次已召回的候选，数量不足时不补查；已有索引无需重建。
+
+MMR 默认启用，仅在重排开启且 `1 < top_k < 候选数` 时参与选择：重排接口先返回全部候选的分数；第一项保留最高相关性片段，其后逐轮最大化 `λ × rerank_score − (1−λ) × 与全部已选片段的最大非负余弦相似度`。默认 `λ=0.8`，更偏重相关性。新增 `rerank_rank` 保存 MMR 前的名次、`mmr_score` 保存选入当时的分数；最终结果不一定按原重排分数降序排列。MMR 会减少相似结果占用名额，但不保证不同版本或不同文档的覆盖。
+
+片段相似度复用 Chroma 已有向量，不增加 Embedding API 调用。任一候选向量缺失、正文或来源不一致、向量无效或存储读取失败时，本次整体回退普通重排 Top-K 并记录日志；未入库的 BM25 仍可使用。MMR 未执行时不添加 `mmr_score` / `rerank_rank`。`MMR_LAMBDA=1` 或关闭 MMR 可恢复普通模型排序；关闭重排也同时跳过 MMR。
+
+默认启用，并复用 `DASHSCOPE_API_KEY`；从百炼 `DASHSCOPE_BASE_URL` 的主机名推导独立重排接口。非百炼地址需要显式配置 `RERANK_URL`。可在 `.env` 设置：
+
+```dotenv
+RERANK_ENABLED=true
+RERANK_MODEL=gte-rerank-v2
+RERANK_CANDIDATES=30
+RERANK_TIMEOUT=15
+MMR_ENABLED=true
+MMR_LAMBDA=0.8
+# RERANK_API_KEY=独立重排服务的密钥（可选，默认复用百炼密钥）
+# RERANK_URL=所在地域的完整重排接口地址
+```
+
+默认采用已在本项目真实联调通过的 `gte-rerank-v2`。也支持 `qwen3-rerank` 的请求和响应格式，但必须将 `RERANK_URL` 设置为该模型对应地域的完整 `/reranks` 地址；模型可用性取决于账户和地域。接口结构参考[百炼官方文本重排文档](https://www.alibabacloud.com/help/en/model-studio/text-rerank-api)。
+
+重排超时返回 504，调用或响应校验失败返回 502，配置缺失返回 503，不静默忽略重排失败。Agent 将剩余检索时间预算传给重排。设置 `RERANK_ENABLED=false` 并重启后端可恢复原检索流程。没有加入未经评测的分数阈值：返回 Top-K 不代表其中每条都有答案，重排也不保证跨文档覆盖或识别无答案问题。
+
+离线回归测试需关闭真实重排请求；新增重排测试在隔离环境中显式启用并模拟外部响应：
+
+```powershell
+$env:RERANK_ENABLED='false'
+.\.venv\Scripts\python.exe -m unittest discover -s tests -q
+```
+
+真实重排联调记录保存在 `artifacts/reranker-real-check.json`，只验证服务调用和结果映射，不代表整体检索质量已改善。
 
 ## 上传和问答
 
@@ -107,7 +159,7 @@ npm.cmd run build
 
 ```text
 main.py                 创建 FastAPI 应用、注册文档路由和健康检查
-config.py               项目根目录、SQLite、上传文件和 Chroma 路径
+config.py               项目根目录、MySQL、上传文件和 Chroma 路径
 schemas.py              文档、会话、问答和搜索请求校验
 storage/database.py            初始化数据库、提供连接依赖
 storage/document_status.py     文档分块数量与处理状态
@@ -128,21 +180,21 @@ retrieval/chunking.py             文本分块及字符位置
 retrieval/bm25.py                 中文分词、词频统计、BM25 排序
 retrieval/embedding.py            百炼向量调用，分批处理及结果校验
 storage/vector_store.py         本地 Chroma 集合配置
-retrieval/indexing.py             读取 SQLite 分块、生成向量并更新 Chroma
+retrieval/indexing.py             读取 MySQL 分块、生成向量并更新 Chroma
 retrieval/engine.py               Dense、Hybrid 检索及 RRF 排名融合
 tests/test_indexing.py  入库、清理、隔离和失败处理回归测试
 tests/test_retrieval.py  隔离数据库及模拟模型的回归测试
 practice/practice_llm.py         独立模型调用练习
 frontend/               Vue 前端及其独立的 package.json
-practice/practice_db.py          sqlite3 插入与查询练习
+practice/practice_db.py          MySQL 插入与查询练习
 practice/practice_orm.py         SQLAlchemy 会话、消息和 JOIN 练习
 requirements.txt        当前项目虚拟环境的依赖版本
 ```
 
 ## 连接管理与路由组织
 
-- 访问数据库的文档接口通过 Depends(get_connection) 获取独立的 SQLite 连接。
-- get_connection 设置 sqlite3.Row，通过 yield 提供连接，并在 finally 中关闭连接。
+- 访问数据库的文档接口通过 Depends(get_connection) 获取独立的 MySQL 连接。
+- get_connection 通过 yield 提供独立 MySQL 连接，并在 finally 中回滚未提交事务、归还连接池；返回行支持字段名访问。
 - 创建、修改和删除接口仍自行调用 commit()；连接依赖不自动提交。
 - 同步依赖配置 check_same_thread=False，以适应框架线程调度；不跨请求共享连接。
 - APIRouter 使用 /documents 前缀，在接口文档中归入“文档”分组。
@@ -155,7 +207,7 @@ requirements.txt        当前项目虚拟环境的依赖版本
 | --- | --- | --- | --- |
 | GET | /health | 检查服务状态 | 200 |
 | GET | /documents | 查询全部文档信息，返回 items 和 total | 200 |
-| POST | /documents | 创建文档信息，由 SQLite 分配 ID | 201 |
+| POST | /documents | 创建文档信息，由 MySQL 分配 ID | 201 |
 | GET | /documents/{document_id} | 根据 ID 查询单条文档 | 200 |
 | PUT | /documents/{document_id} | 更新指定文档的标题和类型，保留 ID | 200 |
 | DELETE | /documents/{document_id} | 删除文档，返回提示和被删除文档的 ID | 200 |
@@ -201,12 +253,12 @@ POST 和 PUT 均须提交以下 JSON 请求体：
 
 ## 数据存储
 
-- 文档接口使用 Python 自带的 sqlite3；独立 ORM 练习使用 SQLAlchemy，安装 requirements.txt 时一并安装。
-- 数据库文件由 config.py 的 DB_PATH 指定，位于项目目录下，名称为 documents.db，包含 documents 表及 id、title、file_type、stored_name 四列。
-- 服务加载时调用 init_db()，创建不存在的数据库和表，并为旧表补充 stored_name 字段，不清空已有记录。
+- 文档接口统一通过 `storage.database` 使用 MySQL 连接池；SQLAlchemy 管理引擎和表定义，PyMySQL 执行参数化 SQL。
+- `config.database_url()` 从 `.env` 的 `MYSQL_HOST/PORT/USER/PASSWORD/DATABASE` 读取连接设置；`DB_PATH` 只用于旧 SQLite 数据迁移。
+- 服务启动时调用 `init_db()` 创建不存在的表；数据库本身需预先创建，已有 MySQL 表的结构变更需单独迁移。
 - 创建、修改和删除操作提交到数据库，服务重启或自动重载后仍然保留。
-- id 为 INTEGER PRIMARY KEY，由 SQLite 在插入时自动分配；删除后的编号可能被复用。
-- 本地数据库及事务日志由 .gitignore 忽略，仓库保留建表代码。
+- 主键为 BIGINT AUTO_INCREMENT；迁移时显式保留旧 ID，后续插入由 MySQL 分配。
+- 旧 SQLite 文件和连接密码由 `.gitignore` 忽略；完整表定义在 `storage/schema.py`。
 
 文件正文保存在 `uploads/`，通过数据库中的 `stored_name` 关联；旧的纯信息记录该字段为 NULL。上传文件目录已被 Git 忽略。
 
@@ -232,9 +284,9 @@ POST 和 PUT 均须提交以下 JSON 请求体：
 .\.venv\Scripts\python.exe practice/practice_orm.py
 ```
 
-使用同一个 documents.db，创建尚不存在的 chat_sessions 和 chat_messages 表。
+使用同一个 MySQL 数据库中的 chat_sessions 和 chat_messages 表，复用 `storage/schema.py` 定义。
 每次运行新增一个聊天会话和两条消息，通过 session_id 外键关联，再用 JOIN 查询本次会话的标题、角色和消息内容。
-引擎在新连接建立时开启 SQLite 外键检查，echo=True 会打印实际执行的 SQL。
+练习脚本使用 SQLAlchemy Session 管理 MySQL 事务，关联由应用层维护。
 聊天会话和消息目前仅用于独立脚本练习，尚未提供对应的 HTTP 接口。
 
 ## 依赖维护
@@ -262,7 +314,7 @@ SQLite 的 sqlite3 和 pathlib 属于 Python 标准库，不需要用 pip 安装
 
 提问请求现在必须携带大于 0 的 `session_id`。后端先检查会话是否属于当前文档，不匹配返回 404；缺少或非法会话编号返回 422。成功回答写入 `question_answers`，记录文档、会话、问题、回答和创建时间。
 
-`document_sessions` 保存会话信息。初始化数据库时自动为旧的 `question_answers` 表补充可空的 `session_id`；原记录保留为 NULL，通过文档历史接口可查看。时间在数据库中保存为 UTC，页面转换为本地时间。会话历史用于保存、展示和多轮问答上下文。
+`document_sessions` 保存会话信息。`question_answers.session_id` 可空；迁移旧记录时保留该字段，无字段的更早版本使用 NULL。时间在数据库中保存为 UTC，页面转换为本地时间。会话历史用于保存、展示和多轮问答上下文。
 
 验收：同一文档创建 A、B 两个会话，分别提问并切换查看；每个会话只显示自己的记录。重新打开页面并选择会话后，记录仍可读取。未选择会话时页面禁用提问。
 
@@ -275,7 +327,7 @@ SQLite 的 sqlite3 和 pathlib 属于 Python 标准库，不需要用 pip 安装
 | POST | /documents/{document_id}/chunks | 无需请求体，重新生成并保存当前文档的分块，返回 document_id、total、message |
 | GET | /documents/{document_id}/chunks | 按 chunk_index 升序查询，返回 document_id、items、total |
 
-`document_chunks` 保存 id、document_id、chunk_index、content、source_name、page_number、start_char、end_char。查询额外返回 chunk_id（id 的别名）。PDF 页码从 1 开始，字符范围相对于该页提取文本；Markdown 页码为空，字符范围相对于整篇正文。范围均为左闭右开。旧表启动时自动补字段，旧记录来源字段为 NULL，需要重新生成分块。块序号从 1 开始，同一文档的块序号唯一；重新生成后数据库 ID 不保证不变。重新生成时，在同一事务中删除旧分块并插入新分块，失败会回滚。文档存在但未分块时查询返回空列表；文档不存在返回 404，空白正文生成返回 422。
+`document_chunks` 保存 id、document_id、chunk_index、content、source_name、page_number、start_char、end_char。查询额外返回 chunk_id（id 的别名）。PDF 页码从 1 开始，字符范围相对于该页提取文本；Markdown 页码为空，字符范围相对于整篇正文。范围均为左闭右开。迁移时保留原来源字段；更早版本缺少来源字段时保持 NULL，需要重新生成分块。块序号从 1 开始，同一文档的块序号唯一；重新生成后数据库 ID 不保证不变。重新生成时，在同一事务中删除旧分块并插入新分块，失败会回滚。文档存在但未分块时查询返回空列表；文档不存在返回 404，空白正文生成返回 422。
 
 分块接口负责保存分块，后续可用于 BM25、向量检索和 RAG；原全文问答仍保留。分块接口没有分页，删除文档也尚未级联清理分块；当前未声明分块表的外键约束。
 
@@ -329,7 +381,7 @@ PDF 通过 pypdf 逐页提取正文，再复用同一套问答与会话逻辑。
 {"question":"SQLite 如何保存数据？","mode":"bm25","top_k":5}
 ```
 
-支持 bm25、dense 和 hybrid，默认 bm25。top_k 为 1—20，默认 5。问题去除首尾空白后为 1—1000 字符。接口从 SQLite 读取指定文档的分块，返回 document_id、question、mode、items、total。每项包含正文、来源和从 1 开始的 rank；各模式的评分字段见下文。BM25 无词语匹配返回空列表；未分块返回 409，文档不存在返回 404，非法输入返回 422；BM25 模式下纯标点问题也返回 422。
+支持 bm25、dense 和 hybrid，默认 bm25。top_k 为 1—20，默认 5。问题去除首尾空白后为 1—1000 字符。接口从 MySQL 读取指定文档的分块，返回 document_id、question、mode、items、total。每项包含正文、来源和从 1 开始的 rank；各模式的评分字段见下文。BM25 无词语匹配返回空列表；未分块返回 409，文档不存在返回 404，非法输入返回 422；BM25 模式下纯标点问题也返回 422。
 
 中文使用 jieba 搜索分词，英文标识符转小写，使用正值 IDF 的 BM25 评分。统计结果按完整语料缓存，最多 8 组；分块变化时重新统计。评分只代表词语匹配程度，不代表资料足以回答问题。尚未配置停用词或专有名词词典。
 
@@ -346,6 +398,9 @@ EMBEDDING_MODEL=text-embedding-v4
 基础地址以 `/compatible-mode/v1` 结尾，不追加 `/embeddings`，以账号控制台对应地域配置为准。不要将真实密钥提交到 Git。
 
 `embedding.embed_texts(texts)` 接收非空白文本列表，每批最多 10 条，返回与输入顺序一致的 1024 维向量。空列表直接返回空列表。函数校验返回编号、数量、维度、有限数值及非零向量，当前固定支持 text-embedding-v4。调用有 30 秒超时配置，不自动重试；调用失败由调用方处理。
+
+本地 BGE-M3 的独立部署、索引和检索命令见 [本地模型说明](docs/bge-m3.md)。它使用独立环境和
+`document_chunks_bge_m3_1024` 集合，现有 API、RAG 和 Agent 仍使用百炼，便于后续比较两套检索。
 
 `vector_store.get_collection()` 打开 `chroma_data/` 下的持久化集合 `document_chunks_v4_1024`，使用 cosine 距离，禁用自动 Embedding，写入时需自行提供向量。这个目录已被 Git 忽略。
 
@@ -366,7 +421,7 @@ EMBEDDING_MODEL=text-embedding-v4
 
 ## 文档向量入库函数
 
-`indexing.index_document(document_id, connection)` 接收文档 ID 和设置了 `sqlite3.Row` 的 SQLite 连接。它读取该文档已保存的分块，调用 `embed_texts()` 生成向量，再通过 `get_collection()` 写入本地 Chroma。
+`indexing.index_document(document_id, connection)` 接收文档 ID 和统一数据库连接。它读取 MySQL 中已保存的分块，调用 `embed_texts()` 生成向量，再通过 `get_collection()` 写入本地 Chroma。
 
 - 记录 ID 为 `doc:{document_id}:chunk:{chunk_id}`，保存向量、正文以及分块来源。没有页码等信息时省略对应元数据字段。
 - 每批最多写入 100 条；`upsert` 更新已有 ID 或新增记录，重复执行不会增加相同 ID 的记录，但会重新调用 Embedding API。

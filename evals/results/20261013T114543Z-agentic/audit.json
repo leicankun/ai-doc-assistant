@@ -1,0 +1,40 @@
+{
+  "successful_answers_checked": 91,
+  "citations_checked": 217,
+  "identity_issues": [],
+  "heading_only_chunk_count": 12,
+  "heading_only_chunk_ids": [
+    1,
+    8,
+    15,
+    22,
+    29,
+    37,
+    44,
+    52,
+    60,
+    67,
+    74,
+    81
+  ],
+  "retrieval_heading_only": {
+    "bm25-rerank-True-c30": {
+      "returned_items": 150,
+      "heading_only_items": 53
+    },
+    "dense-rerank-True-c30": {
+      "returned_items": 150,
+      "heading_only_items": 51
+    },
+    "hybrid-rerank-False-c30": {
+      "returned_items": 150,
+      "heading_only_items": 42
+    },
+    "hybrid-rerank-True-c30": {
+      "returned_items": 150,
+      "heading_only_items": 51
+    }
+  },
+  "agent_single_turn_context_omission_count": 8,
+  "note": "只验证编号、正文和来源身份，不验证语义支持；语义支持仍见自动评分及复核备注。answers.jsonl的retrieval_metrics是原始工具召回覆盖，本文件另计预算筛选后实际纳入上下文的证据。"
+}

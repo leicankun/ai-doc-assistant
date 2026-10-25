@@ -10,10 +10,9 @@ import os
 
 from dotenv import load_dotenv
 from openai import OpenAI
-import sqlite3
 from contextlib import closing
 
-from config import DB_PATH
+from storage.database import connect
 
 
 load_dotenv(PROJECT_ROOT / ".env")
@@ -27,8 +26,7 @@ if not api_key or not base_url:
 # 上次上传的 11111.md，文档 ID 为 5。
 document_id = 5
 
-with closing(sqlite3.connect(DB_PATH)) as connection:
-    connection.row_factory = sqlite3.Row
+with closing(connect()) as connection:
 
     rows = connection.execute(
         """

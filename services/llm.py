@@ -159,6 +159,7 @@ def answer_with_chunks(
             "start_char": chunk.get("start_char"),
             "end_char": chunk.get("end_char"),
             "content": chunk["content"],
+            **({'embedding_provider': chunk['embedding_provider']} if 'embedding_provider' in chunk else {}),
         })
     # 清除上一轮的引用编号，避免与本轮 [1]、[2] 混淆。
     history_text = json.dumps(
@@ -278,6 +279,7 @@ async def stream_answer_with_chunks(
             "start_char": chunk.get("start_char"),
             "end_char": chunk.get("end_char"),
             "content": chunk["content"],
+            **({'embedding_provider': chunk['embedding_provider']} if 'embedding_provider' in chunk else {}),
         })
 
     history_text = json.dumps([{ "question": t["question"], "answer": re.sub(r"\[\d+\]", "", t["answer"]) } for t in (history or [])], ensure_ascii=False)

@@ -1,0 +1,114 @@
+{
+  "passed": true,
+  "question": "自动向量入库失败后，原文件会被删除吗？",
+  "candidate_count": 18,
+  "items": [
+    {
+      "chunk_id": 3070,
+      "document_id": 11,
+      "chunk_index": 7,
+      "content": "## 失败后的恢复\n\n自动入库失败并不意味着上传文件必须删除。系统可以保留原文件和已有分块，展示失败提示，让用户检查模型配置或网络后重试。重试时使用已有记录标识更新向量，避免不断追加重复记录。恢复完成后还要重新检查向量集合与分块集合是否一致。只有验证完整的当前版本，才能把文档标记为已入库。\n",
+      "source_name": "上传后的文档处理流程.md",
+      "page_number": null,
+      "start_char": 834,
+      "end_char": 980,
+      "score": 17.918212998156626,
+      "matched_terms": [
+        "入库",
+        "删除",
+        "原文",
+        "原文件",
+        "后",
+        "向量",
+        "失败",
+        "文件",
+        "自动"
+      ],
+      "rank": 1,
+      "retrieval_rank": 1,
+      "rerank_score": 0.8466323956334096,
+      "rerank_model": "gte-rerank-v2"
+    },
+    {
+      "chunk_id": 3057,
+      "document_id": 10,
+      "chunk_index": 1,
+      "content": "# 从阅读到实践：学习笔记\n\n本文是原创测试资料，用于检查知识库上传后自动分块和向量入库，不代表教育研究结论。\n\n",
+      "source_name": "从阅读到实践：学习笔记.md",
+      "page_number": null,
+      "start_char": 0,
+      "end_char": 57,
+      "score": 7.25389732463433,
+      "matched_terms": [
+        "入库",
+        "后",
+        "向量",
+        "自动"
+      ],
+      "rank": 2,
+      "retrieval_rank": 2,
+      "rerank_score": 0.17989359382212508,
+      "rerank_model": "gte-rerank-v2"
+    },
+    {
+      "chunk_id": 3069,
+      "document_id": 11,
+      "chunk_index": 6,
+      "content": "## 版本与处理状态\n\n示例系统通过分块版本和入库版本判断索引是否有效。重新生成分块时，分块版本递增；向量全部写入并校验成功后，入库版本才更新。两个版本一致表示当前分块已经入库。没有分块时不能检索，有分块但没有有效索引时仍可使用关键词检索，语义检索和混合检索需要等待入库完成。\n\n",
+      "source_name": "上传后的文档处理流程.md",
+      "page_number": null,
+      "start_char": 694,
+      "end_char": 834,
+      "score": 4.935155510808996,
+      "matched_terms": [
+        "入库",
+        "后",
+        "向量"
+      ],
+      "rank": 3,
+      "retrieval_rank": 4,
+      "rerank_score": 0.1423660004446517,
+      "rerank_model": "gte-rerank-v2"
+    },
+    {
+      "chunk_id": 3065,
+      "document_id": 11,
+      "chunk_index": 2,
+      "content": "## 上传校验与文件保存\n\n示例系统接受 UTF-8 Markdown 和文字型 PDF。上传前需要检查扩展名，读取文件后检查是否为空。Markdown 需要正确解码，PDF 需要能够提取文本；加密文档和纯图片扫描件不属于当前支持范围。通过检查后，原文件使用随机名称保存，数据库记录保留用户看到的标题和实际存储文件名。文档标题用于展示，存储文件名用于定位文件。\n\n",
+      "source_name": "上传后的文档处理流程.md",
+      "page_number": null,
+      "start_char": 54,
+      "end_char": 236,
+      "score": 6.386055249711003,
+      "matched_terms": [
+        "原文",
+        "原文件",
+        "后",
+        "文件"
+      ],
+      "rank": 4,
+      "retrieval_rank": 3,
+      "rerank_score": 0.1381218474595598,
+      "rerank_model": "gte-rerank-v2"
+    },
+    {
+      "chunk_id": 3064,
+      "document_id": 11,
+      "chunk_index": 1,
+      "content": "# 上传后的文档处理流程\n\n本文是原创测试资料，用于验证自动文档处理，内容描述一个示例知识库的业务规则。\n\n",
+      "source_name": "上传后的文档处理流程.md",
+      "page_number": null,
+      "start_char": 0,
+      "end_char": 54,
+      "score": 3.2781643344355578,
+      "matched_terms": [
+        "后",
+        "自动"
+      ],
+      "rank": 5,
+      "retrieval_rank": 6,
+      "rerank_score": 0.1315558238233272,
+      "rerank_model": "gte-rerank-v2"
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+# Isolated environment: .venv-bge (see docs/bge-m3.md).
+# Install CUDA PyTorch separately from https://download.pytorch.org/whl/cu128.
+sentence-transformers==5.7.0
+transformers==4.57.6
+torch==2.11.0
+sentencepiece==0.2.2

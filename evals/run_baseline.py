@@ -21,6 +21,8 @@ import chromadb
 from storage import database
 from storage import vector_store
 from routers import documents, document_management, chunks
+from routers import search as search_router
+from retrieval.mmr import mmr_weight
 
 
 def write_json(path, value):
@@ -35,9 +37,24 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument('--mode', choices=['bm25', 'dense', 'hybrid'], default='hybrid')
     parser.add_argument('--top-k', type=int, default=5)
+    parser.add_argument('--rerank', choices=['on', 'off'], default='on',
+                        help='关闭时同时保留原始候选池，用于分离精排与候选池扩大的影响。')
+    parser.add_argument('--candidates', type=int, default=None,
+                        help='召回候选池大小；默认沿用生产配置（精排开启时取 RERANK_CANDIDATES，关闭时等于 top-k）。')
+    parser.add_argument('--limit', type=int, default=None,
+                        help='只跑前 N 题，用于在正式对照前确认配置生效，避免产生完整费用。')
     args = parser.parse_args()
     if not 1 <= args.top_k <= 20:
         parser.error('top-k must be 1..20')
+    os.environ['RERANK_ENABLED'] = 'true' if args.rerank == 'on' else 'false'
+    rerank_on = args.rerank == 'on'
+    default_pool = int(os.getenv('RERANK_CANDIDATES', '30')) if rerank_on else args.top_k
+    pool = args.candidates if args.candidates is not None else default_pool
+    if not 1 <= pool <= 100:
+        parser.error('candidates must be 1..100')
+    if pool < args.top_k:
+        parser.error('candidates must be >= top-k')
+    os.environ['RERANK_CANDIDATES'] = str(pool)
     questions_path = ROOT / 'evals/questions.jsonl'
     questions = [json.loads(line) for line in questions_path.read_text(encoding='utf-8').splitlines() if line.strip()]
     assert len({q['id'] for q in questions}) == len(questions)
@@ -47,19 +64,30 @@ def main():
         for evidence in q['evidence']:
             assert evidence['quote'] in source, q['id']
 
-    output = ROOT / 'evals/results' / (datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ') + '-' + args.mode)
+    if args.limit is not None:
+        if args.limit < 1:
+            parser.error('limit must be >= 1')
+        questions = questions[:args.limit]
+
+    output = ROOT / 'evals/results' / (datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')
+                                       + f'-{args.mode}-rr{args.rerank}-c{pool}'
+                                       + (f'-limit{args.limit}' if args.limit else ''))
     output.mkdir(parents=True, exist_ok=False)
     metadata = {
         'started_at_utc': datetime.now(timezone.utc).isoformat(),
         'git_commit': subprocess.check_output(['git','rev-parse','HEAD'], cwd=ROOT, text=True).strip(),
         'working_tree': subprocess.check_output(['git','status','--short'], cwd=ROOT, text=True).strip(),
         'mode': args.mode, 'top_k': args.top_k, 'chunk_size': 500, 'overlap_max': 100,
-        'rrf_k': 60, 'candidate_k': max(20, args.top_k),
+        'rrf_k': 60, 'recall_candidates': pool,
+        'rerank_enabled': rerank_on,
+        'rerank_model': os.getenv('RERANK_MODEL', 'gte-rerank-v2') if rerank_on else None,
+        'mmr_enabled': rerank_on and mmr_weight() is not None,
+        'mmr_lambda': mmr_weight() if rerank_on else None,
         'embedding_model': os.getenv('EMBEDDING_MODEL', 'text-embedding-v4'), 'dimensions': 1024,
         'answer_model': os.getenv('DEEPSEEK_MODEL', 'deepseek-flash'),
         'dataset_sha256': hashlib.sha256(questions_path.read_bytes()).hexdigest(),
         'source_hashes': {q['document']: hashlib.sha256((questions_path.parent/q['document']).read_bytes()).hexdigest() for q in questions},
-        'code_hashes': {name: hashlib.sha256((ROOT/name).read_bytes()).hexdigest() for name in ['retrieval/chunking.py','retrieval/engine.py','retrieval/bm25.py','retrieval/embedding.py','services/llm.py','routers/search.py','routers/rag.py']},
+        'code_hashes': {name: hashlib.sha256((ROOT/name).read_bytes()).hexdigest() for name in ['retrieval/chunking.py','retrieval/engine.py','retrieval/bm25.py','retrieval/embedding.py','retrieval/reranker.py','retrieval/mmr.py','services/llm.py','routers/search.py','routers/rag.py']},
         'transport': 'FastAPI TestClient; real Embedding and chat APIs; isolated SQLite/Chroma',
     }
     write_json(output/'metadata.json', metadata)
@@ -69,9 +97,10 @@ def main():
         db = storage/'test.db'
         # Use a real in-memory Chroma store, avoiding Windows persistent-file locks.
         memory_client = chromadb.EphemeralClient()
-        with patch.object(database, 'DB_PATH', db), patch.object(vector_store, 'CHROMA_DIR', storage/'chroma'), \
+        with patch.object(database, 'init_db', side_effect=lambda: database.init_test_db(db)), patch.object(vector_store, 'CHROMA_DIR', storage/'chroma'), \
                 patch.object(vector_store.chromadb, 'PersistentClient', return_value=memory_client), \
-                patch.object(document_management, 'UPLOAD_DIR', storage), patch.object(chunks, 'UPLOAD_DIR', storage):
+                patch.object(document_management, 'UPLOAD_DIR', storage), patch.object(chunks, 'UPLOAD_DIR', storage), \
+                patch.object(search_router, 'candidate_count', lambda top_k: pool):
             database.init_db()
             app = FastAPI()
             app.include_router(documents.router)

@@ -22,8 +22,7 @@ class DocumentStatusTests(unittest.TestCase):
         self.addCleanup(folder.cleanup)
         self.root = Path(folder.name)
         self.path = self.root/'test.db'
-        with patch.object(database,'DB_PATH',self.path):
-            database.init_db()
+        database.init_test_db(self.path)
         self.db = sqlite3.connect(self.path,check_same_thread=False)
         self.db.row_factory = sqlite3.Row
         self.addCleanup(self.db.close)
@@ -179,9 +178,8 @@ class DocumentStatusTests(unittest.TestCase):
             db.execute('CREATE TABLE documents (id INTEGER PRIMARY KEY,title TEXT NOT NULL,file_type TEXT NOT NULL)')
             db.execute("INSERT INTO documents VALUES (1,'old','markdown')")
             db.commit()
-        with patch.object(database,'DB_PATH',legacy):
-            database.init_db()
-            database.init_db()
+        database.init_test_db(legacy)
+        database.init_test_db(legacy)
         with closing(sqlite3.connect(legacy)) as db:
             self.assertEqual(db.execute('SELECT title,chunk_version,indexed_version FROM documents').fetchone(),('old',0,None))
 

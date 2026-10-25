@@ -1,0 +1,65 @@
+{
+  "arms": {
+    "rag": {
+      "questions": 2,
+      "request_success": 2,
+      "judge_success": 2,
+      "task_pass": 1,
+      "strict_pass": 1,
+      "point_coverage_mean_scored": 0.8333,
+      "supported_citations": 2,
+      "citation_scored_questions": 2,
+      "unsupported_answer_count": 0,
+      "latency_all_attempts_seconds": {
+        "p50": 8.927,
+        "p95": 9.178
+      },
+      "latency_success_seconds": {
+        "p50": 8.927,
+        "p95": 9.178
+      },
+      "chat_tokens_total": 1542,
+      "chat_tokens_mean": 771,
+      "tool_calls_mean": 0,
+      "categories": {
+        "direct": {
+          "n": 2,
+          "task_pass": 1,
+          "strict_pass": 1
+        }
+      }
+    },
+    "agent": {
+      "questions": 2,
+      "request_success": 2,
+      "judge_success": 2,
+      "task_pass": 2,
+      "strict_pass": 2,
+      "point_coverage_mean_scored": 1.0,
+      "supported_citations": 2,
+      "citation_scored_questions": 2,
+      "unsupported_answer_count": 0,
+      "latency_all_attempts_seconds": {
+        "p50": 14.304,
+        "p95": 16.068
+      },
+      "latency_success_seconds": {
+        "p50": 14.304,
+        "p95": 16.068
+      },
+      "chat_tokens_total": 14607,
+      "chat_tokens_mean": 7303.5,
+      "tool_calls_mean": 2,
+      "categories": {
+        "direct": {
+          "n": 2,
+          "task_pass": 2,
+          "strict_pass": 2
+        }
+      }
+    }
+  },
+  "retrieval_ablations": {},
+  "memory": {},
+  "scoring": "同一 DeepSeek 模型按固定评分规则自动评审；非独立人工准确率。失败计入分母。"
+}

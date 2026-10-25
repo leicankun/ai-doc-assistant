@@ -1,0 +1,391 @@
+{
+  "arms": {
+    "rag": {
+      "questions": 30,
+      "request_success": 30,
+      "judge_success": 30,
+      "task_pass": 19,
+      "strict_pass": 19,
+      "point_coverage_mean_scored": 0.805,
+      "supported_citations": 17,
+      "citation_scored_questions": 24,
+      "unsupported_answer_count": 0,
+      "latency_all_attempts_seconds": {
+        "p50": 10.896,
+        "p95": 13.55
+      },
+      "latency_success_seconds": {
+        "p50": 10.896,
+        "p95": 13.55
+      },
+      "chat_tokens_total": 24636,
+      "chat_tokens_mean": 821.2,
+      "tool_calls_mean": 0,
+      "categories": {
+        "clarification": {
+          "n": 2,
+          "task_pass": 2,
+          "strict_pass": 2
+        },
+        "context": {
+          "n": 5,
+          "task_pass": 1,
+          "strict_pass": 1
+        },
+        "cross_document": {
+          "n": 8,
+          "task_pass": 3,
+          "strict_pass": 3
+        },
+        "direct": {
+          "n": 5,
+          "task_pass": 5,
+          "strict_pass": 5
+        },
+        "unanswerable": {
+          "n": 4,
+          "task_pass": 3,
+          "strict_pass": 3
+        },
+        "version": {
+          "n": 6,
+          "task_pass": 5,
+          "strict_pass": 5
+        }
+      }
+    },
+    "agent": {
+      "questions": 30,
+      "request_success": 29,
+      "judge_success": 29,
+      "task_pass": 24,
+      "strict_pass": 24,
+      "point_coverage_mean_scored": 0.8707,
+      "supported_citations": 23,
+      "citation_scored_questions": 24,
+      "unsupported_answer_count": 0,
+      "latency_all_attempts_seconds": {
+        "p50": 25.855,
+        "p95": 37.98
+      },
+      "latency_success_seconds": {
+        "p50": 25.424,
+        "p95": 38.047
+      },
+      "chat_tokens_total": 408846,
+      "chat_tokens_mean": 13628.2,
+      "tool_calls_mean": 3.93,
+      "categories": {
+        "clarification": {
+          "n": 2,
+          "task_pass": 1,
+          "strict_pass": 1
+        },
+        "context": {
+          "n": 5,
+          "task_pass": 5,
+          "strict_pass": 5
+        },
+        "cross_document": {
+          "n": 8,
+          "task_pass": 6,
+          "strict_pass": 6
+        },
+        "direct": {
+          "n": 5,
+          "task_pass": 5,
+          "strict_pass": 5
+        },
+        "unanswerable": {
+          "n": 4,
+          "task_pass": 2,
+          "strict_pass": 2
+        },
+        "version": {
+          "n": 6,
+          "task_pass": 5,
+          "strict_pass": 5
+        }
+      }
+    }
+  },
+  "retrieval_ablations": {
+    "bm25-rerank-True-c30": {
+      "questions": 30,
+      "success": 30,
+      "answerable_questions": 24,
+      "any_evidence_hit": 23,
+      "full_evidence_coverage": 16,
+      "mean_evidence_coverage": 0.7917,
+      "latency_seconds": {
+        "p50": 2.055,
+        "p95": 4.532
+      }
+    },
+    "dense-rerank-True-c30": {
+      "questions": 30,
+      "success": 30,
+      "answerable_questions": 24,
+      "any_evidence_hit": 22,
+      "full_evidence_coverage": 14,
+      "mean_evidence_coverage": 0.7361,
+      "latency_seconds": {
+        "p50": 6.345,
+        "p95": 8.454
+      }
+    },
+    "hybrid-rerank-False-c30": {
+      "questions": 30,
+      "success": 30,
+      "answerable_questions": 24,
+      "any_evidence_hit": 23,
+      "full_evidence_coverage": 15,
+      "mean_evidence_coverage": 0.8049,
+      "latency_seconds": {
+        "p50": 4.617,
+        "p95": 7.162
+      }
+    },
+    "hybrid-rerank-True-c30": {
+      "questions": 30,
+      "success": 30,
+      "answerable_questions": 24,
+      "any_evidence_hit": 23,
+      "full_evidence_coverage": 15,
+      "mean_evidence_coverage": 0.7778,
+      "latency_seconds": {
+        "p50": 6.403,
+        "p95": 8.581
+      }
+    }
+  },
+  "memory": {
+    "memory_environment": {
+      "rag": {
+        "attempts": 8,
+        "request_success": 8,
+        "final_judge": {
+          "status": "scored",
+          "raw_response": "{\"matched_points\":[false,true,false,false],\"behavior_correct\":false,\"unsupported_claims\":[],\"citation_errors\":[\"回答称“无法确认哪一条适用于你‘纠正后的实际环境’”，但对话中用户已明确纠正为 Windows 11 本地开发环境，且引用[1]明确给出 Windows 开发命令，因此该结论与引用内容及对话事实不符。\",\"回答称“数据目录：文档中未提供足够信息”，但 gold_evidence 中 atlas-deploy-v2.md 明确给出 Windows 开发数据目录为 .\\\\data，属于关键事实缺失/错误。\",\"回答称“修改日志级别是否需要重启：文档中未提供足够信息”，但 gold_evidence 中 atlas-config-v2.md 明确说明 Windows 开发模式不支持热加载，任何配置修改都需要重启进程，属于关键事实缺失/错误。\"],\"rationale\":\"用户已纠正实际环境为 Windows 11 本地开发，回答却未按该环境作答；仅正确给出 Windows 启动命令，遗漏数据目录和日志级别修改需重启，且错误声称资料不足，因此行为不符合预期。\"}",
+          "matched_points": [
+            false,
+            true,
+            false,
+            false
+          ],
+          "behavior_correct": false,
+          "unsupported_claims": [],
+          "citation_errors": [
+            "回答称“无法确认哪一条适用于你‘纠正后的实际环境’”，但对话中用户已明确纠正为 Windows 11 本地开发环境，且引用[1]明确给出 Windows 开发命令，因此该结论与引用内容及对话事实不符。",
+            "回答称“数据目录：文档中未提供足够信息”，但 gold_evidence 中 atlas-deploy-v2.md 明确给出 Windows 开发数据目录为 .\\data，属于关键事实缺失/错误。",
+            "回答称“修改日志级别是否需要重启：文档中未提供足够信息”，但 gold_evidence 中 atlas-config-v2.md 明确说明 Windows 开发模式不支持热加载，任何配置修改都需要重启进程，属于关键事实缺失/错误。"
+          ],
+          "rationale": "用户已纠正实际环境为 Windows 11 本地开发，回答却未按该环境作答；仅正确给出 Windows 启动命令，遗漏数据目录和日志级别修改需重启，且错误声称资料不足，因此行为不符合预期。",
+          "point_coverage": 0.25,
+          "task_pass": false,
+          "strict_pass": false,
+          "calls": [
+            {
+              "kind": "chat",
+              "model": "deepseek-flash",
+              "success": true,
+              "usage": {
+                "completion_tokens": 239,
+                "prompt_tokens": 1054,
+                "total_tokens": 1293,
+                "completion_tokens_details": null,
+                "prompt_tokens_details": {
+                  "audio_tokens": null,
+                  "cache_write_tokens": null,
+                  "cached_tokens": 128,
+                  "image_tokens": null,
+                  "text_tokens": null
+                },
+                "prompt_cache_hit_tokens": 128,
+                "prompt_cache_miss_tokens": 926
+              },
+              "response_id": "dada24ea-0119-405e-81c3-8c056f8dd1e0",
+              "finish_reason": "stop",
+              "seconds": 2.637
+            }
+          ]
+        },
+        "context_usage": null,
+        "chat_tokens_total": 9903
+      },
+      "agent": {
+        "attempts": 8,
+        "request_success": 8,
+        "final_judge": {
+          "status": "scored",
+          "raw_response": "{\"matched_points\":[true,true,true,false],\"behavior_correct\":false,\"unsupported_claims\":[],\"citation_errors\":[\"回答称“修改日志级别不需要重启”，但引用的[6]仅说明 log.level 可热加载，未说明 Windows 开发模式是否支持热加载；而 gold_evidence 中 atlas-config-v2.md 明确“Windows 开发模式不支持热加载，任何配置修改都需要重启进程”，因此该结论与原文依据冲突，引用无法支持其结论。\"],\"rationale\":\"启动命令、数据目录、Windows 11 开发环境均正确；但日志级别修改结论错误，Windows 开发模式不支持热加载，应需要重启，故 behavior_correct 为 false。\"}",
+          "matched_points": [
+            true,
+            true,
+            true,
+            false
+          ],
+          "behavior_correct": false,
+          "unsupported_claims": [],
+          "citation_errors": [
+            "回答称“修改日志级别不需要重启”，但引用的[6]仅说明 log.level 可热加载，未说明 Windows 开发模式是否支持热加载；而 gold_evidence 中 atlas-config-v2.md 明确“Windows 开发模式不支持热加载，任何配置修改都需要重启进程”，因此该结论与原文依据冲突，引用无法支持其结论。"
+          ],
+          "rationale": "启动命令、数据目录、Windows 11 开发环境均正确；但日志级别修改结论错误，Windows 开发模式不支持热加载，应需要重启，故 behavior_correct 为 false。",
+          "point_coverage": 0.75,
+          "task_pass": false,
+          "strict_pass": false,
+          "calls": [
+            {
+              "kind": "chat",
+              "model": "deepseek-flash",
+              "success": true,
+              "usage": {
+                "completion_tokens": 155,
+                "prompt_tokens": 1555,
+                "total_tokens": 1710,
+                "completion_tokens_details": null,
+                "prompt_tokens_details": {
+                  "audio_tokens": null,
+                  "cache_write_tokens": null,
+                  "cached_tokens": 384,
+                  "image_tokens": null,
+                  "text_tokens": null
+                },
+                "prompt_cache_hit_tokens": 384,
+                "prompt_cache_miss_tokens": 1171
+              },
+              "response_id": "9d1bcce3-f091-4319-ae6a-82110578bb49",
+              "finish_reason": "stop",
+              "seconds": 2.38
+            }
+          ]
+        },
+        "context_usage": {
+          "recent_turns": 5,
+          "covered_turn_id": 8,
+          "summary_entries": 2,
+          "summary_updates": 1,
+          "budget": 24000,
+          "peak_estimated_tokens": 20143,
+          "output_reserve": 2000,
+          "omitted_tool_items": 0,
+          "estimation": "conservative_utf8_bytes"
+        },
+        "chat_tokens_total": 83802
+      }
+    },
+    "memory_version": {
+      "rag": {
+        "attempts": 8,
+        "request_success": 8,
+        "final_judge": {
+          "status": "scored",
+          "raw_response": "{\"matched_points\": [true, true, true, false, false], \"behavior_correct\": false, \"unsupported_claims\": [], \"citation_errors\": [\"回答称“资料中未提供其备份间隔和保留天数”，但引用[1]所在文档 atlas-deploy-v1.md 明确包含“Atlas 1.8 的备份每 24 小时执行一次，保留 7 天”，因此该结论与原文依据矛盾，且遗漏了关键事实的引用。\"], \"rationale\": \"回答正确识别了 Atlas 1.8 的端口 8100 和健康检查路径 /health，但错误地声称资料未提供 Atlas 1.8 的备份间隔和保留天数，而原文明确给出 24 小时和 7 天，导致两个要点缺失，且未按预期直接回答实际维护版本的全部参数。\"}",
+          "matched_points": [
+            true,
+            true,
+            true,
+            false,
+            false
+          ],
+          "behavior_correct": false,
+          "unsupported_claims": [],
+          "citation_errors": [
+            "回答称“资料中未提供其备份间隔和保留天数”，但引用[1]所在文档 atlas-deploy-v1.md 明确包含“Atlas 1.8 的备份每 24 小时执行一次，保留 7 天”，因此该结论与原文依据矛盾，且遗漏了关键事实的引用。"
+          ],
+          "rationale": "回答正确识别了 Atlas 1.8 的端口 8100 和健康检查路径 /health，但错误地声称资料未提供 Atlas 1.8 的备份间隔和保留天数，而原文明确给出 24 小时和 7 天，导致两个要点缺失，且未按预期直接回答实际维护版本的全部参数。",
+          "point_coverage": 0.6,
+          "task_pass": false,
+          "strict_pass": false,
+          "calls": [
+            {
+              "kind": "chat",
+              "model": "deepseek-flash",
+              "success": true,
+              "usage": {
+                "completion_tokens": 186,
+                "prompt_tokens": 1063,
+                "total_tokens": 1249,
+                "completion_tokens_details": null,
+                "prompt_tokens_details": {
+                  "audio_tokens": null,
+                  "cache_write_tokens": null,
+                  "cached_tokens": 128,
+                  "image_tokens": null,
+                  "text_tokens": null
+                },
+                "prompt_cache_hit_tokens": 128,
+                "prompt_cache_miss_tokens": 935
+              },
+              "response_id": "97cf99c0-c07c-4517-aab7-6e4a02b1c020",
+              "finish_reason": "stop",
+              "seconds": 2.733
+            }
+          ]
+        },
+        "context_usage": null,
+        "chat_tokens_total": 10144
+      },
+      "agent": {
+        "attempts": 8,
+        "request_success": 8,
+        "final_judge": {
+          "status": "scored",
+          "raw_response": "{\"matched_points\": [true, true, true, true, true], \"behavior_correct\": true, \"unsupported_claims\": [], \"citation_errors\": [], \"rationale\": \"回答正确识别实际维护版本为 Atlas 1.8，并给出端口 8100、健康检查路径 /health、备份间隔 24 小时、保留 7 天，均与原文依据一致；引用 [8][9] 分别支持端口/健康检查与备份/保留信息。末尾关于上下文预算的说明不构成实质性事实主张，不影响评分。\"}",
+          "matched_points": [
+            true,
+            true,
+            true,
+            true,
+            true
+          ],
+          "behavior_correct": true,
+          "unsupported_claims": [],
+          "citation_errors": [],
+          "rationale": "回答正确识别实际维护版本为 Atlas 1.8，并给出端口 8100、健康检查路径 /health、备份间隔 24 小时、保留 7 天，均与原文依据一致；引用 [8][9] 分别支持端口/健康检查与备份/保留信息。末尾关于上下文预算的说明不构成实质性事实主张，不影响评分。",
+          "point_coverage": 1.0,
+          "task_pass": true,
+          "strict_pass": true,
+          "calls": [
+            {
+              "kind": "chat",
+              "model": "deepseek-flash",
+              "success": true,
+              "usage": {
+                "completion_tokens": 120,
+                "prompt_tokens": 1200,
+                "total_tokens": 1320,
+                "completion_tokens_details": null,
+                "prompt_tokens_details": {
+                  "audio_tokens": null,
+                  "cache_write_tokens": null,
+                  "cached_tokens": 384,
+                  "image_tokens": null,
+                  "text_tokens": null
+                },
+                "prompt_cache_hit_tokens": 384,
+                "prompt_cache_miss_tokens": 816
+              },
+              "response_id": "4819caa2-821c-4f64-afff-e437249750b4",
+              "finish_reason": "stop",
+              "seconds": 1.94
+            }
+          ]
+        },
+        "context_usage": {
+          "recent_turns": 5,
+          "covered_turn_id": 26,
+          "summary_entries": 2,
+          "summary_updates": 1,
+          "budget": 24000,
+          "peak_estimated_tokens": 23521,
+          "output_reserve": 2000,
+          "omitted_tool_items": 5,
+          "estimation": "conservative_utf8_bytes"
+        },
+        "chat_tokens_total": 87105
+      }
+    }
+  },
+  "scoring": "同一 DeepSeek 模型按固定评分规则自动评审；非独立人工准确率。失败计入分母。"
+}

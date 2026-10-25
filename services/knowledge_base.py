@@ -1,6 +1,7 @@
 ﻿"""知识库内统一检索，复用文档分块与向量，不重复入库。"""
 
 import json
+import time
 
 from fastapi import HTTPException
 
@@ -8,8 +9,10 @@ from retrieval.bm25 import search_bm25, tokenize
 from storage.document_status import DOCUMENT_SELECT, with_processing_status
 from retrieval.embedding import embed_query
 from retrieval.engine import fuse_rrf
+from retrieval.reranker import candidate_count, rerank
 from storage.vector_store import get_collection
 from config import RAG_HISTORY_TURNS
+from retrieval.backend import request_backend, document_statuses, current_provider
 def require_base(connection, base_id):
     """查询知识库；不存在时返回 404，存在时返回字典。"""
     row = connection.execute(
@@ -30,7 +33,7 @@ def members(connection, base_id):
         """,
         (base_id,),
     ).fetchall()
-    return [with_processing_status(row) for row in rows]
+    return document_statuses(connection, [with_processing_status(row) for row in rows])
 
 
 def ready_documents(connection, base_id, mode):
@@ -55,11 +58,13 @@ def ready_documents(connection, base_id, mode):
     return documents
 
 
+@request_backend('request')
 def search_base(connection, base_id, request, *, document_ids=None,
                 allow_partial=False, min_dense_similarity=None, timeout=None):
     """在全部成员文档中统一检索，返回整个知识库的 Top-K 分块。"""
     # 1. 检查处理状态，并确定本次允许检索的文档 ID。
     skipped = []
+    started = time.monotonic()
     if allow_partial or document_ids is not None:
         documents = members(connection, base_id)
         if document_ids is not None:
@@ -96,7 +101,8 @@ def search_base(connection, base_id, request, *, document_ids=None,
     chunks = [dict(row) for row in rows]
 
     # 3. 涉及向量检索时至少取 20 个候选，供后续截取或 RRF 融合。
-    candidate_k = request.top_k if request.mode == "bm25" else max(20, request.top_k)
+    recall_k = candidate_count(request.top_k)
+    candidate_k = recall_k if request.mode == "bm25" else max(20, recall_k)
     if request.mode == "bm25" and not tokenize(request.question):
         raise HTTPException(422, "问题中没有可检索的词语")
 
@@ -113,7 +119,7 @@ def search_base(connection, base_id, request, *, document_ids=None,
         where = {"document_id": {"$in": ids}}
         records = collection.get(where=where, include=["metadatas"])
 
-        # 检查 Chroma 与 SQLite 的分块身份集合，防止缺失或旧向量参与检索。
+        # 检查 Chroma 与 MySQL 的分块身份集合，防止缺失或旧向量参与检索。
         actual = {
             (m["document_id"], m["chunk_id"])
             for m in records["metadatas"]
@@ -164,15 +170,24 @@ def search_base(connection, base_id, request, *, document_ids=None,
             dense = [item for item in dense if 1 - item['distance'] >= min_dense_similarity]
         # 5. Dense 直接截取；Hybrid 按两路排名进行 RRF 融合后取 Top-K。
         items = (
-            dense[:request.top_k]
+            dense[:recall_k]
             if request.mode == "dense"
-            else fuse_rrf(lexical, dense, request.top_k)
+            else fuse_rrf(lexical, dense, recall_k)
         )
+
+    # Agent 的剩余时间预算也涵盖重排调用。
+    remaining = None if timeout is None else timeout - (time.monotonic() - started)
+    if remaining is not None and remaining <= 0:
+        raise TimeoutError('检索时间预算已耗尽')
+    items = rerank(request.question, items, request.top_k, timeout=remaining)
+    if current_provider() == 'local':
+        items = [{**item, 'embedding_provider': 'local'} for item in items]
 
     return {
         "knowledge_base_id": base_id,
         "question": request.question,
         "mode": request.mode,
+        "embedding_provider": current_provider(),
         "items": items,
         "total": len(items),
         "skipped_documents": skipped,

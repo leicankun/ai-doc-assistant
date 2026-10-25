@@ -1,0 +1,20 @@
+[
+  {
+    "knowledge_base_id": 1,
+    "session_id": 1,
+    "summary_json": "{\"entries\": [{\"key\": \"env_atlas\", \"kind\": \"background\", \"text\": \"在 Windows 11 本地开发环境使用 Atlas 2.4\", \"source_turn_id\": 8, \"source_quote\": \"我实际在 Windows 11 本地开发环境使用 Atlas 2.4\"}, {\"key\": \"q_log_level_restart\", \"kind\": \"question\", \"text\": \"修改 Atlas 2.4 日志级别是否需要重启\", \"source_turn_id\": 8, \"source_quote\": \"日志级别修改需要重启吗？\"}]}",
+    "covered_turn_id": 8,
+    "source_hash": "71bf61e24215e06422d105544b675266c84f6d720470fed2d1b1c5f98cc320ad",
+    "revision": 2,
+    "updated_at": "2026-10-13 11:59:52"
+  },
+  {
+    "knowledge_base_id": 1,
+    "session_id": 4,
+    "summary_json": "{\"entries\": [{\"key\": \"product_maintenance\", \"kind\": \"background\", \"text\": \"用户实际维护的是 Atlas 1.8，而非 Atlas 2.4\", \"source_turn_id\": 26, \"source_quote\": \"我实际维护的是 Atlas 1.8，不是 2.4\"}, {\"key\": \"atlas18_start_command\", \"kind\": \"question\", \"text\": \"询问 Atlas 1.8 的启动命令\", \"source_turn_id\": 26, \"source_quote\": \"请告诉我这个版本的启动命令\"}]}",
+    "covered_turn_id": 26,
+    "source_hash": "578443ee377ec83bafdb8a1d64a35f0a93e36058d4a310fc0ccc9db6f5d7bdd4",
+    "revision": 2,
+    "updated_at": "2026-10-13 12:01:55"
+  }
+]

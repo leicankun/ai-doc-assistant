@@ -31,6 +31,8 @@ class AgentState:
     evidence: dict = field(default_factory=dict)
     context_exhausted: bool = False
     context_omitted: int = 0
+    context_deduplicated: int = 0
+    context_decisions: list[dict] = field(default_factory=list)
     deadline: float = field(default_factory=lambda: time.monotonic() + max(1,float(os.getenv('AGENT_TIMEOUT_SECONDS','120'))))
 
     def validate_final(self, content, question):

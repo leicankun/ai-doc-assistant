@@ -1,0 +1,10 @@
+{
+  "retrieval_cases": 240,
+  "answers": 80,
+  "citations_checked": 162,
+  "original_layouts_identical": true,
+  "issues": [],
+  "official_data_unchanged": true,
+  "note": "确定性指标与来源核验，不是独立人工答案评分。",
+  "audit_script_sha256": "c43879ce09b24057616da81680a39703b801a1e80422e059eb2f04e6e3f8d5ab"
+}

@@ -20,8 +20,7 @@ class DocumentDeletionTests(unittest.TestCase):
         self.folder = tempfile.TemporaryDirectory()
         self.addCleanup(self.folder.cleanup)
         self.root = Path(self.folder.name)
-        with patch.object(database, 'DB_PATH', self.root/'test.db'):
-            database.init_db()
+        database.init_test_db(self.root/'test.db')
         self.db = sqlite3.connect(self.root/'test.db', check_same_thread=False)
         self.db.row_factory = sqlite3.Row
         self.addCleanup(self.db.close)

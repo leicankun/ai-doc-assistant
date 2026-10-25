@@ -1,4 +1,4 @@
-"""状态来自 SQLite 版本记录；旧索引未经验证时需要重新入库。"""
+"""状态来自 MySQL 版本记录；旧索引未经验证时需要重新入库。"""
 LABELS = {'not_chunked': '未分块', 'pending_index': '待入库',
           'indexed': '已入库', 'index_stale': '索引过期'}
 

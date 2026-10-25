@@ -8,3 +8,26 @@ documents.db-wal
 documents.db-shm
 /uploads/
 chroma_data/
+.local_mysql/
+backups/
+.venv-bge/
+.local_bge/
+models/
+
+# Local configuration and runtime output
+.env.*
+!.env.example
+!.env.*.example
+.vite/
+*.log
+*.err
+artifacts/auto_upload_check/
+artifacts/mysql-*.json
+artifacts/bge-deployment.json
+
+# Rebuildable benchmark vector stores and caches; keep reports and datasets
+evals/results/**/isolated_chroma/
+evals/results/**/*.npy
+evals/results/**/*.npz
+evals/results/**/vectors.json
+evals/results/**/embedding_cache.json

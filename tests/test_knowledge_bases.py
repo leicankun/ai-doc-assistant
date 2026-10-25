@@ -24,9 +24,8 @@ class KnowledgeBaseTests(unittest.TestCase):
         self.addCleanup(folder.cleanup)
         self.root=Path(folder.name)
         self.path=self.root/'test.db'
-        with patch.object(database,'DB_PATH',self.path):
-            database.init_db()
-            database.init_db()
+        database.init_test_db(self.path)
+        database.init_test_db(self.path)
         self.db=sqlite3.connect(self.path,check_same_thread=False)
         self.db.row_factory=sqlite3.Row
         self.addCleanup(self.db.close)
@@ -40,7 +39,7 @@ class KnowledgeBaseTests(unittest.TestCase):
                  patch.object(document_deletion,'get_collection',return_value=self.collection),
                  patch.object(indexing,'embed_texts',side_effect=lambda texts:[[1.,0.]]*len(texts)),
                  patch.object(knowledge_base,'embed_query',return_value=[1.,0.]),
-                 patch.object(api,'DB_PATH',self.path),patch.dict(os.environ,{'DEEPSEEK_API_KEY':'test'})]
+                 patch.object(api, 'connect', side_effect=lambda: database.connect_test_db(self.path)),patch.dict(os.environ,{'DEEPSEEK_API_KEY':'test'})]
         for mocker in patches:
             mocker.start(); self.addCleanup(mocker.stop)
         app=FastAPI(); app.include_router(documents.router)

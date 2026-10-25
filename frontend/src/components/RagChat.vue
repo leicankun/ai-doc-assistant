@@ -1,6 +1,7 @@
 <script setup>
 import { computed, nextTick, onBeforeUnmount, ref, watch } from 'vue'
 import RagTurn from './RagTurn.vue'
+import EmbeddingBackend from './EmbeddingBackend.vue'
 import { readSse } from '../utils/readSse'
 import { apiError } from '../utils/apiError'
 import { vClosePopover } from '../utils/closePopover'
@@ -15,8 +16,8 @@ function closeSessionOnBackdrop(event) {
   }
 }
 
-const props = defineProps({ documents: { type: Array, required: true }, activeDocumentId: { type: [String, Number], default: '' }, knowledgeBase: { type: Object, default: null } })
-const emit = defineEmits(['open-tools'])
+const props = defineProps({ documents: { type: Array, required: true }, activeDocumentId: { type: [String, Number], default: '' }, knowledgeBase: { type: Object, default: null }, embeddingProvider: { type: String, default: 'api' } })
+const emit = defineEmits(['open-tools', 'update:embeddingProvider'])
 const conversation = ref(null)
 const selectedDocument = computed(() => props.knowledgeBase ? { ...props.knowledgeBase, processing_status_label: '知识库', processing_status: 'indexed' } : props.documents.find(doc => doc.id === documentId.value))
 const basePath = computed(() => props.knowledgeBase ? `/knowledge-bases/${props.knowledgeBase.id}` : `/documents/${documentId.value}`)
@@ -27,6 +28,8 @@ const turns = ref([])
 const title = ref('')
 const question = ref('')
 const mode = ref('hybrid')
+const embeddingProvider = computed({ get: () => props.embeddingProvider, set: value => emit('update:embeddingProvider', value) })
+const localPreparing = ref(false)
 const topK = ref(5)
 const busy = ref('')
 const error = ref('')
@@ -107,27 +110,20 @@ async function createSession() {
 }
 
 async function ask() {
-  if (!selected.value || !sessionId.value || busy.value) return
+  if (!selected.value || !sessionId.value || busy.value || localPreparing.value) return
   if (!question.value.trim() || question.value.trim().length > 1000 || !Number.isInteger(topK.value) || topK.value < 1 || topK.value > 20) {
     error.value = '请输入 1–1000 字符的问题，Top-K 应为 1–20 的整数。'
     return
   }
   await operate('ask', async (signal, active) => {
-    if (props.knowledgeBase) {
-      const prompt = question.value.trim()
-      pending.value = { question: prompt, answer: '', citations: [], status: 'Agent 正在查询资料并整理回答…' }
-      const data = await request(`${basePath.value}/agent`, { question: prompt, session_id: sessionId.value }, signal)
-      if (active()) {
-        turns.value.push({ ...data, status: null })
-        pending.value = null
-        question.value = ''
-      }
-      return
-    }
-    pending.value = { question: question.value.trim(), answer: '', citations: [], status: '正在生成，引用将在完成后显示。' }
-    const response = await fetch(`http://127.0.0.1:8000${basePath.value}/ask-rag/chat/stream`, {
+    const isAgent = Boolean(props.knowledgeBase)
+    const prompt = question.value.trim()
+    pending.value = { question: prompt, answer: '', citations: [], tool_calls: [], embedding_provider: embeddingProvider.value, status: isAgent ? 'Agent 正在查询资料…' : '正在生成，引用将在完成后显示。' }
+    const endpoint = isAgent ? 'agent/stream' : 'ask-rag/chat/stream'
+    const body = { question: prompt, session_id: sessionId.value, embedding_provider: embeddingProvider.value, ...(isAgent ? {} : { mode: mode.value, top_k: topK.value }) }
+    const response = await fetch(`http://127.0.0.1:8000${basePath.value}/${endpoint}`, {
       method: 'POST', signal, headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question: question.value.trim(), session_id: sessionId.value, mode: mode.value, top_k: topK.value }),
+      body: JSON.stringify(body),
     })
     if (!response.ok) {
       const data = await response.json()
@@ -136,6 +132,13 @@ async function ask() {
     await readSse(response, event => {
       if (!active()) return
       if (event.type === 'meta') pending.value.retrieval_question = event.retrieval_question
+      else if (event.type === 'status') pending.value.status = event.message
+      else if (event.type === 'tool_start') {
+        const toolNames = { list_documents: '正在查看文档目录…', search_knowledge_base: '正在检索知识库…', read_chunk_context: '正在读取相邻上下文…' }
+        pending.value.status = toolNames[event.tool] || '正在查询资料…'
+      }
+      else if (event.type === 'tool_call') pending.value.tool_calls.push({ tool: event.tool, arguments: event.arguments, result: event.result })
+      else if (event.type === 'reset') pending.value.answer = ''
       else if (event.type === 'delta') pending.value.answer += event.content
       else if (event.type === 'done') {
         turns.value.push({ ...pending.value, ...event, status: null })
@@ -176,13 +179,13 @@ onBeforeUnmount(invalidate)
 <template>
   <section class="rag-chat" aria-labelledby="rag-chat-heading" :aria-busy="Boolean(busy)">
     <header class="chat-header">
-      <div><h1 id="rag-chat-heading">{{ selectedDocument?.title || '与你的资料聊一聊' }}</h1><p class="muted">{{ selectedDocument ? `${selectedDocument.processing_status_label} · 回答附原文引用` : '从侧边栏选择文档，开始探索。' }}</p></div>
-      <button v-if="selectedDocument && selectedDocument.processing_status !== 'indexed'" class="prepare" @click="emit('open-tools')">处理文档</button>
+      <div><h1 id="rag-chat-heading">{{ selectedDocument?.title || '与你的资料聊一聊' }}</h1><p class="muted">{{ selectedDocument ? `${embeddingProvider === 'local' ? '本地检索' : selectedDocument.processing_status_label} · 回答附原文引用` : '从侧边栏选择文档，开始探索。' }}</p></div>
+      <button v-if="embeddingProvider === 'api' && selectedDocument && selectedDocument.processing_status !== 'indexed'" class="prepare" @click="emit('open-tools')">处理文档</button>
     </header>
     <div v-if="selected" class="session-bar">
       <label class="session-picker"><span>会话</span><select v-model="sessionId" :disabled="Boolean(busy) || !sessions.length"><option value="" disabled>新建会话后开始</option><option v-for="session in sessions" :key="session.id" :value="session.id">{{ session.title }}</option></select></label>
       <button class="new-session-trigger" :disabled="Boolean(busy)" @click="error = ''; sessionPopover.showModal()">＋ 新对话</button>
-      <details ref="settingsPopover" v-close-popover class="chat-settings"><summary>设置</summary><div class="settings-content"><template v-if="!knowledgeBase"><label>检索方式<select v-model="mode" :disabled="Boolean(busy)"><option value="bm25">BM25</option><option value="dense">向量检索</option><option value="hybrid">混合检索（RRF）</option></select></label><label>返回分块数<input v-model.number="topK" type="number" min="1" max="20" step="1" :disabled="Boolean(busy)" /></label></template><p v-else class="muted">Agent 自动选择检索和上下文读取工具。</p><button :disabled="Boolean(busy)" @click="loadSessions">刷新会话</button><button :disabled="Boolean(busy) || !sessionId" @click="loadHistory">重新加载历史</button><button @click="settingsPopover.open = false">完成</button></div></details>
+      <details ref="settingsPopover" v-close-popover class="chat-settings"><summary>设置</summary><div class="settings-content"><EmbeddingBackend v-model="embeddingProvider" :document-id="knowledgeBase ? null : documentId" :knowledge-base-id="knowledgeBase?.id" :disabled="Boolean(busy)" @preparing="localPreparing = $event" /><template v-if="!knowledgeBase"><label>检索方式<select v-model="mode" :disabled="Boolean(busy) || localPreparing"><option value="bm25">BM25</option><option value="dense">向量检索</option><option value="hybrid">混合检索（RRF）</option></select></label><label>返回分块数<input v-model.number="topK" type="number" min="1" max="20" step="1" :disabled="Boolean(busy) || localPreparing" /></label></template><p v-else class="muted">Agent 自动选择检索和上下文读取工具。</p><button :disabled="Boolean(busy)" @click="loadSessions">刷新会话</button><button :disabled="Boolean(busy) || !sessionId" @click="loadHistory">重新加载历史</button><button @click="settingsPopover.open = false">完成</button></div></details>
     </div>
     <Teleport to="body">
       <dialog ref="sessionPopover" class="new-session-dialog" aria-labelledby="new-session-heading" @click="closeSessionOnBackdrop">
@@ -201,8 +204,9 @@ onBeforeUnmount(invalidate)
     </div>
     <div class="composer-area">
       <p v-if="error" class="error" role="alert">{{ error }}</p>
+      <p v-if="localPreparing" class="muted" role="status">正在准备本地模型和索引，准备完成后即可发送。</p>
       <p v-if="busy" class="muted" role="status">{{ busy === 'ask' ? '正在检索资料并生成回答…' : '正在加载或创建会话…' }}</p>
-      <form class="composer" @submit.prevent="ask"><label class="sr-only" for="rag-question">问题或追问</label><textarea id="rag-question" v-model="question" rows="2" maxlength="1000" placeholder="问问这份资料，或继续追问…" :disabled="Boolean(busy) || !sessionId" required /><div class="composer-footer"><span v-if="knowledgeBase">Agent · 自主检索与上下文补全</span><span v-else>{{ mode === 'hybrid' ? '混合检索' : mode === 'dense' ? '向量检索' : 'BM25' }} · {{ topK }} 个分块</span><button v-if="busy === 'ask'" type="button" @click="controller?.abort()">停止等待</button><button v-else class="primary" :disabled="Boolean(busy) || !sessionId || !question.trim()">发送 ↑</button></div></form>
+      <form class="composer" @submit.prevent="ask"><label class="sr-only" for="rag-question">问题或追问</label><textarea id="rag-question" v-model="question" rows="2" maxlength="1000" placeholder="问问这份资料，或继续追问…" :disabled="Boolean(busy) || !sessionId" required /><div class="composer-footer"><span>{{ embeddingProvider === 'local' ? '本地 BGE-M3' : '百炼 API' }} · {{ knowledgeBase ? 'Agent 自主检索' : mode === 'hybrid' ? '混合检索' : mode === 'dense' ? '向量检索' : 'BM25' }}</span><button v-if="busy === 'ask'" type="button" @click="controller?.abort()">停止等待</button><button v-else class="primary" :disabled="Boolean(busy) || localPreparing || !sessionId || !question.trim()">发送 ↑</button></div></form>
       <p class="footnote">回答仅供参考，请核对引用资料。</p>
     </div>
   </section>

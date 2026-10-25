@@ -1,0 +1,310 @@
+{
+  "original_shared": {
+    "retrieval": {
+      "dev": {
+        "questions": 20,
+        "success": 20,
+        "answerable_questions": 16,
+        "metrics": {
+          "mean_evidence_coverage": 1.0,
+          "full_evidence_questions": 16,
+          "mrr_at_5": 0.9271
+        },
+        "budget_metrics": {
+          "mean_evidence_coverage": 1.0,
+          "full_evidence_questions": 16,
+          "mrr_at_5": 0.9271
+        },
+        "mean_context_characters": 355.9,
+        "mean_overlap_ratio": 0.0,
+        "latency_seconds": {
+          "p50": 0.305,
+          "p95": 0.39
+        }
+      },
+      "test": {
+        "questions": 40,
+        "success": 40,
+        "answerable_questions": 32,
+        "metrics": {
+          "mean_evidence_coverage": 0.7969,
+          "full_evidence_questions": 22,
+          "mrr_at_5": 0.8073
+        },
+        "budget_metrics": {
+          "mean_evidence_coverage": 0.7969,
+          "full_evidence_questions": 22,
+          "mrr_at_5": 0.8073
+        },
+        "mean_context_characters": 422.4,
+        "mean_overlap_ratio": 0.0,
+        "latency_seconds": {
+          "p50": 0.296,
+          "p95": 0.335
+        }
+      },
+      "all": {
+        "questions": 60,
+        "success": 60,
+        "answerable_questions": 48,
+        "metrics": {
+          "mean_evidence_coverage": 0.8646,
+          "full_evidence_questions": 38,
+          "mrr_at_5": 0.8472
+        },
+        "budget_metrics": {
+          "mean_evidence_coverage": 0.8646,
+          "full_evidence_questions": 38,
+          "mrr_at_5": 0.8472
+        },
+        "mean_context_characters": 400.2,
+        "mean_overlap_ratio": 0.0,
+        "latency_seconds": {
+          "p50": 0.299,
+          "p95": 0.367
+        }
+      }
+    },
+    "answers": {
+      "questions": 20,
+      "success": 20,
+      "judge_success": 20,
+      "task_pass": 12,
+      "strict_pass": 12,
+      "mean_point_coverage": 0.7812,
+      "source_identity_errors": 0,
+      "reported_answer_prompt_tokens": 14320
+    }
+  },
+  "long_300_60": {
+    "retrieval": {
+      "dev": {
+        "questions": 20,
+        "success": 20,
+        "answerable_questions": 16,
+        "metrics": {
+          "mean_evidence_coverage": 1.0,
+          "full_evidence_questions": 16,
+          "mrr_at_5": 1.0
+        },
+        "budget_metrics": {
+          "mean_evidence_coverage": 1.0,
+          "full_evidence_questions": 16,
+          "mrr_at_5": 1.0
+        },
+        "mean_context_characters": 1293.8,
+        "mean_overlap_ratio": 0.0098,
+        "latency_seconds": {
+          "p50": 0.37,
+          "p95": 0.505
+        }
+      },
+      "test": {
+        "questions": 40,
+        "success": 40,
+        "answerable_questions": 32,
+        "metrics": {
+          "mean_evidence_coverage": 0.9193,
+          "full_evidence_questions": 27,
+          "mrr_at_5": 0.9125
+        },
+        "budget_metrics": {
+          "mean_evidence_coverage": 0.9193,
+          "full_evidence_questions": 27,
+          "mrr_at_5": 0.9125
+        },
+        "mean_context_characters": 1282.2,
+        "mean_overlap_ratio": 0.0093,
+        "latency_seconds": {
+          "p50": 0.377,
+          "p95": 0.424
+        }
+      },
+      "all": {
+        "questions": 60,
+        "success": 60,
+        "answerable_questions": 48,
+        "metrics": {
+          "mean_evidence_coverage": 0.9462,
+          "full_evidence_questions": 43,
+          "mrr_at_5": 0.9417
+        },
+        "budget_metrics": {
+          "mean_evidence_coverage": 0.9462,
+          "full_evidence_questions": 43,
+          "mrr_at_5": 0.9417
+        },
+        "mean_context_characters": 1286.1,
+        "mean_overlap_ratio": 0.0095,
+        "latency_seconds": {
+          "p50": 0.374,
+          "p95": 0.443
+        }
+      }
+    },
+    "answers": {
+      "questions": 20,
+      "success": 20,
+      "judge_success": 20,
+      "task_pass": 15,
+      "strict_pass": 15,
+      "mean_point_coverage": 0.875,
+      "source_identity_errors": 0,
+      "reported_answer_prompt_tokens": 24982
+    }
+  },
+  "long_500_100": {
+    "retrieval": {
+      "dev": {
+        "questions": 20,
+        "success": 20,
+        "answerable_questions": 16,
+        "metrics": {
+          "mean_evidence_coverage": 1.0,
+          "full_evidence_questions": 16,
+          "mrr_at_5": 1.0
+        },
+        "budget_metrics": {
+          "mean_evidence_coverage": 1.0,
+          "full_evidence_questions": 16,
+          "mrr_at_5": 1.0
+        },
+        "mean_context_characters": 2068.7,
+        "mean_overlap_ratio": 0.0541,
+        "latency_seconds": {
+          "p50": 0.419,
+          "p95": 0.526
+        }
+      },
+      "test": {
+        "questions": 40,
+        "success": 40,
+        "answerable_questions": 32,
+        "metrics": {
+          "mean_evidence_coverage": 0.9766,
+          "full_evidence_questions": 30,
+          "mrr_at_5": 0.9792
+        },
+        "budget_metrics": {
+          "mean_evidence_coverage": 0.9766,
+          "full_evidence_questions": 30,
+          "mrr_at_5": 0.9792
+        },
+        "mean_context_characters": 2052.4,
+        "mean_overlap_ratio": 0.023,
+        "latency_seconds": {
+          "p50": 0.423,
+          "p95": 0.472
+        }
+      },
+      "all": {
+        "questions": 60,
+        "success": 60,
+        "answerable_questions": 48,
+        "metrics": {
+          "mean_evidence_coverage": 0.9844,
+          "full_evidence_questions": 46,
+          "mrr_at_5": 0.9861
+        },
+        "budget_metrics": {
+          "mean_evidence_coverage": 0.9844,
+          "full_evidence_questions": 46,
+          "mrr_at_5": 0.9861
+        },
+        "mean_context_characters": 2057.9,
+        "mean_overlap_ratio": 0.0333,
+        "latency_seconds": {
+          "p50": 0.421,
+          "p95": 0.479
+        }
+      }
+    },
+    "answers": {
+      "questions": 20,
+      "success": 20,
+      "judge_success": 20,
+      "task_pass": 19,
+      "strict_pass": 19,
+      "mean_point_coverage": 1.0,
+      "source_identity_errors": 0,
+      "reported_answer_prompt_tokens": 34671
+    }
+  },
+  "long_800_160": {
+    "retrieval": {
+      "dev": {
+        "questions": 20,
+        "success": 20,
+        "answerable_questions": 16,
+        "metrics": {
+          "mean_evidence_coverage": 1.0,
+          "full_evidence_questions": 16,
+          "mrr_at_5": 1.0
+        },
+        "budget_metrics": {
+          "mean_evidence_coverage": 1.0,
+          "full_evidence_questions": 16,
+          "mrr_at_5": 1.0
+        },
+        "mean_context_characters": 3251.1,
+        "mean_overlap_ratio": 0.0,
+        "latency_seconds": {
+          "p50": 0.436,
+          "p95": 0.577
+        }
+      },
+      "test": {
+        "questions": 40,
+        "success": 40,
+        "answerable_questions": 32,
+        "metrics": {
+          "mean_evidence_coverage": 1.0,
+          "full_evidence_questions": 32,
+          "mrr_at_5": 0.9307
+        },
+        "budget_metrics": {
+          "mean_evidence_coverage": 0.9167,
+          "full_evidence_questions": 29,
+          "mrr_at_5": 0.9167
+        },
+        "mean_context_characters": 2975.2,
+        "mean_overlap_ratio": 0.0129,
+        "latency_seconds": {
+          "p50": 0.421,
+          "p95": 0.472
+        }
+      },
+      "all": {
+        "questions": 60,
+        "success": 60,
+        "answerable_questions": 48,
+        "metrics": {
+          "mean_evidence_coverage": 1.0,
+          "full_evidence_questions": 48,
+          "mrr_at_5": 0.9538
+        },
+        "budget_metrics": {
+          "mean_evidence_coverage": 0.9444,
+          "full_evidence_questions": 45,
+          "mrr_at_5": 0.9444
+        },
+        "mean_context_characters": 3067.2,
+        "mean_overlap_ratio": 0.0086,
+        "latency_seconds": {
+          "p50": 0.429,
+          "p95": 0.477
+        }
+      }
+    },
+    "answers": {
+      "questions": 20,
+      "success": 20,
+      "judge_success": 20,
+      "task_pass": 18,
+      "strict_pass": 18,
+      "mean_point_coverage": 1.0,
+      "source_identity_errors": 0,
+      "reported_answer_prompt_tokens": 46493
+    }
+  }
+}

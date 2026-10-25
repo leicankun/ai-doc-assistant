@@ -1,0 +1,78 @@
+{
+  "retrieval_questions": 60,
+  "successful_variants": 240,
+  "answers": 80,
+  "citations_checked": 205,
+  "identity_or_metric_issues": [],
+  "mmr_evidence_changes": [
+    {
+      "id": "r018",
+      "split": "test",
+      "category": "paraphrase",
+      "question": "Atlas 新版编辑角色能放入资料吗，有资格移除资料吗？",
+      "C_coverage": 1.0,
+      "D_coverage": 0.0,
+      "C_ids": [
+        40,
+        71,
+        49,
+        59,
+        36
+      ],
+      "D_ids": [
+        40,
+        122,
+        155,
+        23,
+        84
+      ]
+    },
+    {
+      "id": "r025",
+      "split": "test",
+      "category": "cross_document",
+      "question": "Atlas 2.4 E201 要查什么，数据库版本要求及修复后的切流条件是什么？",
+      "C_coverage": 0.6666666666666666,
+      "D_coverage": 0.3333333333333333,
+      "C_ids": [
+        114,
+        136,
+        77,
+        123,
+        108
+      ],
+      "D_ids": [
+        114,
+        136,
+        8,
+        123,
+        77
+      ]
+    },
+    {
+      "id": "r043",
+      "split": "test",
+      "category": "version_exception",
+      "question": "Atlas 2.4 Windows 和 Linux 修改 log.level 是否都不需要重启？",
+      "C_coverage": 0.5,
+      "D_coverage": 0.0,
+      "C_ids": [
+        53,
+        34,
+        106,
+        181,
+        93
+      ],
+      "D_ids": [
+        53,
+        34,
+        106,
+        96,
+        158
+      ]
+    }
+  ],
+  "mmr_test_improved": 0,
+  "mmr_test_regressed": 3,
+  "note": "程序复算和来源身份核对，不等于独立人工语义评分；不更改题集、模型输出或原始评分。"
+}

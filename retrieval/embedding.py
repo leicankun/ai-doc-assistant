@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from openai import OpenAI
 
 from config import BASE_DIR
+from retrieval.backend import current_provider
 
 
 load_dotenv(BASE_DIR / ".env")
@@ -22,6 +23,14 @@ def embed_texts(texts: list[str], timeout: float = 30.0) -> list[list[float]]:
     for text in texts:
         if not isinstance(text, str) or not text.strip():
             raise ValueError("输入必须是非空白字符串列表")
+
+    if current_provider() == 'local':
+        from retrieval.local_embedding import embed_local_texts, LocalEmbeddingError
+        try:
+            return embed_local_texts(texts, timeout=timeout)
+        except LocalEmbeddingError as exc:
+            from fastapi import HTTPException
+            raise HTTPException(503, str(exc)) from exc
 
     api_key = os.getenv("DASHSCOPE_API_KEY")
     base_url = os.getenv("DASHSCOPE_BASE_URL")

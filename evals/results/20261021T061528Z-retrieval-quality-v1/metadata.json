@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "mode": "offline_replay_of_real_retrieval",
+  "model_calls": 0,
+  "source_directory": "C:\\Users\\rog\\Desktop\\ai-doc-assistant\\evals\\results\\20261021T055048Z-chunking-v1",
+  "source_hashes": {
+    "metadata.json": "ef0e12dc92e5537fe502a112e881825557d508bfa47902ae06a2ef1215655bb3",
+    "retrieval.jsonl": "ca82cf788dce9432174e9b171be151220fde7b24ecfcff748bdcf3e652e6055e",
+    "chunks.json": "fb494f4d39043846154b9f60b8f8ac7e7665420552ee73ac33b55206ae4ba19d",
+    "audit.json": "87ab8afc7e7e53ff196e8c7262d4597d5610f73d58b4d9a589038363b1f21c70"
+  },
+  "budget_characters": 2500,
+  "retrieval_records": 240,
+  "started_at_utc": "2026-10-21T06:15:28.360554+00:00",
+  "code_hashes": {
+    "evals/retrieval_quality.py": "5d6200f88adeeea1164f22db599ac7e8b0383a37073e949fd66554f089f86558",
+    "evals/report_retrieval_quality.py": "a573e96e8d7fe2f1519fa453d1accf15c06a34c0910b6f11d2c64eef9ec69966",
+    "retrieval/reranker.py": "74509e7bd295660d59b23171c0eb48e404baae1572fd6bfce60830960e04273a"
+  },
+  "source_unchanged": true,
+  "run_status": "completed",
+  "finished_at_utc": "2026-10-21T06:15:30.091278+00:00"
+}

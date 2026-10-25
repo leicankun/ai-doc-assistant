@@ -1,11 +1,14 @@
 <script setup>
 import { computed, onBeforeUnmount, ref, watch } from 'vue'
+import EmbeddingBackend from './EmbeddingBackend.vue'
 
-const props = defineProps({ documents: { type: Array, required: true }, activeDocumentId: { type: [String, Number], default: '' } })
-const emit = defineEmits(['processing-updated'])
+const props = defineProps({ documents: { type: Array, required: true }, activeDocumentId: { type: [String, Number], default: '' }, embeddingProvider: { type: String, default: 'api' } })
+const emit = defineEmits(['processing-updated', 'update:embeddingProvider'])
 const documentId = ref('')
 const question = ref('')
 const mode = ref('bm25')
+const embeddingProvider = computed({ get: () => props.embeddingProvider, set: value => emit('update:embeddingProvider', value) })
+const localPreparing = ref(false)
 const topK = ref(5)
 const busy = ref('')
 const error = ref('')
@@ -30,6 +33,7 @@ function reset() {
 }
 
 watch(documentId, reset)
+watch(embeddingProvider, reset)
 watch(() => props.activeDocumentId, id => { documentId.value = id }, { immediate: true })
 watch(() => props.documents, () => {
   if (!selected.value) documentId.value = ''
@@ -37,7 +41,7 @@ watch(() => props.documents, () => {
 onBeforeUnmount(reset)
 
 async function run(action) {
-  if (busy.value || !selected.value) return
+  if (busy.value || localPreparing.value || !selected.value) return
   const isQuestion = action === 'search' || action === 'ask-rag' || action === 'ask-rag/stream'
   if (isQuestion && (!question.value.trim() || question.value.trim().length > 1000 || !Number.isInteger(topK.value) || topK.value < 1 || topK.value > 20)) {
     error.value = '请输入问题，返回数量应为 1 到 20 的整数。'
@@ -57,7 +61,7 @@ async function run(action) {
       signal: controller.signal,
       ...(isQuestion ? {
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ question: question.value.trim(), mode: mode.value, top_k: topK.value }),
+        body: JSON.stringify({ question: question.value.trim(), mode: mode.value, top_k: topK.value, embedding_provider: embeddingProvider.value }),
       } : {}),
     })
     if (action === 'ask-rag/stream' && response.ok) {
@@ -157,10 +161,11 @@ function metric(value) {
       </select>
     </label>
     <p v-if="!documents.length" class="hint">暂无文档，请先上传 Markdown 或 PDF 文件。</p>
+    <EmbeddingBackend v-model="embeddingProvider" :document-id="documentId" :disabled="Boolean(busy)" @preparing="localPreparing = $event" />
     <p v-if="selected" class="hint" role="status">处理状态：{{ selected.processing_status_label }} · {{ selected.chunk_count }} 个分块。<span v-if="selected.processing_status === 'not_chunked'">请先生成分块。</span><span v-else-if="selected.processing_status !== 'indexed'">BM25 可用；向量或混合检索前请完成向量入库。</span><span v-else>可使用全部检索方式。</span></p>
     <div class="actions">
-      <button type="button" :disabled="!selected || Boolean(busy)" @click="run('chunks')">{{ busy === 'chunks' ? '生成分块中…' : '生成 / 更新分块' }}</button>
-      <button type="button" :disabled="!selected || Boolean(busy)" @click="run('index')">{{ busy === 'index' ? '向量入库中…' : '向量入库' }}</button>
+      <button type="button" :disabled="!selected || Boolean(busy) || localPreparing" @click="run('chunks')">{{ busy === 'chunks' ? '生成分块中…' : '生成 / 更新分块' }}</button>
+      <button v-if="embeddingProvider === 'api'" type="button" :disabled="!selected || Boolean(busy)" @click="run('index')">{{ busy === 'index' ? '向量入库中…' : '向量入库' }}</button>
     </div>
     <form @submit.prevent="run('search')">
       <label class="field">

@@ -1,5 +1,5 @@
 """文档分块接口。"""
-import sqlite3
+from storage.database import DatabaseConnection, DatabaseError
 from fastapi import APIRouter, Depends, HTTPException
 from pypdf import PdfReader
 from pypdf.errors import PyPdfError
@@ -11,11 +11,11 @@ from routers.document_management import get_document_content
 router = APIRouter(prefix="/documents", tags=["文档分块"])
 
 
-# 读取文档正文，生成带来源信息的分块，并替换 SQLite 中的旧分块。
+# 读取文档正文，生成带来源信息的分块，并替换 MySQL 中的旧分块。
 @router.post("/{document_id}/chunks")
 def create_document_chunks(
     document_id: int,
-    connection: sqlite3.Connection = Depends(get_connection),
+    connection: DatabaseConnection = Depends(get_connection),
 ):
     # 1. 复用正文读取函数，支持 Markdown 和 PDF
     document = get_document_content(document_id, connection)
@@ -82,7 +82,7 @@ def create_document_chunks(
         )
         connection.commit()
 
-    except sqlite3.Error:
+    except DatabaseError:
         # 中途失败时，撤销本次修改，保留原来的分块
         connection.rollback()
         raise HTTPException(
@@ -101,7 +101,7 @@ def create_document_chunks(
 @router.get("/{document_id}/chunks")
 def list_document_chunks(
     document_id: int,
-    connection: sqlite3.Connection = Depends(get_connection),
+    connection: DatabaseConnection = Depends(get_connection),
 ):
     # 1. 确认文档存在
     document = connection.execute(

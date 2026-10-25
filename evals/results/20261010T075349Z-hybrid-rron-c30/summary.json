@@ -1,0 +1,9 @@
+{
+  "questions": 30,
+  "retrieval_success": 30,
+  "answer_success": 29,
+  "answerable_questions": 24,
+  "any_evidence_hit": 24,
+  "full_evidence_coverage": 24,
+  "note": "Exact normalized quote matching is a retrieval diagnostic, not semantic accuracy. Human answer/refusal/citation review is pending."
+}

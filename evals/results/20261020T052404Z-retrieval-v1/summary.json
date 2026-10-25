@@ -1,0 +1,344 @@
+{
+  "retrieval": {
+    "dev": {
+      "A": {
+        "questions": 0,
+        "success": 0,
+        "answerable_questions": 0,
+        "any_evidence_hit": 0,
+        "full_evidence_coverage": 0,
+        "mean_evidence_coverage": null,
+        "mrr_at_5": null,
+        "mean_returned_count": null,
+        "heading_only_count": 0,
+        "redundant_count": 0,
+        "redundancy_ratio": 0.0,
+        "mmr_applied": 0,
+        "composed_latency_seconds": null,
+        "latency_note": "共享同一次召回和同一次重排的组件耗时之和，非独立HTTP端到端计时"
+      },
+      "B": {
+        "questions": 0,
+        "success": 0,
+        "answerable_questions": 0,
+        "any_evidence_hit": 0,
+        "full_evidence_coverage": 0,
+        "mean_evidence_coverage": null,
+        "mrr_at_5": null,
+        "mean_returned_count": null,
+        "heading_only_count": 0,
+        "redundant_count": 0,
+        "redundancy_ratio": 0.0,
+        "mmr_applied": 0,
+        "composed_latency_seconds": null,
+        "latency_note": "共享同一次召回和同一次重排的组件耗时之和，非独立HTTP端到端计时"
+      },
+      "C": {
+        "questions": 0,
+        "success": 0,
+        "answerable_questions": 0,
+        "any_evidence_hit": 0,
+        "full_evidence_coverage": 0,
+        "mean_evidence_coverage": null,
+        "mrr_at_5": null,
+        "mean_returned_count": null,
+        "heading_only_count": 0,
+        "redundant_count": 0,
+        "redundancy_ratio": 0.0,
+        "mmr_applied": 0,
+        "composed_latency_seconds": null,
+        "latency_note": "共享同一次召回和同一次重排的组件耗时之和，非独立HTTP端到端计时"
+      },
+      "D": {
+        "questions": 0,
+        "success": 0,
+        "answerable_questions": 0,
+        "any_evidence_hit": 0,
+        "full_evidence_coverage": 0,
+        "mean_evidence_coverage": null,
+        "mrr_at_5": null,
+        "mean_returned_count": null,
+        "heading_only_count": 0,
+        "redundant_count": 0,
+        "redundancy_ratio": 0.0,
+        "mmr_applied": 0,
+        "composed_latency_seconds": null,
+        "latency_note": "共享同一次召回和同一次重排的组件耗时之和，非独立HTTP端到端计时"
+      }
+    },
+    "test": {
+      "A": {
+        "questions": 0,
+        "success": 0,
+        "answerable_questions": 0,
+        "any_evidence_hit": 0,
+        "full_evidence_coverage": 0,
+        "mean_evidence_coverage": null,
+        "mrr_at_5": null,
+        "mean_returned_count": null,
+        "heading_only_count": 0,
+        "redundant_count": 0,
+        "redundancy_ratio": 0.0,
+        "mmr_applied": 0,
+        "composed_latency_seconds": null,
+        "latency_note": "共享同一次召回和同一次重排的组件耗时之和，非独立HTTP端到端计时"
+      },
+      "B": {
+        "questions": 0,
+        "success": 0,
+        "answerable_questions": 0,
+        "any_evidence_hit": 0,
+        "full_evidence_coverage": 0,
+        "mean_evidence_coverage": null,
+        "mrr_at_5": null,
+        "mean_returned_count": null,
+        "heading_only_count": 0,
+        "redundant_count": 0,
+        "redundancy_ratio": 0.0,
+        "mmr_applied": 0,
+        "composed_latency_seconds": null,
+        "latency_note": "共享同一次召回和同一次重排的组件耗时之和，非独立HTTP端到端计时"
+      },
+      "C": {
+        "questions": 0,
+        "success": 0,
+        "answerable_questions": 0,
+        "any_evidence_hit": 0,
+        "full_evidence_coverage": 0,
+        "mean_evidence_coverage": null,
+        "mrr_at_5": null,
+        "mean_returned_count": null,
+        "heading_only_count": 0,
+        "redundant_count": 0,
+        "redundancy_ratio": 0.0,
+        "mmr_applied": 0,
+        "composed_latency_seconds": null,
+        "latency_note": "共享同一次召回和同一次重排的组件耗时之和，非独立HTTP端到端计时"
+      },
+      "D": {
+        "questions": 0,
+        "success": 0,
+        "answerable_questions": 0,
+        "any_evidence_hit": 0,
+        "full_evidence_coverage": 0,
+        "mean_evidence_coverage": null,
+        "mrr_at_5": null,
+        "mean_returned_count": null,
+        "heading_only_count": 0,
+        "redundant_count": 0,
+        "redundancy_ratio": 0.0,
+        "mmr_applied": 0,
+        "composed_latency_seconds": null,
+        "latency_note": "共享同一次召回和同一次重排的组件耗时之和，非独立HTTP端到端计时"
+      }
+    },
+    "all": {
+      "A": {
+        "questions": 0,
+        "success": 0,
+        "answerable_questions": 0,
+        "any_evidence_hit": 0,
+        "full_evidence_coverage": 0,
+        "mean_evidence_coverage": null,
+        "mrr_at_5": null,
+        "mean_returned_count": null,
+        "heading_only_count": 0,
+        "redundant_count": 0,
+        "redundancy_ratio": 0.0,
+        "mmr_applied": 0,
+        "composed_latency_seconds": null,
+        "latency_note": "共享同一次召回和同一次重排的组件耗时之和，非独立HTTP端到端计时"
+      },
+      "B": {
+        "questions": 0,
+        "success": 0,
+        "answerable_questions": 0,
+        "any_evidence_hit": 0,
+        "full_evidence_coverage": 0,
+        "mean_evidence_coverage": null,
+        "mrr_at_5": null,
+        "mean_returned_count": null,
+        "heading_only_count": 0,
+        "redundant_count": 0,
+        "redundancy_ratio": 0.0,
+        "mmr_applied": 0,
+        "composed_latency_seconds": null,
+        "latency_note": "共享同一次召回和同一次重排的组件耗时之和，非独立HTTP端到端计时"
+      },
+      "C": {
+        "questions": 0,
+        "success": 0,
+        "answerable_questions": 0,
+        "any_evidence_hit": 0,
+        "full_evidence_coverage": 0,
+        "mean_evidence_coverage": null,
+        "mrr_at_5": null,
+        "mean_returned_count": null,
+        "heading_only_count": 0,
+        "redundant_count": 0,
+        "redundancy_ratio": 0.0,
+        "mmr_applied": 0,
+        "composed_latency_seconds": null,
+        "latency_note": "共享同一次召回和同一次重排的组件耗时之和，非独立HTTP端到端计时"
+      },
+      "D": {
+        "questions": 0,
+        "success": 0,
+        "answerable_questions": 0,
+        "any_evidence_hit": 0,
+        "full_evidence_coverage": 0,
+        "mean_evidence_coverage": null,
+        "mrr_at_5": null,
+        "mean_returned_count": null,
+        "heading_only_count": 0,
+        "redundant_count": 0,
+        "redundancy_ratio": 0.0,
+        "mmr_applied": 0,
+        "composed_latency_seconds": null,
+        "latency_note": "共享同一次召回和同一次重排的组件耗时之和，非独立HTTP端到端计时"
+      }
+    }
+  },
+  "candidate_pool": {
+    "dev": {
+      "answerable_questions": 0,
+      "mean_evidence_coverage": null,
+      "full_evidence_coverage": 0
+    },
+    "test": {
+      "answerable_questions": 0,
+      "mean_evidence_coverage": null,
+      "full_evidence_coverage": 0
+    },
+    "all": {
+      "answerable_questions": 0,
+      "mean_evidence_coverage": null,
+      "full_evidence_coverage": 0
+    }
+  },
+  "answers": {
+    "A": {
+      "questions": 0,
+      "request_success": 0,
+      "judge_success": 0,
+      "task_pass": 0,
+      "strict_pass": 0,
+      "point_coverage_mean_answerable_scored": null,
+      "behavior_correct": 0,
+      "unsupported_answers": 0,
+      "citation_error_answers": 0,
+      "source_identity_errors": 0,
+      "latency_seconds": null
+    },
+    "B": {
+      "questions": 0,
+      "request_success": 0,
+      "judge_success": 0,
+      "task_pass": 0,
+      "strict_pass": 0,
+      "point_coverage_mean_answerable_scored": null,
+      "behavior_correct": 0,
+      "unsupported_answers": 0,
+      "citation_error_answers": 0,
+      "source_identity_errors": 0,
+      "latency_seconds": null
+    },
+    "C": {
+      "questions": 0,
+      "request_success": 0,
+      "judge_success": 0,
+      "task_pass": 0,
+      "strict_pass": 0,
+      "point_coverage_mean_answerable_scored": null,
+      "behavior_correct": 0,
+      "unsupported_answers": 0,
+      "citation_error_answers": 0,
+      "source_identity_errors": 0,
+      "latency_seconds": null
+    },
+    "D": {
+      "questions": 0,
+      "request_success": 0,
+      "judge_success": 0,
+      "task_pass": 0,
+      "strict_pass": 0,
+      "point_coverage_mean_answerable_scored": null,
+      "behavior_correct": 0,
+      "unsupported_answers": 0,
+      "citation_error_answers": 0,
+      "source_identity_errors": 0,
+      "latency_seconds": null
+    }
+  },
+  "category_results": {},
+  "usage": {
+    "setup": {
+      "embedding": {
+        "calls": 1,
+        "failed": 1,
+        "reported_total_tokens": 0
+      },
+      "rerank": {
+        "calls": 0,
+        "failed": 0,
+        "reported_total_tokens": 0
+      },
+      "chat": {
+        "calls": 0,
+        "failed": 0,
+        "reported_total_tokens": 0
+      }
+    },
+    "retrieval": {
+      "embedding": {
+        "calls": 0,
+        "failed": 0,
+        "reported_total_tokens": 0
+      },
+      "rerank": {
+        "calls": 0,
+        "failed": 0,
+        "reported_total_tokens": 0
+      },
+      "chat": {
+        "calls": 0,
+        "failed": 0,
+        "reported_total_tokens": 0
+      }
+    },
+    "answer": {
+      "embedding": {
+        "calls": 0,
+        "failed": 0,
+        "reported_total_tokens": 0
+      },
+      "rerank": {
+        "calls": 0,
+        "failed": 0,
+        "reported_total_tokens": 0
+      },
+      "chat": {
+        "calls": 0,
+        "failed": 0,
+        "reported_total_tokens": 0
+      }
+    },
+    "judge": {
+      "embedding": {
+        "calls": 0,
+        "failed": 0,
+        "reported_total_tokens": 0
+      },
+      "rerank": {
+        "calls": 0,
+        "failed": 0,
+        "reported_total_tokens": 0
+      },
+      "chat": {
+        "calls": 0,
+        "failed": 0,
+        "reported_total_tokens": 0
+      }
+    }
+  }
+}

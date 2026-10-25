@@ -1,0 +1,134 @@
+[
+  {
+    "kind": "embedding",
+    "model": "text-embedding-v4",
+    "success": true,
+    "usage": {
+      "prompt_tokens": 327,
+      "total_tokens": 327
+    },
+    "response_id": "bc3c59c8-adc3-9357-926c-d1841b574c01",
+    "seconds": 1.51
+  },
+  {
+    "kind": "embedding",
+    "model": "text-embedding-v4",
+    "success": true,
+    "usage": {
+      "prompt_tokens": 338,
+      "total_tokens": 338
+    },
+    "response_id": "ba360793-8292-91e3-99f3-ee5320003cb1",
+    "seconds": 1.394
+  },
+  {
+    "kind": "embedding",
+    "model": "text-embedding-v4",
+    "success": true,
+    "usage": {
+      "prompt_tokens": 323,
+      "total_tokens": 323
+    },
+    "response_id": "47235ebb-c0e3-9a61-adb4-a0e29c1d60fb",
+    "seconds": 1.404
+  },
+  {
+    "kind": "embedding",
+    "model": "text-embedding-v4",
+    "success": true,
+    "usage": {
+      "prompt_tokens": 362,
+      "total_tokens": 362
+    },
+    "response_id": "5af49799-490d-992c-85df-26414a954082",
+    "seconds": 2.29
+  },
+  {
+    "kind": "embedding",
+    "model": "text-embedding-v4",
+    "success": true,
+    "usage": {
+      "prompt_tokens": 406,
+      "total_tokens": 406
+    },
+    "response_id": "1b964cb4-a951-946c-a092-b7856486eeff",
+    "seconds": 3.413
+  },
+  {
+    "kind": "embedding",
+    "model": "text-embedding-v4",
+    "success": true,
+    "usage": {
+      "prompt_tokens": 341,
+      "total_tokens": 341
+    },
+    "response_id": "b0fb22ce-6d03-9280-befa-78fff6829c88",
+    "seconds": 1.529
+  },
+  {
+    "kind": "embedding",
+    "model": "text-embedding-v4",
+    "success": true,
+    "usage": {
+      "prompt_tokens": 440,
+      "total_tokens": 440
+    },
+    "response_id": "d1afc69b-1115-9f14-b7af-9f86b099c974",
+    "seconds": 6.138
+  },
+  {
+    "kind": "embedding",
+    "model": "text-embedding-v4",
+    "success": true,
+    "usage": {
+      "prompt_tokens": 449,
+      "total_tokens": 449
+    },
+    "response_id": "438becb2-9091-915c-b4dc-ebdde7c7422f",
+    "seconds": 1.662
+  },
+  {
+    "kind": "embedding",
+    "model": "text-embedding-v4",
+    "success": true,
+    "usage": {
+      "prompt_tokens": 357,
+      "total_tokens": 357
+    },
+    "response_id": "a1c009df-1785-9c9a-8778-b2e6556e7f86",
+    "seconds": 2.527
+  },
+  {
+    "kind": "embedding",
+    "model": "text-embedding-v4",
+    "success": true,
+    "usage": {
+      "prompt_tokens": 348,
+      "total_tokens": 348
+    },
+    "response_id": "97626075-f872-9119-bf0f-cf1e52dbd6a9",
+    "seconds": 1.404
+  },
+  {
+    "kind": "embedding",
+    "model": "text-embedding-v4",
+    "success": true,
+    "usage": {
+      "prompt_tokens": 313,
+      "total_tokens": 313
+    },
+    "response_id": "eb160f83-d929-9d0c-ae0d-1359ff72ede4",
+    "seconds": 3.236
+  },
+  {
+    "kind": "embedding",
+    "model": "text-embedding-v4",
+    "success": true,
+    "usage": {
+      "prompt_tokens": 372,
+      "total_tokens": 372
+    },
+    "response_id": "f01ea744-45af-9658-ba58-dc38800f8ef7",
+    "seconds": 1.982
+  }
+]

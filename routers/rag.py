@@ -1,11 +1,10 @@
 """RAG问答接口。"""
-import sqlite3
+from storage.database import DatabaseConnection, DatabaseError, connect
 import os
 import logging
 from fastapi import APIRouter, Depends, HTTPException
 from openai import APIError, APITimeoutError
 from storage.database import get_connection
-from config import DB_PATH
 from starlette.concurrency import run_in_threadpool
 from schemas import SearchRequest
 from services.llm import answer_with_chunks
@@ -32,7 +31,7 @@ router = APIRouter(prefix="/documents", tags=["RAG问答"])
 def ask_document_rag(
     document_id: int,
     request: SearchRequest,
-    connection: sqlite3.Connection = Depends(get_connection),
+    connection: DatabaseConnection = Depends(get_connection),
 ):
     # 1. 复用已有检索接口的处理逻辑。
     # 普通 Python 函数调用不会自动注入依赖，
@@ -99,7 +98,7 @@ def ask_document_rag_stream(
     document_id: int,
     request: SearchRequest,
     http_request: Request,
-    connection: sqlite3.Connection = Depends(get_connection),
+    connection: DatabaseConnection = Depends(get_connection),
 ):
     # 1. 先完成检索。
     # 检索失败时，还未开始 SSE，可以正常返回 HTTP 错误。
@@ -191,7 +190,7 @@ def ask_document_rag_stream(
 def ask_document_rag_chat(
     document_id: int,
     request: RagChatRequest,
-    connection: sqlite3.Connection = Depends(get_connection),
+    connection: DatabaseConnection = Depends(get_connection),
 ):
     session = connection.execute(
         """
@@ -240,6 +239,7 @@ def ask_document_rag_chat(
                 question=retrieval_question,
                 mode=request.mode,
                 top_k=request.top_k,
+                embedding_provider=request.embedding_provider,
             ),
             connection=connection,
         )
@@ -296,7 +296,7 @@ def ask_document_rag_chat(
             ),
         )
         connection.commit()
-    except sqlite3.Error as exc:
+    except DatabaseError as exc:
         connection.rollback()
         raise HTTPException(
             status_code=500,
@@ -321,7 +321,7 @@ def ask_document_rag_chat(
 def get_rag_history(
     document_id: int,
     session_id: int,
-    connection: sqlite3.Connection = Depends(get_connection),
+    connection: DatabaseConnection = Depends(get_connection),
 ):
     session = connection.execute(
         """
@@ -364,7 +364,7 @@ def ask_document_rag_chat_stream(
     document_id: int,
     request: RagChatRequest,
     http_request: Request,
-    connection: sqlite3.Connection = Depends(get_connection),
+    connection: DatabaseConnection = Depends(get_connection),
 ):
     session = connection.execute(
         """
@@ -413,6 +413,7 @@ def ask_document_rag_chat_stream(
                 question=retrieval_question,
                 mode=request.mode,
                 top_k=request.top_k,
+                embedding_provider=request.embedding_provider,
             ),
             connection=connection,
         )
@@ -444,7 +445,7 @@ def ask_document_rag_chat_stream(
 
 
     def save_turn(answer, citations):
-        with closing(sqlite3.connect(DB_PATH)) as save, save:
+        with closing(connect()) as save, save:
             cursor = save.execute(
                 """INSERT INTO rag_turns(document_id,session_id,question,retrieval_question,answer,citations_json,mode)
                 VALUES(?,?,?,?,?,?,?)""",
@@ -484,7 +485,7 @@ def ask_document_rag_chat_stream(
             yield encode({"type":"error", "message":"模型调用失败，请稍后重试"})
         except ValueError as exc:
             yield encode({"type":"error", "message":str(exc)})
-        except sqlite3.Error:
+        except DatabaseError:
             logger.exception("RAG history save failed")
             yield encode({"type":"error", "message":"回答已生成，但历史保存失败"})
         except Exception:

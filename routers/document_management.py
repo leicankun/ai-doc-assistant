@@ -1,6 +1,7 @@
 """文档管理接口。"""
-import sqlite3
+from storage.database import DatabaseConnection, DatabaseError
 import logging
+from typing import Literal
 from uuid import uuid4
 from pathlib import Path
 from io import BytesIO
@@ -19,7 +20,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/documents", tags=["文档管理"])
 
 
-def process_uploaded_document(document_id, connection):
+def process_uploaded_document(document_id, connection, embedding_provider='api'):
     """顺序完成分块和入库；在线程池运行，避免阻塞异步请求循环。"""
     # 分块模块复用本文件的正文读取函数，延迟导入避免循环导入。
     from routers.chunks import create_document_chunks
@@ -29,7 +30,13 @@ def process_uploaded_document(document_id, connection):
     try:
         create_document_chunks(document_id, connection)
         stage = "indexing"
-        index_document(document_id, connection)
+        if embedding_provider == 'local':
+            from scripts.local_bge import start
+            from retrieval.local_index import index_local_document
+            start()
+            index_local_document(connection, document_id)
+        else:
+            index_document(document_id, connection)
         return {"processing_completed": True, "processing_error": None}
     except Exception:
         connection.rollback()
@@ -45,7 +52,7 @@ def process_uploaded_document(document_id, connection):
 # 查询所有文档的信息列表，返回文档条目和总数。
 @router.get("")
 def list_documents(
-    connection: sqlite3.Connection = Depends(get_connection),
+    connection: DatabaseConnection = Depends(get_connection),
 ):
     query_cursor = connection.execute(
         DOCUMENT_SELECT + " ORDER BY d.id"
@@ -64,7 +71,7 @@ def list_documents(
 @router.get("/{document_id}")
 def get_document(
     document_id: int,
-    connection: sqlite3.Connection = Depends(get_connection),
+    connection: DatabaseConnection = Depends(get_connection),
     ):
     query_cursor = connection.execute(
         DOCUMENT_SELECT + " WHERE d.id = ?",
@@ -83,7 +90,7 @@ def get_document(
 @router.put("/{document_id}")
 def update_document(document_id: int,
                     new_data: Document,
-                    connection: sqlite3.Connection = Depends(get_connection),):
+                    connection: DatabaseConnection = Depends(get_connection),):
 
     update_cursor = connection.execute(
         """
@@ -110,7 +117,7 @@ def update_document(document_id: int,
 @router.post("", status_code=201)
 def create_document(
     document: Document,
-    connection :sqlite3.Connection = Depends(get_connection),
+    connection :DatabaseConnection = Depends(get_connection),
     ):
 
     insert_cursor = connection.execute(
@@ -125,11 +132,11 @@ def create_document(
     }
 
 
-# 删除文档、上传原文件、SQLite 分块、Chroma 向量及两类问答历史和会话。
+# 删除文档、上传原文件、MySQL 分块、Chroma 向量及两类问答历史和会话。
 @router.delete("/{document_id}")
 def del_document(
     document_id: int,
-    connection :sqlite3.Connection = Depends(get_connection),
+    connection :DatabaseConnection = Depends(get_connection),
     ):
     try:
         return delete_document(document_id, connection, UPLOAD_DIR)
@@ -147,7 +154,8 @@ def del_document(
 @router.post("/upload", status_code=201)
 async def upload_document(
     file: UploadFile,
-    connection: sqlite3.Connection = Depends(get_connection),
+    connection: DatabaseConnection = Depends(get_connection),
+    embedding_provider: Literal['api', 'local'] = 'api',
 ):
     # 1. 判断文件类型
     filename = file.filename or ""
@@ -226,18 +234,20 @@ async def upload_document(
         )
         connection.commit()
 
-    except sqlite3.Error:
+    except DatabaseError:
         connection.rollback()
         file_path.unlink()
         raise
 
     document_id = insert_cursor.lastrowid
-    processing = await run_in_threadpool(process_uploaded_document, document_id, connection)
+    options = {'embedding_provider': 'local'} if embedding_provider == 'local' else {}
+    processing = await run_in_threadpool(process_uploaded_document, document_id, connection, **options)
     document = get_document(document_id, connection)
 
     return {
         **document,
         **processing,
+        "embedding_provider": embedding_provider,
         "id": document_id,
         "title": filename,
         "file_type": file_type,
@@ -251,7 +261,7 @@ async def upload_document(
 @router.get("/{document_id}/content")
 def get_document_content(
     document_id: int,
-    connection: sqlite3.Connection = Depends(get_connection),
+    connection: DatabaseConnection = Depends(get_connection),
 ):
     # 1. 查询文档信息，同时获取文件类型
     document = connection.execute(

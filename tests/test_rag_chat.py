@@ -22,9 +22,8 @@ class RagChatTests(unittest.TestCase):
         folder = tempfile.TemporaryDirectory()
         self.addCleanup(folder.cleanup)
         db_path = Path(folder.name) / 'test.db'
-        with patch.object(database, 'DB_PATH', db_path):
-            database.init_db()
-            database.init_db()
+        database.init_test_db(db_path)
+        database.init_test_db(db_path)
         self.db = sqlite3.connect(db_path, check_same_thread=False)
         self.db.row_factory = sqlite3.Row
         self.addCleanup(self.db.close)

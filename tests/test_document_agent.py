@@ -35,8 +35,7 @@ class DocumentAgentTests(unittest.TestCase):
         folder = tempfile.TemporaryDirectory()
         self.addCleanup(folder.cleanup)
         path = Path(folder.name) / "test.db"
-        with patch.object(database, "DB_PATH", path):
-            database.init_db()
+        database.init_test_db(path)
         self.db = sqlite3.connect(path, check_same_thread=False)
         self.db.row_factory = sqlite3.Row
         self.addCleanup(self.db.close)

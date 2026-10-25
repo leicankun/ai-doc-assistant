@@ -2,10 +2,18 @@ from storage.database import init_db
 from fastapi import FastAPI
 from routers.documents import router as documents_router
 from fastapi.middleware.cors import CORSMiddleware
+from contextlib import asynccontextmanager
+from starlette.concurrency import run_in_threadpool
 
 
 # 创建应用实例
-app = FastAPI(title = "技术文档问答助手")
+@asynccontextmanager
+async def lifespan(app):
+    await run_in_threadpool(init_db)
+    yield
+
+
+app = FastAPI(title = "技术文档问答助手", lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -15,8 +23,6 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["Content-Type"],
 )
-
-init_db()
 
 app.include_router(documents_router)
 

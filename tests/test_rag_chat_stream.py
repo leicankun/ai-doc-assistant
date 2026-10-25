@@ -1,3 +1,4 @@
+from storage import database
 import json
 from unittest.mock import AsyncMock, MagicMock, patch
 from services import llm
@@ -13,7 +14,7 @@ class RagChatStreamTests(RagChatTests):
         client.__aexit__ = AsyncMock(return_value=False)
         client.chat.completions.create = AsyncMock(return_value=FakeStream(parts, 'stop'))
         path = self.db.execute('PRAGMA database_list').fetchone()[2]
-        with patch.object(rag, 'DB_PATH', path), patch.object(llm, 'AsyncOpenAI', return_value=client), \
+        with patch.object(rag, 'connect', side_effect=lambda: database.connect_test_db(path)), patch.object(llm, 'AsyncOpenAI', return_value=client), \
                 patch.object(rag, 'rewrite_question', return_value='SQLite'):
             response = self.client.post('/documents/1/ask-rag/chat/stream', json={
                 'question': '它如何保存？', 'session_id': 1, 'mode': 'bm25'})

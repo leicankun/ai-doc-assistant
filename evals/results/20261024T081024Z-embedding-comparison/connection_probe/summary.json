@@ -1,0 +1,222 @@
+{
+  "sample_questions": [
+    "r055",
+    "r049",
+    "r029",
+    "r026",
+    "l027",
+    "l014",
+    "r057",
+    "r010",
+    "r053",
+    "r047"
+  ],
+  "constructor_ms": 1045.7331000015984,
+  "api_model": "text-embedding-v4",
+  "dimensions": 1024,
+  "note": "10 matched queries, modes interleaved; small supplementary latency check, no quality retuning.",
+  "summary": {
+    "api_fresh": {
+      "n": 10,
+      "mean_ms": 2768.09252999974,
+      "p50_ms": 2866.455899998982,
+      "p95_ms": 3879.6525199994894
+    },
+    "api_reused": {
+      "n": 10,
+      "mean_ms": 652.3182000000816,
+      "p50_ms": 467.8454499999134,
+      "p95_ms": 1464.4427299997003
+    },
+    "local": {
+      "n": 10,
+      "mean_ms": 67.04916000016965,
+      "p50_ms": 48.079850001158775,
+      "p95_ms": 181.95833000008835
+    }
+  },
+  "failed": 0,
+  "rows": [
+    {
+      "id": "r055",
+      "mode": "api_fresh",
+      "success": true,
+      "milliseconds": 3312.6979999997275
+    },
+    {
+      "id": "r055",
+      "mode": "api_reused",
+      "success": true,
+      "milliseconds": 505.7923000003939
+    },
+    {
+      "id": "r055",
+      "mode": "local",
+      "success": true,
+      "milliseconds": 287.7644000000146
+    },
+    {
+      "id": "r049",
+      "mode": "api_reused",
+      "success": true,
+      "milliseconds": 597.596200001135
+    },
+    {
+      "id": "r049",
+      "mode": "local",
+      "success": true,
+      "milliseconds": 46.907600000849925
+    },
+    {
+      "id": "r049",
+      "mode": "api_fresh",
+      "success": true,
+      "milliseconds": 1844.6256999995967
+    },
+    {
+      "id": "r029",
+      "mode": "local",
+      "success": true,
+      "milliseconds": 50.773700000718236
+    },
+    {
+      "id": "r029",
+      "mode": "api_fresh",
+      "success": true,
+      "milliseconds": 4343.524399999296
+    },
+    {
+      "id": "r029",
+      "mode": "api_reused",
+      "success": true,
+      "milliseconds": 1341.4909999992233
+    },
+    {
+      "id": "r026",
+      "mode": "api_fresh",
+      "success": true,
+      "milliseconds": 1930.9651000003214
+    },
+    {
+      "id": "r026",
+      "mode": "api_reused",
+      "success": true,
+      "milliseconds": 401.55049999884795
+    },
+    {
+      "id": "r026",
+      "mode": "local",
+      "success": true,
+      "milliseconds": 37.10350000073959
+    },
+    {
+      "id": "l027",
+      "mode": "api_reused",
+      "success": true,
+      "milliseconds": 349.2865999996866
+    },
+    {
+      "id": "l027",
+      "mode": "local",
+      "success": true,
+      "milliseconds": 52.63980000017909
+    },
+    {
+      "id": "l027",
+      "mode": "api_fresh",
+      "success": true,
+      "milliseconds": 2002.6942000004055
+    },
+    {
+      "id": "l014",
+      "mode": "local",
+      "success": true,
+      "milliseconds": 32.4929999987944
+    },
+    {
+      "id": "l014",
+      "mode": "api_fresh",
+      "success": true,
+      "milliseconds": 3029.408099999273
+    },
+    {
+      "id": "l014",
+      "mode": "api_reused",
+      "success": true,
+      "milliseconds": 1565.039600000091
+    },
+    {
+      "id": "r057",
+      "mode": "api_fresh",
+      "success": true,
+      "milliseconds": 3146.5910999995685
+    },
+    {
+      "id": "r057",
+      "mode": "api_reused",
+      "success": true,
+      "milliseconds": 600.7225000012113
+    },
+    {
+      "id": "r057",
+      "mode": "local",
+      "success": true,
+      "milliseconds": 27.984399999695597
+    },
+    {
+      "id": "r010",
+      "mode": "api_reused",
+      "success": true,
+      "milliseconds": 340.57949999987613
+    },
+    {
+      "id": "r010",
+      "mode": "local",
+      "success": true,
+      "milliseconds": 35.40149999935238
+    },
+    {
+      "id": "r010",
+      "mode": "api_fresh",
+      "success": true,
+      "milliseconds": 2077.6253000003635
+    },
+    {
+      "id": "r053",
+      "mode": "local",
+      "success": true,
+      "milliseconds": 49.252100001467625
+    },
+    {
+      "id": "r053",
+      "mode": "api_fresh",
+      "success": true,
+      "milliseconds": 2703.5036999986914
+    },
+    {
+      "id": "r053",
+      "mode": "api_reused",
+      "success": true,
+      "milliseconds": 391.22520000091754
+    },
+    {
+      "id": "r047",
+      "mode": "api_fresh",
+      "success": true,
+      "milliseconds": 3289.289700000154
+    },
+    {
+      "id": "r047",
+      "mode": "api_reused",
+      "success": true,
+      "milliseconds": 429.8985999994329
+    },
+    {
+      "id": "r047",
+      "mode": "local",
+      "success": true,
+      "milliseconds": 50.171599999885075
+    }
+  ],
+  "additional_api_reported_tokens": 368
+}

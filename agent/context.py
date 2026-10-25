@@ -5,6 +5,7 @@ import re
 import json
 import os
 from dataclasses import dataclass, field
+from copy import deepcopy
 
 
 def estimate_tokens(value):
@@ -45,6 +46,7 @@ def build_messages(question, history=None, summary=None):
             "文档事实只根据本次工具获得的正文回答。citation_id 是整数，"
             "例如 citation_id=1 时句末写 [1]，不要写 [citation_id 1] 或 [citation_id]。"
             "只能使用工具返回的引用编号。目录元数据无需正文引用。"
+            "工具结果中的 content_reference=true 表示该分块正文已在此前同一 citation_id 下提供，复用该正文与编号。"
             "资料冲突时分别说明并引用；证据不足明确说明，不用常识填补。"
             "工具报错不等于没有资料。缺少用户条件时请求澄清。"
             "普通问候无需工具。分页结果不完整时明确说明，不声称已经列出全部资料。"
@@ -92,30 +94,88 @@ def final_messages(question, history, state, summary=None):
     return messages
 
 
+def compact_tool_messages(messages):
+    """同一来源和引用编号的正文仅保留首次出现，工具调用协议及原始记录不变。"""
+    compacted = deepcopy(messages)
+    seen = {}
+    replaced = 0
+    for message in compacted:
+        if message.get('role') != 'tool':
+            continue
+        try:
+            result = json.loads(message.get('content', ''))
+        except (ValueError, TypeError):
+            continue
+        if not isinstance(result, dict) or not isinstance(result.get('items'), list):
+            continue
+        changed = False
+        for index, item in enumerate(result['items']):
+            if (not isinstance(item, dict) or not isinstance(item.get('content'), str)
+                    or item.get('document_id') is None or item.get('chunk_id') is None
+                    or type(item.get('citation_id')) is not int):
+                continue
+            key = (item['document_id'], item['chunk_id'])
+            identity = (item['content'], item['citation_id'])
+            if seen.get(key) == identity:
+                result['items'][index] = {name: item[name] for name in
+                    ('document_id', 'chunk_id', 'citation_id')}
+                result['items'][index]['content_reference'] = True
+                replaced += 1
+                changed = True
+            else:
+                seen[key] = identity
+        if changed:
+            message['content'] = json.dumps(result, ensure_ascii=False, separators=(',', ':'))
+    return compacted, replaced
+
+
 def fit_tool_result(result, state, call, question, history, summary, budget, tools):
-    """按完整片段/目录项减少结果，绝不截断正文或拆开工具协议对。"""
-    from copy import deepcopy
+    """先去掉重复正文；完整最终证据装得下时结束工具阶段，最后才删整块。"""
     candidate = deepcopy(result)
     omitted = 0
+    decision = None
+
+    def record(action):
+        state.context_decisions.append({**decision, 'action': action,
+                                       'retained_running_estimate': compact_used,
+                                       'retained_final_estimate': final_used,
+                                       'omitted_items': omitted})
+
     while True:
         probe = deepcopy(state)
         if omitted:
             candidate['omitted_by_context_budget'] = omitted
             candidate['context_budget_note'] = '上下文预算有限，以下是部分结果；未发送的片段不能引用。'
         registered = probe.register_evidence(deepcopy(candidate))
-        probe.tool_calls.append({'tool': call.function.name, 'arguments': call.function.arguments, 'result': registered})
-        probe.messages.append({'role': 'tool', 'tool_call_id': call.id,
+        probe.tool_calls.append({'tool': call.function.name,
+                                 'arguments': call.function.arguments,
+                                 'result': registered})
+        probe.messages.append({'role': 'tool',
+                               'tool_call_id': call.id,
                                'content': json.dumps(registered, ensure_ascii=False)})
+        raw_used = budget.used(probe.messages, tools)
+        probe.messages, duplicates = compact_tool_messages(probe.messages)
+        compact_used = budget.used(probe.messages, tools)
+        final_used = budget.used(final_messages(question, history, probe, summary))
+        if decision is None:
+            decision = {'tool': call.function.name, 'tool_call_id': call.id,
+                        'budget': budget.limit, 'margin': 512,
+                        'raw_running_estimate': raw_used,
+                        'compact_running_estimate': compact_used, 'final_estimate': final_used,
+                        'raw_over_budget': raw_used > budget.limit,
+                        'compact_over_budget': compact_used > budget.limit,
+                        'preview_deduplicated_items': duplicates}
         final_fits = budget.fits(final_messages(question, history, probe, summary), margin=512)
         running_fits = budget.fits(probe.messages, tools, margin=512)
-        if final_fits and running_fits:
-            return candidate, omitted, False
+        if final_fits:
+            exhausted = not running_fits
+            record(('trim_and_finalize' if exhausted else 'trim_and_continue') if omitted
+                   else ('finalize' if exhausted else 'continue'))
+            return candidate, omitted, exhausted
         field_name = 'items' if candidate.get('items') else 'documents' if candidate.get('documents') else None
         if field_name:
             candidate[field_name].pop()
             omitted += 1
             continue
-        if final_fits:
-            # 完整协议记录仍保留在状态/数据库，下一次请求换成干净的最终证据上下文。
-            return candidate, omitted, True
+        record('error')
         raise ContextBudgetExceeded('工具元数据超过上下文预算，本轮未保存；请缩小检索范围或提高预算。')

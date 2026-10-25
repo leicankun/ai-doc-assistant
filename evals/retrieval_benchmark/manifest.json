@@ -1,0 +1,47 @@
+{
+  "version": "retrieval-v1",
+  "documents": 20,
+  "questions": 60,
+  "split": {
+    "dev": 20,
+    "test": 40
+  },
+  "categories": {
+    "direct": 10,
+    "paraphrase": 10,
+    "cross_document": 10,
+    "duplicate_noise": 10,
+    "version_exception": 8,
+    "unanswerable": 6,
+    "clarification": 6
+  },
+  "top_k": 5,
+  "candidates": 30,
+  "mmr_lambda": 0.8,
+  "answer_check_questions": 20,
+  "source": "人工定义合成运维资料；Orion开发题与Atlas/Nebula/Aster验收题分离；非真实产品承诺",
+  "hashes": {
+    "documents\\aster-archive-v2.md": "127c152bc02c3ad4dbd1aa962182e8c45ccc850bcc3d864e89557d781ec6f2cb",
+    "documents\\aster-index-v4.md": "279bc83770233bdafabfb7e7f541bbae4269a2847393ee9bb0e795a08b931b13",
+    "documents\\aster-operating-notes-v4.md": "86d13cad9d1741a83552b0b1b447a07446f3cd0a90356a9d8c1da4890c02677c",
+    "documents\\aster-permissions-v4.md": "1789af9f7d4ac38c72c14604a25986908abe0da6193972fa3640912622b51801",
+    "documents\\aster-windows-v4.md": "3c4632657d63020f5ae812363ad997711594d3b9e4d181c5c9968ec340c42254",
+    "documents\\atlas-archive.md": "f93bf46a7c73703981ba5c4e2945daffe413f7b9e707c14afcec0a6f46f79bcf",
+    "documents\\atlas-auth-v2.md": "000e4cf77cc7b238c9f149c77eeec6f6a141e0b9bcb07294f376568fdba3996e",
+    "documents\\atlas-backup-v2.md": "49a27cf33fea6cabc353f05192476e7657c20c9390e0aebf06986c38ee9db16b",
+    "documents\\atlas-capacity-v2.md": "ebfe73a24bec76dd72e10e862eb448e909a235100a2a83b503547c5832b19bfb",
+    "documents\\atlas-config-v2.md": "e9826f3fa2db952fe1aeb5865f4516b886937758a0dd21cddb5be26a16c9d54b",
+    "documents\\atlas-deploy-v1.md": "846e10aaf0d52c6a7ff6c707af2974a70594eaf5441add8fe80c07b53bf0fa16",
+    "documents\\atlas-deploy-v2.md": "e175d98f1acbdd45875018cf7cbd13a1231fa76d92b05f99eb4502695ed2283a",
+    "documents\\atlas-incident-v2.md": "398c6d6477ff726fced892aa28fe83d202868130d4a2d4627d8fd1ad4187cf79",
+    "documents\\atlas-migrate-v2.md": "5e4ce0bee516f41f8c49d93b8c524a83b320b38da9847301f8a9b6c15df8fffd",
+    "documents\\atlas-monitor-v2.md": "5276b8f30ff95e016db9eb4594ade38b3fd07ba27fe3f8b4fb37d7af72252f41",
+    "documents\\atlas-release-v2.md": "12befe41facc75f72ae56d7b36b40c28dea61afbc6f654bc8c14d6b4b7066ad2",
+    "documents\\nebula-deploy-v2.md": "5db12b7646dfbf68a0011b74c06f8dc7eed60cee521cb8c094eee88ee92f8dd7",
+    "documents\\orion-archive-v1.md": "b141dcde82a5015b1b6c0566ecbe3da4f9438bf5f88369ba74c6b9d396c19915",
+    "documents\\orion-cache-v3.md": "534f96f4d25b9a2739c939346c2d9a957f1320626239975ba902fb113f98da07",
+    "documents\\orion-worker-v3.md": "92886e85a55bcfb6c56fb3f98913f26a34c3cfa15edc6fc2517497905e0d64ff",
+    "questions.jsonl": "9aadfac0d680878ceedc903a770a603915cd68a3215c63783f60fcbce506c8fa",
+    "sections.jsonl": "38e3500a337a3e92b26df3dbddc1ca2a2d03a8bf050bd50d9405c7cc71c869e6"
+  }
+}

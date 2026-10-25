@@ -1,5 +1,5 @@
 """会话与历史接口。"""
-import sqlite3
+from storage.database import DatabaseConnection, DatabaseError
 from fastapi import APIRouter, Depends, HTTPException
 from storage.database import get_connection
 from schemas import SessionCreate
@@ -11,7 +11,7 @@ router = APIRouter(prefix="/documents", tags=["会话与历史"])
 @router.get("/{document_id}/history")
 def get_document_history(
     document_id: int,
-    connection: sqlite3.Connection = Depends(get_connection),
+    connection: DatabaseConnection = Depends(get_connection),
 ):
     document = connection.execute(
         "SELECT id FROM documents WHERE id = ?",
@@ -44,7 +44,7 @@ def get_document_history(
 def create_document_session(
     document_id: int,
     session: SessionCreate,
-    connection: sqlite3.Connection = Depends(get_connection),
+    connection: DatabaseConnection = Depends(get_connection),
 ):
     # 先确认文档存在
     document = connection.execute(
@@ -65,7 +65,7 @@ def create_document_session(
             (document_id, session.title),
         )
         connection.commit()
-    except sqlite3.Error:
+    except DatabaseError:
         connection.rollback()
         raise HTTPException(status_code=500, detail="创建会话失败")
 
@@ -80,7 +80,7 @@ def create_document_session(
 @router.get("/{document_id}/sessions")
 def list_document_sessions(
     document_id: int,
-    connection: sqlite3.Connection = Depends(get_connection),
+    connection: DatabaseConnection = Depends(get_connection),
 ):
     # 1. 确认文档存在
     document = connection.execute(
@@ -116,7 +116,7 @@ def list_document_sessions(
 def get_session_history(
     document_id: int,
     session_id: int,
-    connection: sqlite3.Connection = Depends(get_connection),
+    connection: DatabaseConnection = Depends(get_connection),
 ):
     # 1. 确认文档存在
     document = connection.execute(

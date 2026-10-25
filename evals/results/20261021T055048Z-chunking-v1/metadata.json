@@ -1,0 +1,407 @@
+{
+  "run_status": "completed",
+  "phase": "finished",
+  "started_at_utc": "2026-10-21T05:50:48.592975+00:00",
+  "dataset": {
+    "version": "retrieval-v1",
+    "documents": 20,
+    "questions": 60,
+    "split": {
+      "dev": 20,
+      "test": 40
+    },
+    "categories": {
+      "direct": 10,
+      "paraphrase": 10,
+      "cross_document": 10,
+      "duplicate_noise": 10,
+      "version_exception": 8,
+      "unanswerable": 6,
+      "clarification": 6
+    },
+    "top_k": 5,
+    "candidates": 30,
+    "mmr_lambda": 0.8,
+    "answer_check_questions": 20,
+    "source": "人工定义合成运维资料；Orion开发题与Atlas/Nebula/Aster验收题分离；非真实产品承诺",
+    "hashes": {
+      "documents\\aster-archive-v2.md": "127c152bc02c3ad4dbd1aa962182e8c45ccc850bcc3d864e89557d781ec6f2cb",
+      "documents\\aster-index-v4.md": "279bc83770233bdafabfb7e7f541bbae4269a2847393ee9bb0e795a08b931b13",
+      "documents\\aster-operating-notes-v4.md": "86d13cad9d1741a83552b0b1b447a07446f3cd0a90356a9d8c1da4890c02677c",
+      "documents\\aster-permissions-v4.md": "1789af9f7d4ac38c72c14604a25986908abe0da6193972fa3640912622b51801",
+      "documents\\aster-windows-v4.md": "3c4632657d63020f5ae812363ad997711594d3b9e4d181c5c9968ec340c42254",
+      "documents\\atlas-archive.md": "f93bf46a7c73703981ba5c4e2945daffe413f7b9e707c14afcec0a6f46f79bcf",
+      "documents\\atlas-auth-v2.md": "000e4cf77cc7b238c9f149c77eeec6f6a141e0b9bcb07294f376568fdba3996e",
+      "documents\\atlas-backup-v2.md": "49a27cf33fea6cabc353f05192476e7657c20c9390e0aebf06986c38ee9db16b",
+      "documents\\atlas-capacity-v2.md": "ebfe73a24bec76dd72e10e862eb448e909a235100a2a83b503547c5832b19bfb",
+      "documents\\atlas-config-v2.md": "e9826f3fa2db952fe1aeb5865f4516b886937758a0dd21cddb5be26a16c9d54b",
+      "documents\\atlas-deploy-v1.md": "846e10aaf0d52c6a7ff6c707af2974a70594eaf5441add8fe80c07b53bf0fa16",
+      "documents\\atlas-deploy-v2.md": "e175d98f1acbdd45875018cf7cbd13a1231fa76d92b05f99eb4502695ed2283a",
+      "documents\\atlas-incident-v2.md": "398c6d6477ff726fced892aa28fe83d202868130d4a2d4627d8fd1ad4187cf79",
+      "documents\\atlas-migrate-v2.md": "5e4ce0bee516f41f8c49d93b8c524a83b320b38da9847301f8a9b6c15df8fffd",
+      "documents\\atlas-monitor-v2.md": "5276b8f30ff95e016db9eb4594ade38b3fd07ba27fe3f8b4fb37d7af72252f41",
+      "documents\\atlas-release-v2.md": "12befe41facc75f72ae56d7b36b40c28dea61afbc6f654bc8c14d6b4b7066ad2",
+      "documents\\nebula-deploy-v2.md": "5db12b7646dfbf68a0011b74c06f8dc7eed60cee521cb8c094eee88ee92f8dd7",
+      "documents\\orion-archive-v1.md": "b141dcde82a5015b1b6c0566ecbe3da4f9438bf5f88369ba74c6b9d396c19915",
+      "documents\\orion-cache-v3.md": "534f96f4d25b9a2739c939346c2d9a957f1320626239975ba902fb113f98da07",
+      "documents\\orion-worker-v3.md": "92886e85a55bcfb6c56fb3f98913f26a34c3cfa15edc6fc2517497905e0d64ff",
+      "questions.jsonl": "9aadfac0d680878ceedc903a770a603915cd68a3215c63783f60fcbce506c8fa",
+      "sections.jsonl": "38e3500a337a3e92b26df3dbddc1ca2a2d03a8bf050bd50d9405c7cc71c869e6"
+    }
+  },
+  "groups": {
+    "original_shared": {
+      "config": [
+        500,
+        100
+      ],
+      "documents": 20,
+      "chunks": 183,
+      "mean_chunk_characters": 72.2
+    },
+    "long_300_60": {
+      "config": [
+        300,
+        60
+      ],
+      "documents": 20,
+      "chunks": 54,
+      "mean_chunk_characters": 244.4
+    },
+    "long_500_100": {
+      "config": [
+        500,
+        100
+      ],
+      "documents": 20,
+      "chunks": 38,
+      "mean_chunk_characters": 370.8
+    },
+    "long_800_160": {
+      "config": [
+        800,
+        160
+      ],
+      "documents": 20,
+      "chunks": 22,
+      "mean_chunk_characters": 591.1
+    }
+  },
+  "top_k": 5,
+  "candidate_count": 30,
+  "mmr_lambda": 0.8,
+  "embedding_model": "text-embedding-v4",
+  "rerank_model": "gte-rerank-v2",
+  "answer_model": "deepseek-flash",
+  "workers": 3,
+  "network_mode": "direct",
+  "limit": null,
+  "original_aliases": {
+    "300_60": "original_shared",
+    "500_100": "original_shared",
+    "800_160": "original_shared"
+  },
+  "code_hashes": {
+    "retrieval\\bm25.py": "3c8224aa0368587d77c16c909fadb055cf8c9434619f9c20d61dfe171fe5e8f2",
+    "retrieval\\chunking.py": "5b8ed4c9a1d4f6a9c4222140332c214edc4a5de3d0d5580284a0d0e9705a0b34",
+    "retrieval\\embedding.py": "1a2584cadb24e0ec6aeebae12d206b75ccf35070e48c02c369bb9f34fb5961de",
+    "retrieval\\engine.py": "b8ba035efefe4d52c505db54f22e163d00f3d8018dc276eb122cd1e8e6b677fe",
+    "retrieval\\indexing.py": "2f5dcdad382bdd85210d76b86ebabd70e7c395f15878dee060b405b50fd55134",
+    "retrieval\\mmr.py": "15a9f314aa65053c306423896b54644ac6311b7f2213c9143b509c3b53dfab9e",
+    "retrieval\\reranker.py": "74509e7bd295660d59b23171c0eb48e404baae1572fd6bfce60830960e04273a",
+    "retrieval\\__init__.py": "6541e4851891174009714e09b8fe399b6821b489136b1ea66047ec2632cf3695",
+    "services\\knowledge_base.py": "4b75f68996adc1d8c1ffd9afa6ed52811d8e8a8aadf6e4f403fedf9a2e25be37",
+    "services\\llm.py": "8ce7d11118a3574928075ec7636084bd7154cce414af11572b8f640c81edded2",
+    "services\\rag_chat.py": "fba75a609b134f4594085c58efe7f9f7450a3d3d4a1b39f54c98b634205bce32",
+    "services\\__init__.py": "deea286c1033f0d34a1147b70db65b0502b0cabab112ed6f171a9cbf190dd70d",
+    "storage\\database.py": "d9d97ead7976dde724ae4eb895996a0e111f5059f8a27c6cd3d8b912df3f7a89",
+    "storage\\document_deletion.py": "2095cda882ed1eb2dd705f2053af79650532aac85f710e058eae0e899fe744bc",
+    "storage\\document_status.py": "5fc788e64c03ba23cb190b801b9c63a3abf9caa6d958fdf7c604e309169b4786",
+    "storage\\schema.py": "2645b799fc4d4738c4eeecfd0001edba89f783ea5082f754f3c11d60d53587bd",
+    "storage\\sqlite_test.py": "85029e1aaa454b377831dd242ddf8dee90ba364e8797faa204496011cc8bf35e",
+    "storage\\vector_store.py": "4c16756d78deab15772ba9200107659fd924af36be57c997216da84f166b701f",
+    "storage\\__init__.py": "1f7044d83039976939f02949b9aea73eb5ca6beb58778ebc939ba2d6bf7f9a3c",
+    "evals\\agentic_dataset.py": "5730d9081e4c04c2be9e9e906c3804a7ff0c5ef12269f79224c96abdbb0f8960",
+    "evals\\audit_agentic_benchmark.py": "c8d71744d27caacdae6c374a3c443569272fe04f089c423e09454778f3ad7d12",
+    "evals\\audit_chunking_benchmark.py": "19a158a0263099e6ee80537a27de312163e42b41ddbd9db7d36a290ba4e0ffb8",
+    "evals\\audit_context_budget_benchmark.py": "4b473acc4728dafef6327c5f03665cf0bf3009fc198ac24ca88416006598e479",
+    "evals\\audit_retrieval_benchmark.py": "46b9060487c4ae5a0133754dabf11e4cd97f87d08f871aba1222f5221f05e644",
+    "evals\\context_budget_baseline.py": "6d770adf4646f6382fa86844dcc0165bc6a448867b55b14fd38924aa4abf15a3",
+    "evals\\expand_questions.py": "94066ab71a5042e9bcc0ff3895c049a26151c743432389f619ab96abdf582dd2",
+    "evals\\report_agentic_benchmark.py": "d1e5f213f7348c6e7020355f17daad9b4cf8176a49bbd319a23526826c236937",
+    "evals\\retrieval_dataset.py": "34b6def9800d18e246c5e2a62091835eb82ad7efa63672a29d2d07c7fddf975e",
+    "evals\\run_agentic_benchmark.py": "e642f3de9683cccf2f9fe849abe6ed8c1e2b5274d6e7a6e15742515545abde82",
+    "evals\\run_baseline.py": "958bc44de9123d5b3da95ff081945f11265c17819f4061378b1650ad27366a8b",
+    "evals\\run_chunking_benchmark.py": "d8aa6a9a3893318ab3bb7bbe8ca0cf86691f4e63174210bb30ed039bef139c43",
+    "evals\\run_context_budget_benchmark.py": "48737f6a106df43f50d489f1dfaf2d1d4c47b52f9d5c5006a55319d5a521aa6f",
+    "evals\\run_retrieval_benchmark.py": "211e70f5d31662847bb1f40ed207aa1375c4d6092c41849eb53640a2251c4758"
+  },
+  "official_data_before": {
+    "files": {
+      "documents.db": "af41b34b3aebb9ed2e65a698f4d22147c52fc291ad983f907f0775708a3b4efb",
+      "uploads\\0563f556c5914d6594323143aeab8fca.md": "4ea23c5d30b337d5cef9808fe1761c94c9fec92ea03c8d8b270b75467715c936",
+      "uploads\\0a36ead28e1249b7a9e1e0095734f23b.md": "869af1b95432a6579e8ab476d91d9c32f41ddf6adcad6301f67310b7de8474d2",
+      "uploads\\11111.md": "b191523ad7946c84293e416139395851a00338aef9f5a6f7dcd8add9e486bc29",
+      "uploads\\1d20aad6a3a744b9810f303b8c0d7059.md": "316f57dedaea8b582d939bc1b324e7640dea27a553d0aa9553a90f7d3270f4bd",
+      "uploads\\3b77ca65464041c6be139c2a81ef5571.md": "adc0a59607ecbc1c6f6f8aa987d18eae48c8b293c5bc780d1e205025436ea07b",
+      "uploads\\5279fdc9857d4c9a93b32db431b7dcaf.pdf": "20505ea018b9815a896b465b33baea35a9c63303692a33c6e4df993088427979",
+      "uploads\\698d3bdd30864e1eba534087164a54b1.md": "66570a5e37d2f14920aa2073e7c51d6d6b79bcd1b9095d30f5a6959f02b6b60e",
+      "uploads\\c5a4a1cbbf374f2eab1bd90e2afe7efb.md": "bcaaf4633189e5e289b7df5262d7b045ae087b8ead0f7dc8d59aee81a37a824e",
+      "uploads\\c89b6991d62a46a2bc1cf48cc0966c49.md": "4ea23c5d30b337d5cef9808fe1761c94c9fec92ea03c8d8b270b75467715c936",
+      "uploads\\cf579fb3c9df482e96f4a39657e163a0.md": "73b92fd7340c5add822ebed427b648a40c972aa71ee67f7e6bef2228c32a112b",
+      "uploads\\d46d5294f6744659b62a7cc8ca62211d.md": "33f8913fd607d73358e0a30c50f84e3a48a67150359af9e77014e0391adde71c",
+      "uploads\\f34d773c270e44b8a20d276b18f9c7af.md": "0ec76753dc0752e2252636bb75bf56663d29a11a1fb93d39263ddbd945dde241",
+      "uploads\\test.md": "adc0a59607ecbc1c6f6f8aa987d18eae48c8b293c5bc780d1e205025436ea07b",
+      "uploads\\test.pdf": "14bfd773f6bf2d52c5d21306a60da699fe7d1f81d59544f0115a6a2113771607",
+      "chroma_data\\chroma.sqlite3": "774da979c6c5af45f9abdd4c65239809a753b9f41344995ed477bed5d05f7f91",
+      "chroma_data\\63668531-c3e2-4f5d-82c2-0d15cd200f48\\data_level0.bin": "823ceeab89a18086300fa848338241d969bfd782bab870ce15cb7c978a886a1e",
+      "chroma_data\\63668531-c3e2-4f5d-82c2-0d15cd200f48\\header.bin": "c26aef3be279ee129386d16d39df4499eb6d367f3825663bc19af7dc7193a5b6",
+      "chroma_data\\63668531-c3e2-4f5d-82c2-0d15cd200f48\\index_metadata.pickle": "1b9975b77c5a25f3ff799c136884b5fc179043d800fd556a9318196041e132b4",
+      "chroma_data\\63668531-c3e2-4f5d-82c2-0d15cd200f48\\length.bin": "e53d6712780a38939c9250341fa79e32ca1bc62ded342301c92ea69f48ca084a",
+      "chroma_data\\63668531-c3e2-4f5d-82c2-0d15cd200f48\\link_lists.bin": "919c5199637f5e06bb66841de733ec362b21470480c62f12466f4c9a5525f5b7"
+    },
+    "mysql": {
+      "documents": {
+        "rows": 11,
+        "sha256": "d65e8af286bc56cc52f0250622686dbeca46e726bff3da8d5fa5a75878cd8a2d"
+      },
+      "question_answers": {
+        "rows": 2,
+        "sha256": "ec0f708e7fb72aff7716452a85e3d8297d9bacf1c8ddb54e7fc5cad0e3447692"
+      },
+      "document_sessions": {
+        "rows": 5,
+        "sha256": "83737084e57311e8a540b5f3de22906caa507cf7ebb1eb8ad987a7dc1b6db66e"
+      },
+      "document_chunks": {
+        "rows": 3074,
+        "sha256": "5ee7c6b77a410c7b5aebe9a2fbb69293638f021ff610c9b5f454444ab1ac35b7"
+      },
+      "rag_turns": {
+        "rows": 3,
+        "sha256": "1d1853cc7d5218520b5813c349494adc19fcd4ab017e4a28c63447a1d80ee247"
+      },
+      "knowledge_bases": {
+        "rows": 2,
+        "sha256": "10e7331519cb82cdb17683b357d5a455cf35c9cb2d93a8aac4d1fd2f8909d784"
+      },
+      "knowledge_base_documents": {
+        "rows": 6,
+        "sha256": "6450ff67a7bdcfef163a478bcaead2548d3ea0e6df235bf0a23461f46a092260"
+      },
+      "knowledge_base_sessions": {
+        "rows": 2,
+        "sha256": "7767348e0757464095e9005bd58642cac370d37e141fd76d454179b2fdde9629"
+      },
+      "knowledge_base_turns": {
+        "rows": 4,
+        "sha256": "82af1aaa97049ba6dc790b1be7d6ffd96efb0f787f39677dda676426cdd2bd5c"
+      },
+      "knowledge_base_turn_documents": {
+        "rows": 8,
+        "sha256": "554a3a5b62b761e891bb56e4866f8ed1b6005c546b674b2fcb27f8e7134eb84b"
+      },
+      "agent_session_summaries": {
+        "rows": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "chat_sessions": {
+        "rows": 1,
+        "sha256": "82ec8f813cdd3098404ae9a79856fd5d3d87e7f46060915473d01c9a1edca72c"
+      },
+      "chat_messages": {
+        "rows": 2,
+        "sha256": "7e0b226d60159c95f635e1a77de8d17f0c85982f4d397c5dc06649d0736f3ea2"
+      }
+    }
+  },
+  "dataset_snapshot_hashes": {
+    "dataset_snapshot\\long_300_60\\questions.json": "4550ed2e4296b03448b4fc3d78fb8ccde4bce618aff80ce291cd27666421cd8b",
+    "dataset_snapshot\\long_300_60\\sections.json": "e05103a56e0e73c845bfd52a942be6c7d8ea67f2bf721c8bf108c05120f857ad",
+    "dataset_snapshot\\long_500_100\\questions.json": "4550ed2e4296b03448b4fc3d78fb8ccde4bce618aff80ce291cd27666421cd8b",
+    "dataset_snapshot\\long_500_100\\sections.json": "e05103a56e0e73c845bfd52a942be6c7d8ea67f2bf721c8bf108c05120f857ad",
+    "dataset_snapshot\\long_800_160\\questions.json": "4550ed2e4296b03448b4fc3d78fb8ccde4bce618aff80ce291cd27666421cd8b",
+    "dataset_snapshot\\long_800_160\\sections.json": "e05103a56e0e73c845bfd52a942be6c7d8ea67f2bf721c8bf108c05120f857ad",
+    "dataset_snapshot\\original_shared\\questions.json": "ee1e846dcc9998a2cc85c5928d6f2fe775c009219904bdbe1417873095b7a8c8",
+    "dataset_snapshot\\original_shared\\sections.json": "43ba0cd3fc949ba9e419aa2daafa0cd4446a3137ff22cc6731ce9858d96fa784",
+    "dataset_snapshot\\original_shared\\documents\\aster-archive-v2.md": "127c152bc02c3ad4dbd1aa962182e8c45ccc850bcc3d864e89557d781ec6f2cb",
+    "dataset_snapshot\\original_shared\\documents\\aster-index-v4.md": "279bc83770233bdafabfb7e7f541bbae4269a2847393ee9bb0e795a08b931b13",
+    "dataset_snapshot\\original_shared\\documents\\aster-operating-notes-v4.md": "86d13cad9d1741a83552b0b1b447a07446f3cd0a90356a9d8c1da4890c02677c",
+    "dataset_snapshot\\original_shared\\documents\\aster-permissions-v4.md": "1789af9f7d4ac38c72c14604a25986908abe0da6193972fa3640912622b51801",
+    "dataset_snapshot\\original_shared\\documents\\aster-windows-v4.md": "3c4632657d63020f5ae812363ad997711594d3b9e4d181c5c9968ec340c42254",
+    "dataset_snapshot\\original_shared\\documents\\atlas-archive.md": "f93bf46a7c73703981ba5c4e2945daffe413f7b9e707c14afcec0a6f46f79bcf",
+    "dataset_snapshot\\original_shared\\documents\\atlas-auth-v2.md": "000e4cf77cc7b238c9f149c77eeec6f6a141e0b9bcb07294f376568fdba3996e",
+    "dataset_snapshot\\original_shared\\documents\\atlas-backup-v2.md": "49a27cf33fea6cabc353f05192476e7657c20c9390e0aebf06986c38ee9db16b",
+    "dataset_snapshot\\original_shared\\documents\\atlas-capacity-v2.md": "ebfe73a24bec76dd72e10e862eb448e909a235100a2a83b503547c5832b19bfb",
+    "dataset_snapshot\\original_shared\\documents\\atlas-config-v2.md": "e9826f3fa2db952fe1aeb5865f4516b886937758a0dd21cddb5be26a16c9d54b",
+    "dataset_snapshot\\original_shared\\documents\\atlas-deploy-v1.md": "846e10aaf0d52c6a7ff6c707af2974a70594eaf5441add8fe80c07b53bf0fa16",
+    "dataset_snapshot\\original_shared\\documents\\atlas-deploy-v2.md": "e175d98f1acbdd45875018cf7cbd13a1231fa76d92b05f99eb4502695ed2283a",
+    "dataset_snapshot\\original_shared\\documents\\atlas-incident-v2.md": "398c6d6477ff726fced892aa28fe83d202868130d4a2d4627d8fd1ad4187cf79",
+    "dataset_snapshot\\original_shared\\documents\\atlas-migrate-v2.md": "5e4ce0bee516f41f8c49d93b8c524a83b320b38da9847301f8a9b6c15df8fffd",
+    "dataset_snapshot\\original_shared\\documents\\atlas-monitor-v2.md": "5276b8f30ff95e016db9eb4594ade38b3fd07ba27fe3f8b4fb37d7af72252f41",
+    "dataset_snapshot\\original_shared\\documents\\atlas-release-v2.md": "12befe41facc75f72ae56d7b36b40c28dea61afbc6f654bc8c14d6b4b7066ad2",
+    "dataset_snapshot\\original_shared\\documents\\nebula-deploy-v2.md": "5db12b7646dfbf68a0011b74c06f8dc7eed60cee521cb8c094eee88ee92f8dd7",
+    "dataset_snapshot\\original_shared\\documents\\orion-archive-v1.md": "b141dcde82a5015b1b6c0566ecbe3da4f9438bf5f88369ba74c6b9d396c19915",
+    "dataset_snapshot\\original_shared\\documents\\orion-cache-v3.md": "534f96f4d25b9a2739c939346c2d9a957f1320626239975ba902fb113f98da07",
+    "dataset_snapshot\\original_shared\\documents\\orion-worker-v3.md": "92886e85a55bcfb6c56fb3f98913f26a34c3cfa15edc6fc2517497905e0d64ff",
+    "dataset_snapshot\\long_800_160\\documents\\aster-archive-v2.md": "de644f1e5e50c42ab730bdd8243bdec60d34648ab096b2016e41df830376654d",
+    "dataset_snapshot\\long_800_160\\documents\\aster-index-v4.md": "9c81e7d5b22b8f647037bfca0d1c412514ec28bfd4aef4fce8490823cac068e3",
+    "dataset_snapshot\\long_800_160\\documents\\aster-operating-notes-v4.md": "eecb26e01b4ed39331d1a7facb8ec4e09620ddf9959fdcf37d63502bd428b857",
+    "dataset_snapshot\\long_800_160\\documents\\aster-permissions-v4.md": "8a5e4c9697b31c8f7bf80352253e29107ceef43c663417810eea83526c07499a",
+    "dataset_snapshot\\long_800_160\\documents\\aster-windows-v4.md": "63275fe7c4a1f5012f81e458ff24ac1f673d8cf809fe1584268b7ad82a47f691",
+    "dataset_snapshot\\long_800_160\\documents\\atlas-archive.md": "1f355017cb17363e1b74549de52a39bc9cfa528b349f5f35086b1ecdf47de560",
+    "dataset_snapshot\\long_800_160\\documents\\atlas-auth-v2.md": "be1d9796b75b4612ddc80fe77390b3481c42a3287888dad2397ff0403168bbd9",
+    "dataset_snapshot\\long_800_160\\documents\\atlas-backup-v2.md": "e0d97030108c22ff81586dc439b1e6c943fda242acba6cef6013e4b31b50ba6b",
+    "dataset_snapshot\\long_800_160\\documents\\atlas-capacity-v2.md": "a956690af50fd93003d3adabe434d7b3ec3128e3f654b583cf3e390b94e1bd28",
+    "dataset_snapshot\\long_800_160\\documents\\atlas-config-v2.md": "62399122f6f7da64105982fd3d07f2b7525fed83d91eda2881b3e9fd496de11e",
+    "dataset_snapshot\\long_800_160\\documents\\atlas-deploy-v1.md": "4c2264a8afccb6b07ed63882458b0eed0b959b1e2fab8f021d69761eecda7935",
+    "dataset_snapshot\\long_800_160\\documents\\atlas-deploy-v2.md": "ccbdad79c71b0fb2adde1c74a6d14f61779867d01b2da4ef53bfcf880aa48fc6",
+    "dataset_snapshot\\long_800_160\\documents\\atlas-incident-v2.md": "b8bad4474b76a8e8c79919142dc4c876c29d2d40e2042f8ba96c721bc052c866",
+    "dataset_snapshot\\long_800_160\\documents\\atlas-migrate-v2.md": "8f787425db625b6a260215f0c2fd64e0d77ffe4615380a946b4d858fa33d8cce",
+    "dataset_snapshot\\long_800_160\\documents\\atlas-monitor-v2.md": "4138ec14187cb7f11f1e7e0487407eb8a90bc28291568d50d6fa18d5da489743",
+    "dataset_snapshot\\long_800_160\\documents\\atlas-release-v2.md": "5de42aef905ec2f731bf96a2e07be5552dc78e3147cc438212d1654b223ce89f",
+    "dataset_snapshot\\long_800_160\\documents\\nebula-deploy-v2.md": "0bd5e9eebadb86bb210ff2f9597de74ddd0e7e8d9beee67e4305607227d8fa6c",
+    "dataset_snapshot\\long_800_160\\documents\\orion-archive-v1.md": "e17f9a998cbd23f2bd52c57b860fbfae344ec73de0b07b21b7a1446e07ad85fb",
+    "dataset_snapshot\\long_800_160\\documents\\orion-cache-v3.md": "9a5765288347cb8655cb34e0fb1f0d4cc3efd2b7e721de6ef0cc87331472eeb5",
+    "dataset_snapshot\\long_800_160\\documents\\orion-worker-v3.md": "e2214cd50d182d81dddda4248c7f2eac75b609208611328188c7a62b410654c9",
+    "dataset_snapshot\\long_500_100\\documents\\aster-archive-v2.md": "de644f1e5e50c42ab730bdd8243bdec60d34648ab096b2016e41df830376654d",
+    "dataset_snapshot\\long_500_100\\documents\\aster-index-v4.md": "9c81e7d5b22b8f647037bfca0d1c412514ec28bfd4aef4fce8490823cac068e3",
+    "dataset_snapshot\\long_500_100\\documents\\aster-operating-notes-v4.md": "eecb26e01b4ed39331d1a7facb8ec4e09620ddf9959fdcf37d63502bd428b857",
+    "dataset_snapshot\\long_500_100\\documents\\aster-permissions-v4.md": "8a5e4c9697b31c8f7bf80352253e29107ceef43c663417810eea83526c07499a",
+    "dataset_snapshot\\long_500_100\\documents\\aster-windows-v4.md": "63275fe7c4a1f5012f81e458ff24ac1f673d8cf809fe1584268b7ad82a47f691",
+    "dataset_snapshot\\long_500_100\\documents\\atlas-archive.md": "1f355017cb17363e1b74549de52a39bc9cfa528b349f5f35086b1ecdf47de560",
+    "dataset_snapshot\\long_500_100\\documents\\atlas-auth-v2.md": "be1d9796b75b4612ddc80fe77390b3481c42a3287888dad2397ff0403168bbd9",
+    "dataset_snapshot\\long_500_100\\documents\\atlas-backup-v2.md": "e0d97030108c22ff81586dc439b1e6c943fda242acba6cef6013e4b31b50ba6b",
+    "dataset_snapshot\\long_500_100\\documents\\atlas-capacity-v2.md": "a956690af50fd93003d3adabe434d7b3ec3128e3f654b583cf3e390b94e1bd28",
+    "dataset_snapshot\\long_500_100\\documents\\atlas-config-v2.md": "62399122f6f7da64105982fd3d07f2b7525fed83d91eda2881b3e9fd496de11e",
+    "dataset_snapshot\\long_500_100\\documents\\atlas-deploy-v1.md": "4c2264a8afccb6b07ed63882458b0eed0b959b1e2fab8f021d69761eecda7935",
+    "dataset_snapshot\\long_500_100\\documents\\atlas-deploy-v2.md": "ccbdad79c71b0fb2adde1c74a6d14f61779867d01b2da4ef53bfcf880aa48fc6",
+    "dataset_snapshot\\long_500_100\\documents\\atlas-incident-v2.md": "b8bad4474b76a8e8c79919142dc4c876c29d2d40e2042f8ba96c721bc052c866",
+    "dataset_snapshot\\long_500_100\\documents\\atlas-migrate-v2.md": "8f787425db625b6a260215f0c2fd64e0d77ffe4615380a946b4d858fa33d8cce",
+    "dataset_snapshot\\long_500_100\\documents\\atlas-monitor-v2.md": "4138ec14187cb7f11f1e7e0487407eb8a90bc28291568d50d6fa18d5da489743",
+    "dataset_snapshot\\long_500_100\\documents\\atlas-release-v2.md": "5de42aef905ec2f731bf96a2e07be5552dc78e3147cc438212d1654b223ce89f",
+    "dataset_snapshot\\long_500_100\\documents\\nebula-deploy-v2.md": "0bd5e9eebadb86bb210ff2f9597de74ddd0e7e8d9beee67e4305607227d8fa6c",
+    "dataset_snapshot\\long_500_100\\documents\\orion-archive-v1.md": "e17f9a998cbd23f2bd52c57b860fbfae344ec73de0b07b21b7a1446e07ad85fb",
+    "dataset_snapshot\\long_500_100\\documents\\orion-cache-v3.md": "9a5765288347cb8655cb34e0fb1f0d4cc3efd2b7e721de6ef0cc87331472eeb5",
+    "dataset_snapshot\\long_500_100\\documents\\orion-worker-v3.md": "e2214cd50d182d81dddda4248c7f2eac75b609208611328188c7a62b410654c9",
+    "dataset_snapshot\\long_300_60\\documents\\aster-archive-v2.md": "de644f1e5e50c42ab730bdd8243bdec60d34648ab096b2016e41df830376654d",
+    "dataset_snapshot\\long_300_60\\documents\\aster-index-v4.md": "9c81e7d5b22b8f647037bfca0d1c412514ec28bfd4aef4fce8490823cac068e3",
+    "dataset_snapshot\\long_300_60\\documents\\aster-operating-notes-v4.md": "eecb26e01b4ed39331d1a7facb8ec4e09620ddf9959fdcf37d63502bd428b857",
+    "dataset_snapshot\\long_300_60\\documents\\aster-permissions-v4.md": "8a5e4c9697b31c8f7bf80352253e29107ceef43c663417810eea83526c07499a",
+    "dataset_snapshot\\long_300_60\\documents\\aster-windows-v4.md": "63275fe7c4a1f5012f81e458ff24ac1f673d8cf809fe1584268b7ad82a47f691",
+    "dataset_snapshot\\long_300_60\\documents\\atlas-archive.md": "1f355017cb17363e1b74549de52a39bc9cfa528b349f5f35086b1ecdf47de560",
+    "dataset_snapshot\\long_300_60\\documents\\atlas-auth-v2.md": "be1d9796b75b4612ddc80fe77390b3481c42a3287888dad2397ff0403168bbd9",
+    "dataset_snapshot\\long_300_60\\documents\\atlas-backup-v2.md": "e0d97030108c22ff81586dc439b1e6c943fda242acba6cef6013e4b31b50ba6b",
+    "dataset_snapshot\\long_300_60\\documents\\atlas-capacity-v2.md": "a956690af50fd93003d3adabe434d7b3ec3128e3f654b583cf3e390b94e1bd28",
+    "dataset_snapshot\\long_300_60\\documents\\atlas-config-v2.md": "62399122f6f7da64105982fd3d07f2b7525fed83d91eda2881b3e9fd496de11e",
+    "dataset_snapshot\\long_300_60\\documents\\atlas-deploy-v1.md": "4c2264a8afccb6b07ed63882458b0eed0b959b1e2fab8f021d69761eecda7935",
+    "dataset_snapshot\\long_300_60\\documents\\atlas-deploy-v2.md": "ccbdad79c71b0fb2adde1c74a6d14f61779867d01b2da4ef53bfcf880aa48fc6",
+    "dataset_snapshot\\long_300_60\\documents\\atlas-incident-v2.md": "b8bad4474b76a8e8c79919142dc4c876c29d2d40e2042f8ba96c721bc052c866",
+    "dataset_snapshot\\long_300_60\\documents\\atlas-migrate-v2.md": "8f787425db625b6a260215f0c2fd64e0d77ffe4615380a946b4d858fa33d8cce",
+    "dataset_snapshot\\long_300_60\\documents\\atlas-monitor-v2.md": "4138ec14187cb7f11f1e7e0487407eb8a90bc28291568d50d6fa18d5da489743",
+    "dataset_snapshot\\long_300_60\\documents\\atlas-release-v2.md": "5de42aef905ec2f731bf96a2e07be5552dc78e3147cc438212d1654b223ce89f",
+    "dataset_snapshot\\long_300_60\\documents\\nebula-deploy-v2.md": "0bd5e9eebadb86bb210ff2f9597de74ddd0e7e8d9beee67e4305607227d8fa6c",
+    "dataset_snapshot\\long_300_60\\documents\\orion-archive-v1.md": "e17f9a998cbd23f2bd52c57b860fbfae344ec73de0b07b21b7a1446e07ad85fb",
+    "dataset_snapshot\\long_300_60\\documents\\orion-cache-v3.md": "9a5765288347cb8655cb34e0fb1f0d4cc3efd2b7e721de6ef0cc87331472eeb5",
+    "dataset_snapshot\\long_300_60\\documents\\orion-worker-v3.md": "e2214cd50d182d81dddda4248c7f2eac75b609208611328188c7a62b410654c9"
+  },
+  "usage": {
+    "embedding": {
+      "calls": 36,
+      "failed": 0,
+      "reported_total_tokens": 34297
+    },
+    "rerank": {
+      "calls": 240,
+      "failed": 0,
+      "reported_total_tokens": 1323254
+    },
+    "chat": {
+      "calls": 160,
+      "failed": 0,
+      "reported_total_tokens": 229411
+    }
+  },
+  "unique_embedding_texts": 351,
+  "official_data_after": {
+    "files": {
+      "documents.db": "af41b34b3aebb9ed2e65a698f4d22147c52fc291ad983f907f0775708a3b4efb",
+      "uploads\\0563f556c5914d6594323143aeab8fca.md": "4ea23c5d30b337d5cef9808fe1761c94c9fec92ea03c8d8b270b75467715c936",
+      "uploads\\0a36ead28e1249b7a9e1e0095734f23b.md": "869af1b95432a6579e8ab476d91d9c32f41ddf6adcad6301f67310b7de8474d2",
+      "uploads\\11111.md": "b191523ad7946c84293e416139395851a00338aef9f5a6f7dcd8add9e486bc29",
+      "uploads\\1d20aad6a3a744b9810f303b8c0d7059.md": "316f57dedaea8b582d939bc1b324e7640dea27a553d0aa9553a90f7d3270f4bd",
+      "uploads\\3b77ca65464041c6be139c2a81ef5571.md": "adc0a59607ecbc1c6f6f8aa987d18eae48c8b293c5bc780d1e205025436ea07b",
+      "uploads\\5279fdc9857d4c9a93b32db431b7dcaf.pdf": "20505ea018b9815a896b465b33baea35a9c63303692a33c6e4df993088427979",
+      "uploads\\698d3bdd30864e1eba534087164a54b1.md": "66570a5e37d2f14920aa2073e7c51d6d6b79bcd1b9095d30f5a6959f02b6b60e",
+      "uploads\\c5a4a1cbbf374f2eab1bd90e2afe7efb.md": "bcaaf4633189e5e289b7df5262d7b045ae087b8ead0f7dc8d59aee81a37a824e",
+      "uploads\\c89b6991d62a46a2bc1cf48cc0966c49.md": "4ea23c5d30b337d5cef9808fe1761c94c9fec92ea03c8d8b270b75467715c936",
+      "uploads\\cf579fb3c9df482e96f4a39657e163a0.md": "73b92fd7340c5add822ebed427b648a40c972aa71ee67f7e6bef2228c32a112b",
+      "uploads\\d46d5294f6744659b62a7cc8ca62211d.md": "33f8913fd607d73358e0a30c50f84e3a48a67150359af9e77014e0391adde71c",
+      "uploads\\f34d773c270e44b8a20d276b18f9c7af.md": "0ec76753dc0752e2252636bb75bf56663d29a11a1fb93d39263ddbd945dde241",
+      "uploads\\test.md": "adc0a59607ecbc1c6f6f8aa987d18eae48c8b293c5bc780d1e205025436ea07b",
+      "uploads\\test.pdf": "14bfd773f6bf2d52c5d21306a60da699fe7d1f81d59544f0115a6a2113771607",
+      "chroma_data\\chroma.sqlite3": "774da979c6c5af45f9abdd4c65239809a753b9f41344995ed477bed5d05f7f91",
+      "chroma_data\\63668531-c3e2-4f5d-82c2-0d15cd200f48\\data_level0.bin": "823ceeab89a18086300fa848338241d969bfd782bab870ce15cb7c978a886a1e",
+      "chroma_data\\63668531-c3e2-4f5d-82c2-0d15cd200f48\\header.bin": "c26aef3be279ee129386d16d39df4499eb6d367f3825663bc19af7dc7193a5b6",
+      "chroma_data\\63668531-c3e2-4f5d-82c2-0d15cd200f48\\index_metadata.pickle": "1b9975b77c5a25f3ff799c136884b5fc179043d800fd556a9318196041e132b4",
+      "chroma_data\\63668531-c3e2-4f5d-82c2-0d15cd200f48\\length.bin": "e53d6712780a38939c9250341fa79e32ca1bc62ded342301c92ea69f48ca084a",
+      "chroma_data\\63668531-c3e2-4f5d-82c2-0d15cd200f48\\link_lists.bin": "919c5199637f5e06bb66841de733ec362b21470480c62f12466f4c9a5525f5b7"
+    },
+    "mysql": {
+      "documents": {
+        "rows": 11,
+        "sha256": "d65e8af286bc56cc52f0250622686dbeca46e726bff3da8d5fa5a75878cd8a2d"
+      },
+      "question_answers": {
+        "rows": 2,
+        "sha256": "ec0f708e7fb72aff7716452a85e3d8297d9bacf1c8ddb54e7fc5cad0e3447692"
+      },
+      "document_sessions": {
+        "rows": 5,
+        "sha256": "83737084e57311e8a540b5f3de22906caa507cf7ebb1eb8ad987a7dc1b6db66e"
+      },
+      "document_chunks": {
+        "rows": 3074,
+        "sha256": "5ee7c6b77a410c7b5aebe9a2fbb69293638f021ff610c9b5f454444ab1ac35b7"
+      },
+      "rag_turns": {
+        "rows": 3,
+        "sha256": "1d1853cc7d5218520b5813c349494adc19fcd4ab017e4a28c63447a1d80ee247"
+      },
+      "knowledge_bases": {
+        "rows": 2,
+        "sha256": "10e7331519cb82cdb17683b357d5a455cf35c9cb2d93a8aac4d1fd2f8909d784"
+      },
+      "knowledge_base_documents": {
+        "rows": 6,
+        "sha256": "6450ff67a7bdcfef163a478bcaead2548d3ea0e6df235bf0a23461f46a092260"
+      },
+      "knowledge_base_sessions": {
+        "rows": 2,
+        "sha256": "7767348e0757464095e9005bd58642cac370d37e141fd76d454179b2fdde9629"
+      },
+      "knowledge_base_turns": {
+        "rows": 4,
+        "sha256": "82af1aaa97049ba6dc790b1be7d6ffd96efb0f787f39677dda676426cdd2bd5c"
+      },
+      "knowledge_base_turn_documents": {
+        "rows": 8,
+        "sha256": "554a3a5b62b761e891bb56e4866f8ed1b6005c546b674b2fcb27f8e7134eb84b"
+      },
+      "agent_session_summaries": {
+        "rows": 0,
+        "sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+      },
+      "chat_sessions": {
+        "rows": 1,
+        "sha256": "82ec8f813cdd3098404ae9a79856fd5d3d87e7f46060915473d01c9a1edca72c"
+      },
+      "chat_messages": {
+        "rows": 2,
+        "sha256": "7e0b226d60159c95f635e1a77de8d17f0c85982f4d397c5dc06649d0736f3ea2"
+      }
+    }
+  },
+  "official_data_unchanged": true,
+  "finished_at_utc": "2026-10-21T05:53:06.723029+00:00"
+}

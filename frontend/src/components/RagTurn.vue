@@ -12,6 +12,7 @@ const toolNames = { list_documents: '查看文档目录', search_knowledge_base:
       <p class="text">{{ turn.retrieval_question }}</p>
     </details>
     <p class="label">资料回答</p>
+    <p v-if="turn.embedding_provider === 'local' || turn.citations?.some(source => source.embedding_provider === 'local')" class="muted">本地 BGE-M3 检索</p>
     <p class="text answer">{{ turn.answer }}</p>
     <details v-if="turn.tool_calls?.length" class="tool-trace">
       <summary>工具执行记录 · {{ turn.tool_calls.length }} 次</summary>

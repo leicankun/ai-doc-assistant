@@ -6,14 +6,13 @@ PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-import sqlite3
 
-from config import DB_PATH
+from storage.database import connect
 from storage.database import init_db
 
 init_db()
 
-connection = sqlite3.connect(DB_PATH)
+connection = connect()
 
 try:
     # 添加一条文档

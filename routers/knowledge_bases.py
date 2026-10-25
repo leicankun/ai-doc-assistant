@@ -2,7 +2,7 @@
 import json
 import logging
 import os
-import sqlite3
+from storage.database import connect
 import asyncio
 import threading
 from contextlib import aclosing, closing
@@ -10,14 +10,14 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from openai import APIError, APITimeoutError
 from starlette.concurrency import run_in_threadpool
-from config import DB_PATH
-from storage.database import get_connection
+from storage.database import get_connection, insert_if_absent
 from schemas import KnowledgeBaseCreate, KnowledgeBaseDocuments, SessionCreate, SearchRequest, RagChatRequest, AgentRequest
 from services.knowledge_base import require_base, members, ready_documents, search_base, session_history, save_turn
 from services.rag_chat import rewrite_question
 from services.llm import answer_with_chunks, stream_answer_with_chunks
 from agent import run_document_agent
 from agent.runner import AgentCancelled
+from retrieval.backend import request_backend
 
 router = APIRouter(prefix='/knowledge-bases', tags=['知识库'])
 logger = logging.getLogger(__name__)
@@ -44,15 +44,17 @@ async def document_agent(base_id:int,body:AgentRequest,http_request:Request,conn
                 pass
 
 
-def _document_agent(base_id,body,connection,stop):
+@request_backend('body')
+def _document_agent(base_id,body,connection,stop,on_event=None):
     """Agent 问答；提供会话 ID 时加载历史并保存回答、引用和工具记录。"""
     try:
         require_base(connection,base_id)
         if not os.getenv('DEEPSEEK_API_KEY'):
             raise HTTPException(503,'服务尚未配置回答模型 API Key')
         previous = session_history(connection,base_id,body.session_id) if body.session_id else []
+        options = {'on_event': on_event} if on_event else {}
         result = run_document_agent(connection,base_id,body.question,history=previous,
-                                    cancelled=stop.is_set,session_id=body.session_id)
+                                    cancelled=stop.is_set,session_id=body.session_id,**options)
         if stop.is_set():
             raise AgentCancelled('已停止执行，本轮不保存')
         turn_id = None
@@ -64,10 +66,87 @@ def _document_agent(base_id,body,connection,stop):
                                     result['answer'],result['citations'],sources)
                 connection.execute('UPDATE knowledge_base_turns SET mode=?, tool_calls_json=? WHERE id=?',
                                    ('agent',json.dumps(result['tool_calls'],ensure_ascii=False),turn_id))
-        return {**result,'knowledge_base_id':base_id,'question':body.question,
+                if stop.is_set():
+                    raise AgentCancelled('已停止执行，本轮不保存')
+        return {**result,'embedding_provider':body.embedding_provider,'knowledge_base_id':base_id,'question':body.question,
                 'session_id':body.session_id,'id':turn_id,'mode':'agent'}
     except Exception as exc:
         raise translate_error(exc) from exc
+
+
+@router.post('/{base_id}/agent/stream')
+def document_agent_stream(base_id:int,body:AgentRequest,http_request:Request,connection=Depends(get_connection)):
+    """Agent SSE：工作线程独立持有数据库连接，成功保存后才发送 done。"""
+    require_base(connection,base_id)
+    if not os.getenv('DEEPSEEK_API_KEY'):
+        raise HTTPException(503,'服务尚未配置回答模型 API Key')
+    if body.session_id:
+        session_history(connection,base_id,body.session_id)
+
+    async def generate():
+        stop = threading.Event()
+        loop = asyncio.get_running_loop()
+        events = asyncio.Queue(maxsize=32)
+
+        def emit(event):
+            if stop.is_set():
+                raise AgentCancelled('已停止执行，本轮不保存')
+            pending = asyncio.run_coroutine_threadsafe(events.put(event),loop)
+            try:
+                while True:
+                    try:
+                        pending.result(timeout=0.2)
+                        return
+                    except TimeoutError:
+                        if stop.is_set():
+                            raise AgentCancelled('已停止执行，本轮不保存')
+            finally:
+                if not pending.done():
+                    pending.cancel()
+
+        def work():
+            try:
+                with closing(connect()) as db:
+                    result = _document_agent(base_id,body,db,stop,on_event=emit)
+                emit({'type':'done',**result})
+            except Exception as exc:
+                if not stop.is_set():
+                    error = translate_error(exc)
+                    try:
+                        emit({'type':'error','message':error.detail})
+                    except AgentCancelled:
+                        pass
+
+        def encode(event):
+            return 'data: '+json.dumps(event,ensure_ascii=False)+'\n\n'
+
+        task = asyncio.create_task(run_in_threadpool(work))
+        heartbeat = loop.time()
+        try:
+            yield encode({'type':'meta','knowledge_base_id':base_id,'session_id':body.session_id,'mode':'agent'})
+            while True:
+                if await http_request.is_disconnected():
+                    return
+                try:
+                    event = await asyncio.wait_for(events.get(),timeout=0.2)
+                except TimeoutError:
+                    if loop.time() - heartbeat >= 15:
+                        yield ': keep-alive\n\n'
+                        heartbeat = loop.time()
+                    continue
+                if await http_request.is_disconnected():
+                    return
+                yield encode(event)
+                heartbeat = loop.time()
+                if event['type'] in ('done','error'):
+                    return
+        finally:
+            stop.set()
+            # worker 自己关闭连接；即使 ASGI 取消等待，也不会使用已释放的依赖连接。
+            await asyncio.shield(task)
+
+    return StreamingResponse(generate(),media_type='text/event-stream',
+                             headers={'Cache-Control':'no-cache','X-Accel-Buffering':'no'})
 
 
 def translate_error(exc):
@@ -139,7 +218,8 @@ def add_documents(base_id:int,body:KnowledgeBaseDocuments,connection=Depends(get
         for doc in body.document_ids:
             if not connection.execute('SELECT id FROM documents WHERE id=?',(doc,)).fetchone():
                 raise HTTPException(404,f'文档 {doc} 不存在')
-        connection.executemany('INSERT OR IGNORE INTO knowledge_base_documents VALUES (?,?)',[(base_id,doc) for doc in body.document_ids])
+        for doc in body.document_ids:
+            insert_if_absent(connection, 'INSERT INTO knowledge_base_documents VALUES (?,?)', (base_id, doc))
     return {'items':members(connection,base_id)}
 
 
@@ -202,13 +282,15 @@ def history(base_id:int,session_id:int,connection=Depends(get_connection)):
     return {'items':items,'total':len(items)}
 
 
+@request_backend('body')
 def prepare(connection,base_id,body):
     history = session_history(connection,base_id,body.session_id)
     ready_documents(connection,base_id,body.mode)
     if not os.getenv('DEEPSEEK_API_KEY'):
         raise HTTPException(503,'服务尚未配置回答模型 API Key')
     rewritten = rewrite_question(body.question,history)
-    result = search_base(connection,base_id,SearchRequest(question=rewritten,mode=body.mode,top_k=body.top_k))
+    result = search_base(connection,base_id,SearchRequest(question=rewritten,mode=body.mode,top_k=body.top_k,
+                                                       embedding_provider=body.embedding_provider))
     return history,rewritten,result['items']
 
 
@@ -234,8 +316,7 @@ def chat_stream(base_id:int,body:RagChatRequest,http_request:Request,connection=
         raise translate_error(exc) from exc
 
     def persist(answer,citations):
-        with closing(sqlite3.connect(DB_PATH)) as db, db:
-            db.row_factory=sqlite3.Row
+        with closing(connect()) as db, db:
             return save_turn(db,base_id,body,rewritten,answer,citations,chunks)
 
     def encode(event):

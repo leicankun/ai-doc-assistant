@@ -1,0 +1,10 @@
+{
+  "REVIEW_NOTES.md": "9e3dea3c6cbaf8461d9b9b46db2637cd616786d36ab8d518c1100e4727a3ef9b",
+  "exact_cosine_audit.json": "fd34166effa0f65ae531ed2940546c69171623a2241c0dc50db17f981d6d3d95",
+  "connection_probe\\calls.jsonl": "6b2e998f20f96cd6350ccca3052b88df0f26e27cec423f943674b40d522d7de6",
+  "connection_probe\\questions.json": "8d3af6700e5629afe014058cb3ceb47e76be24e64b3185cb4f2dc254d904ddce",
+  "connection_probe\\summary.json": "ef046dd3eda774c579ebb59ce69115560c532f6d6f81ca7011e451bc85299287",
+  "code_snapshot/evals/probe_embedding_connections.py": "2cc4cd9b3236e364dfc3f392fbbedbd2a4f9bad9b8fad48ce28795753d977419",
+  "code_snapshot/evals/report_embedding_comparison.py": "2690cdc674639d54427f099f46843fd6a1d62d9843263a34a383fa8846d2cc07",
+  "code_snapshot/evals/audit_embedding_vectors.py": "f0aa6bbd8ea9ced7e13ec42b1f9b380c3d757db0d58e2eb78b7ca14dbd29bedf"
+}

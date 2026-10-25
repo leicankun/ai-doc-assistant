@@ -10,6 +10,7 @@ const activeBase = ref(null)
 
 const documents = ref([])
 const activeDocumentId = ref('')
+const embeddingProvider = ref('api')
 const sidebarOpen = ref(false)
 const sidebarWidth = ref(280)
 const resizingSidebar = ref(false)
@@ -240,7 +241,7 @@ async function uploadDocument() {
     formData.append('file', selectedFile.value)
 
     const response = await fetch(
-      'http://127.0.0.1:8000/documents/upload',
+      `http://127.0.0.1:8000/documents/upload?embedding_provider=${embeddingProvider.value}`,
       {
         method: 'POST',
         body: formData,
@@ -258,7 +259,7 @@ async function uploadDocument() {
 
     const data = await response.json()
     uploadSuccess.value = data.processing_completed
-      ? `上传并入库完成：${data.title}（${data.chunk_count} 个分块）`
+      ? `上传并${data.embedding_provider === 'local' ? '本地' : 'API'}入库完成：${data.title}（${data.chunk_count} 个分块）`
       : `文件已上传：${data.title}`
     if (data.processing_error) uploadError.value = data.processing_error
 
@@ -499,6 +500,7 @@ onMounted(loadDocuments)
         <label class="upload-label" for="document-file">＋ 添加文档</label>
         <input id="document-file" type="file" accept=".md,.pdf" :disabled="uploading" @change="selectFile" />
         <p class="muted">Markdown / 文字型 PDF</p>
+        <label class="muted">向量来源 <select v-model="embeddingProvider" :disabled="uploading"><option value="api">百炼 API（默认）</option><option value="local">本地 BGE-M3</option></select></label>
         <button v-if="selectedFile" class="primary wide" :disabled="uploading" @click="uploadDocument">{{ uploading ? '上传并处理中…' : '上传并自动入库' }}</button>
         <p v-if="uploadError" class="error" role="alert">{{ uploadError }}</p>
         <p v-if="uploadSuccess" class="success" role="status">{{ uploadSuccess }}</p>
@@ -535,8 +537,8 @@ onMounted(loadDocuments)
     <main class="main-area">
       <header class="workspace-header"><button class="mobile-toggle" @click="sidebarOpen = !sidebarOpen" :aria-expanded="sidebarOpen" aria-label="展开文档侧边栏">☰</button><span>资料对话</span><button :aria-expanded="toolsOpen" @click="toolsOpen = !toolsOpen">{{ toolsOpen ? '返回对话' : '文档处理与检索' }}</button></header>
       <div v-show="toolsOpen" class="tools-area">
-        <KnowledgeBaseSearch v-if="activeBase" :base="activeBase" />
-        <DocumentSearch :documents="documents" :active-document-id="activeDocumentId" @processing-updated="loadDocuments" />
+        <KnowledgeBaseSearch v-if="activeBase" v-model:embedding-provider="embeddingProvider" :base="activeBase" />
+        <DocumentSearch v-model:embedding-provider="embeddingProvider" :documents="documents" :active-document-id="activeDocumentId" @processing-updated="loadDocuments" />
         <details class="legacy" :open="Boolean(askingDocument)"><summary>全文问答与历史</summary>
     <section v-if="askingDocument" class="panel library" aria-labelledby="ask-heading" :aria-busy="asking">
       <h2 id="ask-heading" class="ask-title">文档问答：{{ askingDocument.title }}</h2>
@@ -619,7 +621,7 @@ onMounted(loadDocuments)
 
         </details>
       </div>
-      <RagChat v-show="!toolsOpen" :documents="documents" :active-document-id="activeDocumentId" :knowledge-base="activeBase" @open-tools="toolsOpen = true" />
+      <RagChat v-show="!toolsOpen" v-model:embedding-provider="embeddingProvider" :documents="documents" :active-document-id="activeDocumentId" :knowledge-base="activeBase" @open-tools="toolsOpen = true" />
     </main>
   </div>
 </template>

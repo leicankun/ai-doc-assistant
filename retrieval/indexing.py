@@ -1,4 +1,4 @@
-import sqlite3
+from storage.database import DatabaseConnection
 
 from retrieval.embedding import embed_texts
 from storage.vector_store import get_collection
@@ -6,7 +6,7 @@ from storage.vector_store import get_collection
 
 def index_document(
     document_id: int,
-    connection: sqlite3.Connection,
+    connection: DatabaseConnection,
 ):
     # 1. 检查文档是否存在。
     document = connection.execute(
@@ -18,8 +18,8 @@ def index_document(
         raise ValueError("文档不存在")
     chunk_version = document["chunk_version"]
 
-    # 2. 从 SQLite 读取当前文档的分块。
-    # connection 需要设置 row_factory = sqlite3.Row。
+    # 2. 从 MySQL 读取当前文档的分块。
+    # 统一连接返回可按字段名访问的行。
     rows = connection.execute(
         """
         SELECT id, document_id, chunk_index, content,
@@ -98,7 +98,7 @@ def index_document(
         )
 
     # 7. 新记录全部写入成功后，删除失效的旧记录。
-    # 例如重新分块后，有些旧块 ID 已不在 SQLite 中。
+    # 例如重新分块后，有些旧块 ID 已不在 MySQL 中。
     stale_ids = sorted(old_ids - set(ids))
 
     for start in range(0, len(stale_ids), write_batch_size):

@@ -1,0 +1,32 @@
+{
+  "started_at_utc": "2026-10-10T07:53:49.906400+00:00",
+  "git_commit": "19a74532784ea72da5d742a2510035b61ff53028",
+  "working_tree": "M README.md\n M agent/context.py\n M agent/runner.py\n M agent/tools.py\n M evals/run_baseline.py\n M routers/search.py\n M services/knowledge_base.py\n M \"\\351\\241\\271\\347\\233\\256\\346\\236\\266\\346\\236\\204\\350\\257\\264\\346\\230\\216.md\"\n?? artifacts/auto_upload_check/\n?? artifacts/check_reranker_real.py\n?? artifacts/check_retrieval_quality.py\n?? artifacts/reranker-live-20261009T052801Z.json\n?? artifacts/reranker-real-check.json\n?? artifacts/retrieval-diagnostic-20261009T050352Z.json\n?? artifacts/retrieval-diagnostic-20261009T050451Z.json\n?? artifacts/test_reranker_live.py\n?? evals/results/20261010T074545Z-hybrid-rron-c30-limit2/\n?? evals/results/20261010T074732Z-hybrid-rroff-c30-limit1/\n?? evals/results/20261010T074753Z-bm25-rron-c30/\n?? evals/results/20261010T075002Z-dense-rron-c30/\n?? retrieval/reranker.py\n?? tests/test_reranker.py",
+  "mode": "hybrid",
+  "top_k": 5,
+  "chunk_size": 500,
+  "overlap_max": 100,
+  "rrf_k": 60,
+  "recall_candidates": 30,
+  "rerank_enabled": true,
+  "rerank_model": "gte-rerank-v2",
+  "embedding_model": "text-embedding-v4",
+  "dimensions": 1024,
+  "answer_model": "deepseek-flash",
+  "dataset_sha256": "a25aac9fb3147382934c9719696ddd3117e9574f8f0d93e27295fe01e2a43852",
+  "source_hashes": {
+    "documents/pilot.md": "5c35e2508f2b50fc629418a2a430a36e7e5769f736c57e18d0338cc3b7753c7b",
+    "documents/odysseus.md": "bcaaf4633189e5e289b7df5262d7b045ae087b8ead0f7dc8d59aee81a37a824e"
+  },
+  "code_hashes": {
+    "retrieval/chunking.py": "5b8ed4c9a1d4f6a9c4222140332c214edc4a5de3d0d5580284a0d0e9705a0b34",
+    "retrieval/engine.py": "b8ba035efefe4d52c505db54f22e163d00f3d8018dc276eb122cd1e8e6b677fe",
+    "retrieval/bm25.py": "3c8224aa0368587d77c16c909fadb055cf8c9434619f9c20d61dfe171fe5e8f2",
+    "retrieval/embedding.py": "1a2584cadb24e0ec6aeebae12d206b75ccf35070e48c02c369bb9f34fb5961de",
+    "retrieval/reranker.py": "771767404996b331575f83a6021902742f964749f4d65cfea4273b9430699cce",
+    "services/llm.py": "8ce7d11118a3574928075ec7636084bd7154cce414af11572b8f640c81edded2",
+    "routers/search.py": "3c2dd9a42abe89d79453e65debf214c975334eb91e936dfff8785598842f2061",
+    "routers/rag.py": "bfb4d7bc7e626ebfc03772ae396820f9a9cfc8ee4170937c24a6e6cf493a8c21"
+  },
+  "transport": "FastAPI TestClient; real Embedding and chat APIs; isolated SQLite/Chroma"
+}

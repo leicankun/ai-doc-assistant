@@ -1,11 +1,10 @@
 """全文问答接口。"""
-import sqlite3
+from storage.database import DatabaseConnection, DatabaseError, connect
 import json
 from contextlib import aclosing
 from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from openai import APIError, APITimeoutError
-from config import DB_PATH
 from storage.database import get_connection
 from schemas import QuestionRequest
 from services.llm import answer_question, stream_answer_question
@@ -19,7 +18,7 @@ router = APIRouter(prefix="/documents", tags=["全文问答"])
 def ask_document(
     document_id: int,
     request: QuestionRequest,
-    connection: sqlite3.Connection = Depends(get_connection),
+    connection: DatabaseConnection = Depends(get_connection),
 ):
     # 复用之前写好的函数，查询文档并读取正文
     document = get_document_content(document_id, connection)
@@ -93,7 +92,7 @@ def ask_document(
             (document_id,request.session_id, request.question, answer),
         )
         connection.commit()
-    except sqlite3.Error:
+    except DatabaseError:
         connection.rollback()
         raise HTTPException(
             status_code=500,
@@ -114,7 +113,7 @@ def ask_document_stream(
     document_id: int,
     request: QuestionRequest,
     http_request: Request,
-    connection: sqlite3.Connection = Depends(get_connection),
+    connection: DatabaseConnection = Depends(get_connection),
 ):
     # 1. 读取 Markdown 或 PDF 正文
     document = get_document_content(document_id, connection)
@@ -211,7 +210,7 @@ def ask_document_stream(
 
             # 5. 正常生成结束后，使用独立连接保存完整问答
             # 不依赖流式响应期间原连接的生命周期
-            save_connection = sqlite3.connect(DB_PATH)
+            save_connection = connect()
 
             try:
                 save_connection.execute(
@@ -229,7 +228,7 @@ def ask_document_stream(
                 )
                 save_connection.commit()
 
-            except sqlite3.Error:
+            except DatabaseError:
                 save_connection.rollback()
                 raise
 
@@ -267,7 +266,7 @@ def ask_document_stream(
                 "message": str(error),
             })
 
-        except sqlite3.Error:
+        except DatabaseError:
             yield make_event({
                 "type": "error",
                 "message": "回答已生成，但历史记录保存失败",

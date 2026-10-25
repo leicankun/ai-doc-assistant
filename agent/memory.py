@@ -2,6 +2,7 @@
 import hashlib
 import json
 import os
+from storage.database import insert_if_absent
 from typing import Literal
 from pydantic import BaseModel, ConfigDict, Field
 from services.knowledge_base import session_history
@@ -135,7 +136,7 @@ def prepare_session_context(connection, base_id, session_id, client, check_runti
                     WHERE knowledge_base_id=? AND session_id=? AND revision=?''',
                     (json.dumps(updated, ensure_ascii=False), next_cursor, covered_hash, base_id, session_id, revision)).rowcount
             else:
-                changed = connection.execute('''INSERT OR IGNORE INTO agent_session_summaries
+                changed = insert_if_absent(connection, '''INSERT INTO agent_session_summaries
                     (knowledge_base_id,session_id,summary_json,covered_turn_id,source_hash) VALUES (?,?,?,?,?)''',
                     (base_id, session_id, json.dumps(updated, ensure_ascii=False), next_cursor, covered_hash)).rowcount
             if not changed:

@@ -56,9 +56,8 @@ class RetrievalTests(unittest.TestCase):
                 c.execute('CREATE TABLE document_chunks (id INTEGER PRIMARY KEY, document_id INTEGER, chunk_index INTEGER, content TEXT, UNIQUE(document_id, chunk_index))')
                 c.execute("INSERT INTO document_chunks VALUES (99,99,1,'legacy')")
                 c.commit()
-            with patch.object(database, 'DB_PATH', db):
-                database.init_db()
-                database.init_db()
+            database.init_test_db(db)
+            database.init_test_db(db)
             def connection():
                 with closing(sqlite3.connect(db, check_same_thread=False)) as c:
                     c.row_factory = sqlite3.Row

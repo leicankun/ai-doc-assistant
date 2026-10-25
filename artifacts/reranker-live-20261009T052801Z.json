@@ -1,0 +1,935 @@
+{
+  "knowledge_base_id": 3,
+  "checks": [
+    {
+      "question": "自动向量入库失败后，原文件会被删除吗？",
+      "expected_evidence": "保留原文件和已有分块",
+      "candidate_count": 18,
+      "api_passed": true,
+      "items": [
+        {
+          "chunk_id": 3070,
+          "document_id": 11,
+          "chunk_index": 7,
+          "content": "## 失败后的恢复\n\n自动入库失败并不意味着上传文件必须删除。系统可以保留原文件和已有分块，展示失败提示，让用户检查模型配置或网络后重试。重试时使用已有记录标识更新向量，避免不断追加重复记录。恢复完成后还要重新检查向量集合与分块集合是否一致。只有验证完整的当前版本，才能把文档标记为已入库。\n",
+          "source_name": "上传后的文档处理流程.md",
+          "page_number": null,
+          "start_char": 834,
+          "end_char": 980,
+          "score": 17.918212998156626,
+          "matched_terms": [
+            "入库",
+            "删除",
+            "原文",
+            "原文件",
+            "后",
+            "向量",
+            "失败",
+            "文件",
+            "自动"
+          ],
+          "rank": 1,
+          "retrieval_rank": 1,
+          "rerank_score": 0.8466323956334096,
+          "rerank_model": "gte-rerank-v2"
+        },
+        {
+          "chunk_id": 3057,
+          "document_id": 10,
+          "chunk_index": 1,
+          "content": "# 从阅读到实践：学习笔记\n\n本文是原创测试资料，用于检查知识库上传后自动分块和向量入库，不代表教育研究结论。\n\n",
+          "source_name": "从阅读到实践：学习笔记.md",
+          "page_number": null,
+          "start_char": 0,
+          "end_char": 57,
+          "score": 7.25389732463433,
+          "matched_terms": [
+            "入库",
+            "后",
+            "向量",
+            "自动"
+          ],
+          "rank": 2,
+          "retrieval_rank": 2,
+          "rerank_score": 0.17987337671266546,
+          "rerank_model": "gte-rerank-v2"
+        },
+        {
+          "chunk_id": 3069,
+          "document_id": 11,
+          "chunk_index": 6,
+          "content": "## 版本与处理状态\n\n示例系统通过分块版本和入库版本判断索引是否有效。重新生成分块时，分块版本递增；向量全部写入并校验成功后，入库版本才更新。两个版本一致表示当前分块已经入库。没有分块时不能检索，有分块但没有有效索引时仍可使用关键词检索，语义检索和混合检索需要等待入库完成。\n\n",
+          "source_name": "上传后的文档处理流程.md",
+          "page_number": null,
+          "start_char": 694,
+          "end_char": 834,
+          "score": 4.935155510808996,
+          "matched_terms": [
+            "入库",
+            "后",
+            "向量"
+          ],
+          "rank": 3,
+          "retrieval_rank": 4,
+          "rerank_score": 0.1423660004446517,
+          "rerank_model": "gte-rerank-v2"
+        },
+        {
+          "chunk_id": 3065,
+          "document_id": 11,
+          "chunk_index": 2,
+          "content": "## 上传校验与文件保存\n\n示例系统接受 UTF-8 Markdown 和文字型 PDF。上传前需要检查扩展名，读取文件后检查是否为空。Markdown 需要正确解码，PDF 需要能够提取文本；加密文档和纯图片扫描件不属于当前支持范围。通过检查后，原文件使用随机名称保存，数据库记录保留用户看到的标题和实际存储文件名。文档标题用于展示，存储文件名用于定位文件。\n\n",
+          "source_name": "上传后的文档处理流程.md",
+          "page_number": null,
+          "start_char": 54,
+          "end_char": 236,
+          "score": 6.386055249711003,
+          "matched_terms": [
+            "原文",
+            "原文件",
+            "后",
+            "文件"
+          ],
+          "rank": 4,
+          "retrieval_rank": 3,
+          "rerank_score": 0.13816134565,
+          "rerank_model": "gte-rerank-v2"
+        },
+        {
+          "chunk_id": 3064,
+          "document_id": 11,
+          "chunk_index": 1,
+          "content": "# 上传后的文档处理流程\n\n本文是原创测试资料，用于验证自动文档处理，内容描述一个示例知识库的业务规则。\n\n",
+          "source_name": "上传后的文档处理流程.md",
+          "page_number": null,
+          "start_char": 0,
+          "end_char": 54,
+          "score": 3.2781643344355578,
+          "matched_terms": [
+            "后",
+            "自动"
+          ],
+          "rank": 5,
+          "retrieval_rank": 6,
+          "rerank_score": 0.1315558238233272,
+          "rerank_model": "gte-rerank-v2"
+        }
+      ],
+      "evidence_rank_before": 1,
+      "evidence_rank_after": 1,
+      "seconds": 1.512
+    },
+    {
+      "question": "PDF中有空白页，后面的页码会向前压缩吗？",
+      "expected_evidence": "后续页面的页码不能向前压缩",
+      "candidate_count": 18,
+      "api_passed": true,
+      "items": [
+        {
+          "chunk_id": 3067,
+          "document_id": 11,
+          "chunk_index": 4,
+          "content": "## 保留来源位置\n\n每个分块除了正文，还需要记录所属文档和来源位置。Markdown 的字符位置相对于整篇原文；PDF 的页码按物理页从一开始，字符位置相对于当前页面提取的文本。空白页不产生分块，但后续页面的页码不能向前压缩。来源位置帮助用户核对引用，也能帮助开发者判断文字提取和切分是否符合预期。\n\n",
+          "source_name": "上传后的文档处理流程.md",
+          "page_number": null,
+          "start_char": 380,
+          "end_char": 532,
+          "score": 16.310436560257028,
+          "matched_terms": [
+            "pdf",
+            "压缩",
+            "向前",
+            "的",
+            "空白",
+            "空白页",
+            "页码"
+          ],
+          "rank": 1,
+          "retrieval_rank": 1,
+          "rerank_score": 0.5350312922562512,
+          "rerank_model": "gte-rerank-v2"
+        },
+        {
+          "chunk_id": 3065,
+          "document_id": 11,
+          "chunk_index": 2,
+          "content": "## 上传校验与文件保存\n\n示例系统接受 UTF-8 Markdown 和文字型 PDF。上传前需要检查扩展名，读取文件后检查是否为空。Markdown 需要正确解码，PDF 需要能够提取文本；加密文档和纯图片扫描件不属于当前支持范围。通过检查后，原文件使用随机名称保存，数据库记录保留用户看到的标题和实际存储文件名。文档标题用于展示，存储文件名用于定位文件。\n\n",
+          "source_name": "上传后的文档处理流程.md",
+          "page_number": null,
+          "start_char": 54,
+          "end_char": 236,
+          "score": 3.126102820058469,
+          "matched_terms": [
+            "pdf",
+            "的"
+          ],
+          "rank": 2,
+          "retrieval_rank": 2,
+          "rerank_score": 0.13444393888711392,
+          "rerank_model": "gte-rerank-v2"
+        },
+        {
+          "chunk_id": 3064,
+          "document_id": 11,
+          "chunk_index": 1,
+          "content": "# 上传后的文档处理流程\n\n本文是原创测试资料，用于验证自动文档处理，内容描述一个示例知识库的业务规则。\n\n",
+          "source_name": "上传后的文档处理流程.md",
+          "page_number": null,
+          "start_char": 0,
+          "end_char": 54,
+          "score": 0.3122754837802966,
+          "matched_terms": [
+            "的"
+          ],
+          "rank": 3,
+          "retrieval_rank": 7,
+          "rerank_score": 0.09350593833254489,
+          "rerank_model": "gte-rerank-v2"
+        },
+        {
+          "chunk_id": 3063,
+          "document_id": 10,
+          "chunk_index": 7,
+          "content": "## 一次练习的完成标准\n\n一次练习不以读了多少文件为标准，而以是否能解释一条流程并验证一个变化为标准。结束时写下原行为、修改后的行为和验证方法。对暂时没有解决的问题也保留记录，下一次继续处理。学习笔记、运行结果和代码变更共同构成证据，让以后复习时可以从实际问题出发，而不是重新从第一页开始读。\n",
+          "source_name": "从阅读到实践：学习笔记.md",
+          "page_number": null,
+          "start_char": 859,
+          "end_char": 1007,
+          "score": 0.2792969056338079,
+          "matched_terms": [
+            "的"
+          ],
+          "rank": 4,
+          "retrieval_rank": 10,
+          "rerank_score": 0.028569759760260216,
+          "rerank_model": "gte-rerank-v2"
+        },
+        {
+          "chunk_id": 3058,
+          "document_id": 10,
+          "chunk_index": 2,
+          "content": "## 从一个具体问题开始\n\n学习一个软件项目时，可以先提出一个具体问题，例如用户上传文件后，文件保存在哪里，哪些信息进入数据库。带着问题阅读代码，比连续浏览所有文件更容易明确目标。学习者可以画出输入、处理和输出，把业务动作与函数联系起来。暂时不理解所有语法，也可以先标记关键步骤，再逐个核对。阅读的目标是建立定位能力，而不是把整份代码背下来。\n\n",
+          "source_name": "从阅读到实践：学习笔记.md",
+          "page_number": null,
+          "start_char": 57,
+          "end_char": 230,
+          "score": 0.15401236561453194,
+          "matched_terms": [
+            "的"
+          ],
+          "rank": 5,
+          "retrieval_rank": 18,
+          "rerank_score": 0.006134963463080567,
+          "rerank_model": "gte-rerank-v2"
+        }
+      ],
+      "evidence_rank_before": 1,
+      "evidence_rank_after": 1,
+      "seconds": 1.241
+    },
+    {
+      "question": "回答中的引用编号等于数据库分块ID吗？",
+      "expected_evidence": "不等于数据库分块 ID",
+      "candidate_count": 20,
+      "api_passed": true,
+      "items": [
+        {
+          "chunk_id": 3076,
+          "document_id": 12,
+          "chunk_index": 6,
+          "content": "## 回答与引用编号\n\n检索结果交给回答模型前，可以按本次顺序分配一、二、三这样的引用编号。模型回答使用方括号标记，前端根据编号查找对应原文和文档名称。引用编号只在本次回答中有效，不等于数据库分块 ID。后端需要检查模型使用的编号是否存在，但合法编号并不能证明原文支持结论，用户仍需核对实际引用内容。\n\n",
+          "source_name": "多文档检索与引用核对.md",
+          "page_number": null,
+          "start_char": 679,
+          "end_char": 831,
+          "score": 18.323587364943656,
+          "matched_terms": [
+            "id",
+            "中",
+            "分块",
+            "回答",
+            "引用",
+            "据库",
+            "数据",
+            "数据库",
+            "的",
+            "等于",
+            "编号"
+          ],
+          "rank": 1,
+          "retrieval_rank": 1,
+          "rerank_score": 0.9013728028186037,
+          "rerank_model": "gte-rerank-v2"
+        },
+        {
+          "chunk_id": 3059,
+          "document_id": 10,
+          "chunk_index": 3,
+          "content": "## 用自己的话解释\n\n阅读一段逻辑后，尝试用自己的话描述它做了什么。例如“先取得知识库中的文档编号，然后只查询这些文档的分块”。如果解释中只能复述变量名，可以代入具体数据：知识库包含文档六和文档七，本次就只允许检索这两份文档。具体例子能帮助发现误解，也能区分数据库中的文档编号、分块编号和回答引用编号。\n\n",
+          "source_name": "从阅读到实践：学习笔记.md",
+          "page_number": null,
+          "start_char": 230,
+          "end_char": 384,
+          "score": 12.95562700533976,
+          "matched_terms": [
+            "中",
+            "分块",
+            "回答",
+            "引用",
+            "据库",
+            "数据",
+            "数据库",
+            "的",
+            "编号"
+          ],
+          "rank": 2,
+          "retrieval_rank": 2,
+          "rerank_score": 0.1897314151391418,
+          "rerank_model": "gte-rerank-v2"
+        },
+        {
+          "chunk_id": 3061,
+          "document_id": 10,
+          "chunk_index": 5,
+          "content": "## 怎样记录学习笔记\n\n笔记可以只保存问题、入口函数和关键判断，不必复制整份源代码。一个实用条目是“检索范围异常：检查成员文档 ID 和 Chroma 的过滤条件”。另一个条目是“引用编号不存在：检查模型输出和合法编号集合”。笔记应当指向下一次可以采取的动作，文件移动后及时更新入口。业务流程图和少量具体例子通常比大量截图更容易查找。\n\n",
+          "source_name": "从阅读到实践：学习笔记.md",
+          "page_number": null,
+          "start_char": 540,
+          "end_char": 710,
+          "score": 5.238836062115627,
+          "matched_terms": [
+            "id",
+            "引用",
+            "的",
+            "编号"
+          ],
+          "rank": 3,
+          "retrieval_rank": 3,
+          "rerank_score": 0.15885480859164774,
+          "rerank_model": "gte-rerank-v2"
+        },
+        {
+          "chunk_id": 3057,
+          "document_id": 10,
+          "chunk_index": 1,
+          "content": "# 从阅读到实践：学习笔记\n\n本文是原创测试资料，用于检查知识库上传后自动分块和向量入库，不代表教育研究结论。\n\n",
+          "source_name": "从阅读到实践：学习笔记.md",
+          "page_number": null,
+          "start_char": 0,
+          "end_char": 57,
+          "score": 0.6759065541312986,
+          "matched_terms": [
+            "分块"
+          ],
+          "rank": 4,
+          "retrieval_rank": 17,
+          "rerank_score": 0.1454606121892354,
+          "rerank_model": "gte-rerank-v2"
+        },
+        {
+          "chunk_id": 3074,
+          "document_id": 12,
+          "chunk_index": 4,
+          "content": "## 混合检索排序\n\n混合检索可以使用 RRF 融合两路排名。每个候选按照所在列表中的排名贡献分数，同一个分块在两路出现时，贡献累加到同一条记录。分块身份由文档 ID 和分块 ID 共同确定。融合完成后统一排序，取整个知识库的前几条结果。RRF 使用排名而不是直接比较关键词分数与向量距离，避免两种数值尺度不同。\n\n",
+          "source_name": "多文档检索与引用核对.md",
+          "page_number": null,
+          "start_char": 366,
+          "end_char": 524,
+          "score": 4.589046657706094,
+          "matched_terms": [
+            "id",
+            "中",
+            "分块",
+            "的"
+          ],
+          "rank": 5,
+          "retrieval_rank": 5,
+          "rerank_score": 0.13794414653908513,
+          "rerank_model": "gte-rerank-v2"
+        }
+      ],
+      "evidence_rank_before": 1,
+      "evidence_rank_after": 1,
+      "seconds": 1.266
+    },
+    {
+      "question": "火星探测器的燃料箱容量是多少升？",
+      "expected_evidence": null,
+      "candidate_count": 20,
+      "api_passed": true,
+      "items": [
+        {
+          "chunk_id": 3057,
+          "document_id": 10,
+          "chunk_index": 1,
+          "content": "# 从阅读到实践：学习笔记\n\n本文是原创测试资料，用于检查知识库上传后自动分块和向量入库，不代表教育研究结论。\n\n",
+          "source_name": "从阅读到实践：学习笔记.md",
+          "page_number": null,
+          "start_char": 0,
+          "end_char": 57,
+          "score": 1.6874942624737934,
+          "matched_terms": [
+            "是"
+          ],
+          "rank": 1,
+          "retrieval_rank": 5,
+          "rerank_score": 0.11287456007719263,
+          "rerank_model": "gte-rerank-v2"
+        },
+        {
+          "chunk_id": 3071,
+          "document_id": 12,
+          "chunk_index": 1,
+          "content": "# 多文档检索与引用核对\n\n本文是原创测试资料，用于检验知识库范围过滤、混合检索和引用来源展示。\n\n",
+          "source_name": "多文档检索与引用核对.md",
+          "page_number": null,
+          "start_char": 0,
+          "end_char": 50,
+          "score": 1.7493756003875587,
+          "matched_terms": [
+            "是"
+          ],
+          "rank": 2,
+          "retrieval_rank": 4,
+          "rerank_score": 0.0823593177084187,
+          "rerank_model": "gte-rerank-v2"
+        },
+        {
+          "chunk_id": 3064,
+          "document_id": 11,
+          "chunk_index": 1,
+          "content": "# 上传后的文档处理流程\n\n本文是原创测试资料，用于验证自动文档处理，内容描述一个示例知识库的业务规则。\n\n",
+          "source_name": "上传后的文档处理流程.md",
+          "page_number": null,
+          "start_char": 0,
+          "end_char": 54,
+          "score": 2.030153324000832,
+          "matched_terms": [
+            "是",
+            "的"
+          ],
+          "rank": 3,
+          "retrieval_rank": 2,
+          "rerank_score": 0.05381746882439678,
+          "rerank_model": "gte-rerank-v2"
+        },
+        {
+          "chunk_id": 3076,
+          "document_id": 12,
+          "chunk_index": 6,
+          "content": "## 回答与引用编号\n\n检索结果交给回答模型前，可以按本次顺序分配一、二、三这样的引用编号。模型回答使用方括号标记，前端根据编号查找对应原文和文档名称。引用编号只在本次回答中有效，不等于数据库分块 ID。后端需要检查模型使用的编号是否存在，但合法编号并不能证明原文支持结论，用户仍需核对实际引用内容。\n\n",
+          "source_name": "多文档检索与引用核对.md",
+          "page_number": null,
+          "start_char": 679,
+          "end_char": 831,
+          "score": 0.23926324091618273,
+          "matched_terms": [
+            "的"
+          ],
+          "rank": 4,
+          "retrieval_rank": 18,
+          "rerank_score": 0.03575010863092486,
+          "rerank_model": "gte-rerank-v2"
+        },
+        {
+          "chunk_id": 3068,
+          "document_id": 11,
+          "chunk_index": 5,
+          "content": "## 向量生成与写入\n\n分块保存后，系统把正文交给 Embedding 模型，得到每块对应的向量。返回向量的数量应与输入分块一致，维度也应符合 Chroma 集合的要求。写入时使用稳定的记录标识，并附上文档 ID、分块 ID 和来源位置。向量本身用于比较语义接近程度，元数据用于限定检索范围和显示来源，二者承担不同职责。\n\n",
+          "source_name": "上传后的文档处理流程.md",
+          "page_number": null,
+          "start_char": 532,
+          "end_char": 694,
+          "score": 0.31451752057474275,
+          "matched_terms": [
+            "的"
+          ],
+          "rank": 5,
+          "retrieval_rank": 8,
+          "rerank_score": 0.005904099567803819,
+          "rerank_model": "gte-rerank-v2"
+        }
+      ],
+      "evidence_rank_before": null,
+      "evidence_rank_after": null,
+      "seconds": 1.17
+    },
+    {
+      "question": "比较这三篇文章的共同点和不同侧重点",
+      "expected_evidence": null,
+      "candidate_count": 20,
+      "api_passed": true,
+      "items": [
+        {
+          "chunk_id": 3075,
+          "document_id": 12,
+          "chunk_index": 5,
+          "content": "## 多文档比较问题\n\n全库最相关的几条分块可能全部来自一份文档，因此不保证每份成员文档都有结果。用户要求分别比较三篇文章时，可以考虑按文档分别检索，再汇总共同点和差异。普通事实问题仍可以采用全局检索。选择策略时要关注问题是否要求覆盖每份文档，不应强制所有问题都平均分配来源，否则可能把无关内容加入上下文。\n\n",
+          "source_name": "多文档检索与引用核对.md",
+          "page_number": null,
+          "start_char": 524,
+          "end_char": 679,
+          "score": 14.449587980975876,
+          "matched_terms": [
+            "三篇",
+            "共同",
+            "共同点",
+            "同点",
+            "和",
+            "文章",
+            "比较",
+            "的"
+          ],
+          "rank": 1,
+          "retrieval_rank": 1,
+          "rerank_score": 0.23398705290429575,
+          "rerank_model": "gte-rerank-v2"
+        },
+        {
+          "chunk_id": 3071,
+          "document_id": 12,
+          "chunk_index": 1,
+          "content": "# 多文档检索与引用核对\n\n本文是原创测试资料，用于检验知识库范围过滤、混合检索和引用来源展示。\n\n",
+          "source_name": "多文档检索与引用核对.md",
+          "page_number": null,
+          "start_char": 0,
+          "end_char": 50,
+          "score": 0.24861163733440084,
+          "matched_terms": [
+            "和"
+          ],
+          "rank": 2,
+          "retrieval_rank": 18,
+          "rerank_score": 0.11345851646541619,
+          "rerank_model": "gte-rerank-v2"
+        },
+        {
+          "chunk_id": 3063,
+          "document_id": 10,
+          "chunk_index": 7,
+          "content": "## 一次练习的完成标准\n\n一次练习不以读了多少文件为标准，而以是否能解释一条流程并验证一个变化为标准。结束时写下原行为、修改后的行为和验证方法。对暂时没有解决的问题也保留记录，下一次继续处理。学习笔记、运行结果和代码变更共同构成证据，让以后复习时可以从实际问题出发，而不是重新从第一页开始读。\n",
+          "source_name": "从阅读到实践：学习笔记.md",
+          "page_number": null,
+          "start_char": 859,
+          "end_char": 1007,
+          "score": 2.248804007295516,
+          "matched_terms": [
+            "共同",
+            "和",
+            "的"
+          ],
+          "rank": 3,
+          "retrieval_rank": 5,
+          "rerank_score": 0.07819398176919425,
+          "rerank_model": "gte-rerank-v2"
+        },
+        {
+          "chunk_id": 3074,
+          "document_id": 12,
+          "chunk_index": 4,
+          "content": "## 混合检索排序\n\n混合检索可以使用 RRF 融合两路排名。每个候选按照所在列表中的排名贡献分数，同一个分块在两路出现时，贡献累加到同一条记录。分块身份由文档 ID 和分块 ID 共同确定。融合完成后统一排序，取整个知识库的前几条结果。RRF 使用排名而不是直接比较关键词分数与向量距离，避免两种数值尺度不同。\n\n",
+          "source_name": "多文档检索与引用核对.md",
+          "page_number": null,
+          "start_char": 366,
+          "end_char": 524,
+          "score": 5.733976159644753,
+          "matched_terms": [
+            "不同",
+            "共同",
+            "和",
+            "比较",
+            "的"
+          ],
+          "rank": 4,
+          "retrieval_rank": 2,
+          "rerank_score": 0.04519168583900694,
+          "rerank_model": "gte-rerank-v2"
+        },
+        {
+          "chunk_id": 3073,
+          "document_id": 12,
+          "chunk_index": 3,
+          "content": "## 关键词与语义检索\n\n关键词检索关注问题中的词语与原文的匹配，适合查找专有名词和明确术语。语义检索先把问题转成向量，再寻找语义接近的分块，适合处理不同表达方式。两种检索都有局限：关键词可能漏掉同义表达，语义相似也不保证能回答具体问题。观察两路返回结果，可以帮助判断失败来自分词、向量还是资料本身。\n\n",
+          "source_name": "多文档检索与引用核对.md",
+          "page_number": null,
+          "start_char": 214,
+          "end_char": 366,
+          "score": 2.174919087848342,
+          "matched_terms": [
+            "不同",
+            "和",
+            "的"
+          ],
+          "rank": 5,
+          "retrieval_rank": 6,
+          "rerank_score": 0.0444717390879928,
+          "rerank_model": "gte-rerank-v2"
+        }
+      ],
+      "evidence_rank_before": null,
+      "evidence_rank_after": null,
+      "seconds": 1.179
+    }
+  ],
+  "interfaces": [
+    {
+      "mode": "bm25",
+      "status_code": 200,
+      "seconds": 1.67,
+      "result": {
+        "knowledge_base_id": 3,
+        "question": "自动向量入库失败后，原文件会被删除吗？",
+        "mode": "bm25",
+        "items": [
+          {
+            "chunk_id": 3070,
+            "document_id": 11,
+            "chunk_index": 7,
+            "content": "## 失败后的恢复\n\n自动入库失败并不意味着上传文件必须删除。系统可以保留原文件和已有分块，展示失败提示，让用户检查模型配置或网络后重试。重试时使用已有记录标识更新向量，避免不断追加重复记录。恢复完成后还要重新检查向量集合与分块集合是否一致。只有验证完整的当前版本，才能把文档标记为已入库。\n",
+            "source_name": "上传后的文档处理流程.md",
+            "page_number": null,
+            "start_char": 834,
+            "end_char": 980,
+            "score": 17.918212998156626,
+            "matched_terms": [
+              "入库",
+              "删除",
+              "原文",
+              "原文件",
+              "后",
+              "向量",
+              "失败",
+              "文件",
+              "自动"
+            ],
+            "rank": 1,
+            "retrieval_rank": 1,
+            "rerank_score": 0.8466323956334096,
+            "rerank_model": "gte-rerank-v2"
+          },
+          {
+            "chunk_id": 3057,
+            "document_id": 10,
+            "chunk_index": 1,
+            "content": "# 从阅读到实践：学习笔记\n\n本文是原创测试资料，用于检查知识库上传后自动分块和向量入库，不代表教育研究结论。\n\n",
+            "source_name": "从阅读到实践：学习笔记.md",
+            "page_number": null,
+            "start_char": 0,
+            "end_char": 57,
+            "score": 7.25389732463433,
+            "matched_terms": [
+              "入库",
+              "后",
+              "向量",
+              "自动"
+            ],
+            "rank": 2,
+            "retrieval_rank": 2,
+            "rerank_score": 0.17987337671266546,
+            "rerank_model": "gte-rerank-v2"
+          },
+          {
+            "chunk_id": 3069,
+            "document_id": 11,
+            "chunk_index": 6,
+            "content": "## 版本与处理状态\n\n示例系统通过分块版本和入库版本判断索引是否有效。重新生成分块时，分块版本递增；向量全部写入并校验成功后，入库版本才更新。两个版本一致表示当前分块已经入库。没有分块时不能检索，有分块但没有有效索引时仍可使用关键词检索，语义检索和混合检索需要等待入库完成。\n\n",
+            "source_name": "上传后的文档处理流程.md",
+            "page_number": null,
+            "start_char": 694,
+            "end_char": 834,
+            "score": 4.935155510808996,
+            "matched_terms": [
+              "入库",
+              "后",
+              "向量"
+            ],
+            "rank": 3,
+            "retrieval_rank": 4,
+            "rerank_score": 0.1423660004446517,
+            "rerank_model": "gte-rerank-v2"
+          },
+          {
+            "chunk_id": 3065,
+            "document_id": 11,
+            "chunk_index": 2,
+            "content": "## 上传校验与文件保存\n\n示例系统接受 UTF-8 Markdown 和文字型 PDF。上传前需要检查扩展名，读取文件后检查是否为空。Markdown 需要正确解码，PDF 需要能够提取文本；加密文档和纯图片扫描件不属于当前支持范围。通过检查后，原文件使用随机名称保存，数据库记录保留用户看到的标题和实际存储文件名。文档标题用于展示，存储文件名用于定位文件。\n\n",
+            "source_name": "上传后的文档处理流程.md",
+            "page_number": null,
+            "start_char": 54,
+            "end_char": 236,
+            "score": 6.386055249711003,
+            "matched_terms": [
+              "原文",
+              "原文件",
+              "后",
+              "文件"
+            ],
+            "rank": 4,
+            "retrieval_rank": 3,
+            "rerank_score": 0.13816134565,
+            "rerank_model": "gte-rerank-v2"
+          },
+          {
+            "chunk_id": 3064,
+            "document_id": 11,
+            "chunk_index": 1,
+            "content": "# 上传后的文档处理流程\n\n本文是原创测试资料，用于验证自动文档处理，内容描述一个示例知识库的业务规则。\n\n",
+            "source_name": "上传后的文档处理流程.md",
+            "page_number": null,
+            "start_char": 0,
+            "end_char": 54,
+            "score": 3.2781643344355578,
+            "matched_terms": [
+              "后",
+              "自动"
+            ],
+            "rank": 5,
+            "retrieval_rank": 6,
+            "rerank_score": 0.1315558238233272,
+            "rerank_model": "gte-rerank-v2"
+          }
+        ],
+        "total": 5,
+        "skipped_documents": []
+      },
+      "evidence_hit": true
+    },
+    {
+      "mode": "dense",
+      "status_code": 200,
+      "seconds": 3.689,
+      "result": {
+        "knowledge_base_id": 3,
+        "question": "自动向量入库失败后，原文件会被删除吗？",
+        "mode": "dense",
+        "items": [
+          {
+            "source_name": "上传后的文档处理流程.md",
+            "document_id": 11,
+            "chunk_index": 7,
+            "chunk_id": 3070,
+            "start_char": 834,
+            "end_char": 980,
+            "record_id": "doc:11:chunk:3070",
+            "content": "## 失败后的恢复\n\n自动入库失败并不意味着上传文件必须删除。系统可以保留原文件和已有分块，展示失败提示，让用户检查模型配置或网络后重试。重试时使用已有记录标识更新向量，避免不断追加重复记录。恢复完成后还要重新检查向量集合与分块集合是否一致。只有验证完整的当前版本，才能把文档标记为已入库。\n",
+            "distance": 0.1924939751625061,
+            "rank": 1,
+            "retrieval_rank": 1,
+            "rerank_score": 0.8466323956334096,
+            "rerank_model": "gte-rerank-v2"
+          },
+          {
+            "source_name": "从阅读到实践：学习笔记.md",
+            "chunk_index": 1,
+            "chunk_id": 3057,
+            "document_id": 10,
+            "start_char": 0,
+            "end_char": 57,
+            "record_id": "doc:10:chunk:3057",
+            "content": "# 从阅读到实践：学习笔记\n\n本文是原创测试资料，用于检查知识库上传后自动分块和向量入库，不代表教育研究结论。\n\n",
+            "distance": 0.6135317087173462,
+            "rank": 2,
+            "retrieval_rank": 13,
+            "rerank_score": 0.17987337671266546,
+            "rerank_model": "gte-rerank-v2"
+          },
+          {
+            "end_char": 834,
+            "source_name": "上传后的文档处理流程.md",
+            "document_id": 11,
+            "start_char": 694,
+            "chunk_index": 6,
+            "chunk_id": 3069,
+            "record_id": "doc:11:chunk:3069",
+            "content": "## 版本与处理状态\n\n示例系统通过分块版本和入库版本判断索引是否有效。重新生成分块时，分块版本递增；向量全部写入并校验成功后，入库版本才更新。两个版本一致表示当前分块已经入库。没有分块时不能检索，有分块但没有有效索引时仍可使用关键词检索，语义检索和混合检索需要等待入库完成。\n\n",
+            "distance": 0.41660380363464355,
+            "rank": 3,
+            "retrieval_rank": 2,
+            "rerank_score": 0.1423660004446517,
+            "rerank_model": "gte-rerank-v2"
+          },
+          {
+            "end_char": 236,
+            "document_id": 11,
+            "chunk_id": 3065,
+            "chunk_index": 2,
+            "source_name": "上传后的文档处理流程.md",
+            "start_char": 54,
+            "record_id": "doc:11:chunk:3065",
+            "content": "## 上传校验与文件保存\n\n示例系统接受 UTF-8 Markdown 和文字型 PDF。上传前需要检查扩展名，读取文件后检查是否为空。Markdown 需要正确解码，PDF 需要能够提取文本；加密文档和纯图片扫描件不属于当前支持范围。通过检查后，原文件使用随机名称保存，数据库记录保留用户看到的标题和实际存储文件名。文档标题用于展示，存储文件名用于定位文件。\n\n",
+            "distance": 0.47754424810409546,
+            "rank": 4,
+            "retrieval_rank": 4,
+            "rerank_score": 0.13816134565,
+            "rerank_model": "gte-rerank-v2"
+          },
+          {
+            "start_char": 0,
+            "chunk_id": 3064,
+            "chunk_index": 1,
+            "end_char": 54,
+            "source_name": "上传后的文档处理流程.md",
+            "document_id": 11,
+            "record_id": "doc:11:chunk:3064",
+            "content": "# 上传后的文档处理流程\n\n本文是原创测试资料，用于验证自动文档处理，内容描述一个示例知识库的业务规则。\n\n",
+            "distance": 0.4989171624183655,
+            "rank": 5,
+            "retrieval_rank": 6,
+            "rerank_score": 0.1315558238233272,
+            "rerank_model": "gte-rerank-v2"
+          }
+        ],
+        "total": 5,
+        "skipped_documents": []
+      },
+      "evidence_hit": true
+    },
+    {
+      "mode": "hybrid",
+      "status_code": 200,
+      "seconds": 3.213,
+      "result": {
+        "knowledge_base_id": 3,
+        "question": "自动向量入库失败后，原文件会被删除吗？",
+        "mode": "hybrid",
+        "items": [
+          {
+            "chunk_id": 3070,
+            "document_id": 11,
+            "chunk_index": 7,
+            "content": "## 失败后的恢复\n\n自动入库失败并不意味着上传文件必须删除。系统可以保留原文件和已有分块，展示失败提示，让用户检查模型配置或网络后重试。重试时使用已有记录标识更新向量，避免不断追加重复记录。恢复完成后还要重新检查向量集合与分块集合是否一致。只有验证完整的当前版本，才能把文档标记为已入库。\n",
+            "source_name": "上传后的文档处理流程.md",
+            "page_number": null,
+            "start_char": 834,
+            "end_char": 980,
+            "rrf_score": 0.03278688524590164,
+            "bm25_rank": 1,
+            "dense_rank": 1,
+            "bm25_score": 17.918212998156626,
+            "dense_distance": 0.1924939751625061,
+            "matched_terms": [
+              "入库",
+              "删除",
+              "原文",
+              "原文件",
+              "后",
+              "向量",
+              "失败",
+              "文件",
+              "自动"
+            ],
+            "record_id": "doc:11:chunk:3070",
+            "rank": 1,
+            "retrieval_rank": 1,
+            "rerank_score": 0.8466323956334096,
+            "rerank_model": "gte-rerank-v2"
+          },
+          {
+            "chunk_id": 3057,
+            "document_id": 10,
+            "chunk_index": 1,
+            "content": "# 从阅读到实践：学习笔记\n\n本文是原创测试资料，用于检查知识库上传后自动分块和向量入库，不代表教育研究结论。\n\n",
+            "source_name": "从阅读到实践：学习笔记.md",
+            "page_number": null,
+            "start_char": 0,
+            "end_char": 57,
+            "rrf_score": 0.029827662395050816,
+            "bm25_rank": 2,
+            "dense_rank": 13,
+            "bm25_score": 7.25389732463433,
+            "dense_distance": 0.6135317087173462,
+            "matched_terms": [
+              "入库",
+              "后",
+              "向量",
+              "自动"
+            ],
+            "record_id": "doc:10:chunk:3057",
+            "rank": 2,
+            "retrieval_rank": 7,
+            "rerank_score": 0.17987337671266546,
+            "rerank_model": "gte-rerank-v2"
+          },
+          {
+            "chunk_id": 3069,
+            "document_id": 11,
+            "chunk_index": 6,
+            "content": "## 版本与处理状态\n\n示例系统通过分块版本和入库版本判断索引是否有效。重新生成分块时，分块版本递增；向量全部写入并校验成功后，入库版本才更新。两个版本一致表示当前分块已经入库。没有分块时不能检索，有分块但没有有效索引时仍可使用关键词检索，语义检索和混合检索需要等待入库完成。\n\n",
+            "source_name": "上传后的文档处理流程.md",
+            "page_number": null,
+            "start_char": 694,
+            "end_char": 834,
+            "rrf_score": 0.031754032258064516,
+            "bm25_rank": 4,
+            "dense_rank": 2,
+            "bm25_score": 4.935155510808996,
+            "dense_distance": 0.41660380363464355,
+            "matched_terms": [
+              "入库",
+              "后",
+              "向量"
+            ],
+            "record_id": "doc:11:chunk:3069",
+            "rank": 3,
+            "retrieval_rank": 2,
+            "rerank_score": 0.1423660004446517,
+            "rerank_model": "gte-rerank-v2"
+          },
+          {
+            "chunk_id": 3065,
+            "document_id": 11,
+            "chunk_index": 2,
+            "content": "## 上传校验与文件保存\n\n示例系统接受 UTF-8 Markdown 和文字型 PDF。上传前需要检查扩展名，读取文件后检查是否为空。Markdown 需要正确解码，PDF 需要能够提取文本；加密文档和纯图片扫描件不属于当前支持范围。通过检查后，原文件使用随机名称保存，数据库记录保留用户看到的标题和实际存储文件名。文档标题用于展示，存储文件名用于定位文件。\n\n",
+            "source_name": "上传后的文档处理流程.md",
+            "page_number": null,
+            "start_char": 54,
+            "end_char": 236,
+            "rrf_score": 0.03149801587301587,
+            "bm25_rank": 3,
+            "dense_rank": 4,
+            "bm25_score": 6.386055249711003,
+            "dense_distance": 0.47754424810409546,
+            "matched_terms": [
+              "原文",
+              "原文件",
+              "后",
+              "文件"
+            ],
+            "record_id": "doc:11:chunk:3065",
+            "rank": 4,
+            "retrieval_rank": 3,
+            "rerank_score": 0.13816134565,
+            "rerank_model": "gte-rerank-v2"
+          },
+          {
+            "chunk_id": 3064,
+            "document_id": 11,
+            "chunk_index": 1,
+            "content": "# 上传后的文档处理流程\n\n本文是原创测试资料，用于验证自动文档处理，内容描述一个示例知识库的业务规则。\n\n",
+            "source_name": "上传后的文档处理流程.md",
+            "page_number": null,
+            "start_char": 0,
+            "end_char": 54,
+            "rrf_score": 0.030303030303030304,
+            "bm25_rank": 6,
+            "dense_rank": 6,
+            "bm25_score": 3.2781643344355578,
+            "dense_distance": 0.4989171624183655,
+            "matched_terms": [
+              "后",
+              "自动"
+            ],
+            "record_id": "doc:11:chunk:3064",
+            "rank": 5,
+            "retrieval_rank": 6,
+            "rerank_score": 0.1315558238233272,
+            "rerank_model": "gte-rerank-v2"
+          }
+        ],
+        "total": 5,
+        "skipped_documents": []
+      },
+      "evidence_hit": true
+    }
+  ]
+}

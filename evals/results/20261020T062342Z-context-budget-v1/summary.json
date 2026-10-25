@@ -1,0 +1,98 @@
+{
+  "historical_replay": {
+    "before": {
+      "cases": 8,
+      "success": 8,
+      "cases_with_retrieval_crossing": 5,
+      "retrieval_crossing_events": 8,
+      "omitted_items": 48,
+      "early_finalizations": 2,
+      "deduplicated_bodies": 0,
+      "model_requests": 0,
+      "requests_over_budget": 0,
+      "task_pass": 0,
+      "judge_success": 0,
+      "chat_tokens": 0,
+      "citation_identity_errors": 0
+    },
+    "after": {
+      "cases": 8,
+      "success": 8,
+      "cases_with_retrieval_crossing": 2,
+      "retrieval_crossing_events": 2,
+      "omitted_items": 0,
+      "early_finalizations": 1,
+      "deduplicated_bodies": 101,
+      "model_requests": 0,
+      "requests_over_budget": 0,
+      "task_pass": 0,
+      "judge_success": 0,
+      "chat_tokens": 0,
+      "citation_identity_errors": 0
+    }
+  },
+  "live_fixed_plan": {
+    "before": {
+      "cases": 3,
+      "success": 2,
+      "cases_with_retrieval_crossing": 3,
+      "retrieval_crossing_events": 4,
+      "omitted_items": 35,
+      "early_finalizations": 3,
+      "deduplicated_bodies": 0,
+      "model_requests": 3,
+      "requests_over_budget": 0,
+      "task_pass": 2,
+      "judge_success": 2,
+      "chat_tokens": 13381,
+      "citation_identity_errors": 0
+    },
+    "after": {
+      "cases": 3,
+      "success": 3,
+      "cases_with_retrieval_crossing": 3,
+      "retrieval_crossing_events": 6,
+      "omitted_items": 0,
+      "early_finalizations": 2,
+      "deduplicated_bodies": 77,
+      "model_requests": 3,
+      "requests_over_budget": 0,
+      "task_pass": 3,
+      "judge_success": 3,
+      "chat_tokens": 16583,
+      "citation_identity_errors": 0
+    }
+  },
+  "live_agent": {
+    "before": {
+      "cases": 4,
+      "success": 4,
+      "cases_with_retrieval_crossing": 2,
+      "retrieval_crossing_events": 5,
+      "omitted_items": 36,
+      "early_finalizations": 2,
+      "deduplicated_bodies": 0,
+      "model_requests": 13,
+      "requests_over_budget": 0,
+      "task_pass": 3,
+      "judge_success": 4,
+      "chat_tokens": 57534,
+      "citation_identity_errors": 0
+    },
+    "after": {
+      "cases": 4,
+      "success": 4,
+      "cases_with_retrieval_crossing": 3,
+      "retrieval_crossing_events": 3,
+      "omitted_items": 1,
+      "early_finalizations": 1,
+      "deduplicated_bodies": 31,
+      "model_requests": 13,
+      "requests_over_budget": 0,
+      "task_pass": 4,
+      "judge_success": 4,
+      "chat_tokens": 54413,
+      "citation_identity_errors": 0
+    }
+  }
+}

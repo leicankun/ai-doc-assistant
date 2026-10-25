@@ -1,0 +1,1950 @@
+[
+  {
+    "id": "r001",
+    "category": "direct",
+    "question": "Orion 3.0 缓存端口和连接超时分别是多少？",
+    "split": "dev",
+    "fact_family": "orion-connect",
+    "expected_behavior": "answer",
+    "expected_points": [
+      "6388",
+      "4秒"
+    ],
+    "evidence_groups": [
+      {
+        "alternatives": [
+          {
+            "document": "orion-cache-v3.md",
+            "section": 1,
+            "quote": "Orion 3.0 的缓存服务监听端口为 6388，连接超时为 4 秒；客户端需要同时设置这两个参数。端口不是应用 HTTP 端口，超时仅指建立连接的等待时间。",
+            "start_char": 29,
+            "end_char": 109
+          }
+        ]
+      }
+    ],
+    "answer_check": false
+  },
+  {
+    "id": "r002",
+    "category": "direct",
+    "question": "Orion 3.0 普通任务重试次数和间隔是多少？",
+    "split": "dev",
+    "fact_family": "orion-retry",
+    "expected_behavior": "answer",
+    "expected_points": [
+      "3次",
+      "12秒"
+    ],
+    "evidence_groups": [
+      {
+        "alternatives": [
+          {
+            "document": "orion-worker-v3.md",
+            "section": 2,
+            "quote": "Orion 3.0 普通任务最多重试 3 次，每次间隔 12 秒。达到重试上限后进入失败队列，不得无限重试。",
+            "start_char": 102,
+            "end_char": 156
+          }
+        ]
+      }
+    ],
+    "answer_check": false
+  },
+  {
+    "id": "r003",
+    "category": "direct",
+    "question": "Orion 3.0 工作线程默认值与上限是什么？",
+    "split": "dev",
+    "fact_family": "orion-threads",
+    "expected_behavior": "answer",
+    "expected_points": [
+      "4",
+      "12"
+    ],
+    "evidence_groups": [
+      {
+        "alternatives": [
+          {
+            "document": "orion-worker-v3.md",
+            "section": 1,
+            "quote": "Orion 3.0 工作进程默认启动 4 个线程，单进程线程上限为 12。调整线程数后需要重启工作进程，不能只重启监控组件。",
+            "start_char": 29,
+            "end_char": 91
+          }
+        ]
+      }
+    ],
+    "answer_check": false
+  },
+  {
+    "id": "r004",
+    "category": "direct",
+    "question": "Orion 3.0 普通缓存和空结果分别保留多久？",
+    "split": "dev",
+    "fact_family": "orion-ttl",
+    "expected_behavior": "answer",
+    "expected_points": [
+      "20分钟",
+      "30秒"
+    ],
+    "evidence_groups": [
+      {
+        "alternatives": [
+          {
+            "document": "orion-cache-v3.md",
+            "section": 4,
+            "quote": "Orion 3.0 缓存普通条目保留 20 分钟，空结果条目保留 30 秒。空结果使用独立过期策略，不能按普通条目的时间保留。",
+            "start_char": 256,
+            "end_char": 319
+          }
+        ]
+      }
+    ],
+    "answer_check": false
+  },
+  {
+    "id": "r005",
+    "category": "direct",
+    "question": "Atlas 2.4 默认监听端口和就绪路径是什么？",
+    "split": "test",
+    "fact_family": "atlas-ready",
+    "expected_behavior": "answer",
+    "expected_points": [
+      "8200",
+      "/ready"
+    ],
+    "evidence_groups": [
+      {
+        "alternatives": [
+          {
+            "document": "atlas-deploy-v2.md",
+            "section": 2,
+            "quote": "Atlas 2.4 的默认监听端口是 8200，存活检查路径是 /live，就绪检查路径是 /ready。/live 成功只代表进程存活，接入业务流量必须以 /ready 成功为准。",
+            "start_char": 206,
+            "end_char": 297
+          }
+        ]
+      }
+    ],
+    "answer_check": true
+  },
+  {
+    "id": "r006",
+    "category": "direct",
+    "question": "Atlas 2.4 请求超时与默认重试次数是多少？",
+    "split": "test",
+    "fact_family": "atlas-timeout",
+    "expected_behavior": "answer",
+    "expected_points": [
+      "20秒",
+      "2次",
+      "单次下游请求"
+    ],
+    "evidence_groups": [
+      {
+        "alternatives": [
+          {
+            "document": "atlas-config-v2.md",
+            "section": 1,
+            "quote": "Atlas 2.4 默认请求超时 request_timeout 为 20 秒，默认重试次数 retry_count 为 2。超时按单次下游请求计时，不能把它解释为整轮业务处理时限。",
+            "start_char": 28,
+            "end_char": 119
+          }
+        ]
+      }
+    ],
+    "answer_check": false
+  },
+  {
+    "id": "r007",
+    "category": "direct",
+    "question": "Atlas 2.4 应用日志与审计日志各保留多久？",
+    "split": "test",
+    "fact_family": "atlas-logs",
+    "expected_behavior": "answer",
+    "expected_points": [
+      "30天",
+      "180天"
+    ],
+    "evidence_groups": [
+      {
+        "alternatives": [
+          {
+            "document": "atlas-monitor-v2.md",
+            "section": 4,
+            "quote": "日志留存为 30 天，审计日志留存为 180 天。应用日志与审计日志使用不同存储策略，不能按应用日志规则删除审计记录。",
+            "start_char": 298,
+            "end_char": 357
+          }
+        ]
+      }
+    ],
+    "answer_check": false
+  },
+  {
+    "id": "r008",
+    "category": "direct",
+    "question": "Atlas 2.4 editor 可以上传和删除吗？",
+    "split": "test",
+    "fact_family": "atlas-role",
+    "expected_behavior": "answer",
+    "expected_points": [
+      "可以上传",
+      "不能删除",
+      "admin才能删除"
+    ],
+    "evidence_groups": [
+      {
+        "alternatives": [
+          {
+            "document": "atlas-auth-v2.md",
+            "section": 2,
+            "quote": "viewer 只能读取资料，editor 可以读取和上传，admin 可以管理成员、配置和删除资料。editor 不能删除资料；删除必须由 admin 执行。",
+            "start_char": 129,
+            "end_char": 208
+          }
+        ]
+      }
+    ],
+    "answer_check": false
+  },
+  {
+    "id": "r009",
+    "category": "direct",
+    "question": "Aster 4.2 的向量维度是多少，查询和文档模型需要一致吗？",
+    "split": "test",
+    "fact_family": "aster-dim",
+    "expected_behavior": "answer",
+    "expected_points": [
+      "768维",
+      "同一模型版本"
+    ],
+    "evidence_groups": [
+      {
+        "alternatives": [
+          {
+            "document": "aster-index-v4.md",
+            "section": 1,
+            "quote": "Aster 4.2 使用 768 维向量，文档与查询必须使用同一模型版本。维度相同并不代表来自不同模型的向量可以混用。",
+            "start_char": 29,
+            "end_char": 88
+          }
+        ]
+      }
+    ],
+    "answer_check": true
+  },
+  {
+    "id": "r010",
+    "category": "direct",
+    "question": "Aster 4.2 标准版和企业版每个知识库分别最多多少文档？",
+    "split": "test",
+    "fact_family": "aster-edition",
+    "expected_behavior": "answer",
+    "expected_points": [
+      "120",
+      "300"
+    ],
+    "evidence_groups": [
+      {
+        "alternatives": [
+          {
+            "document": "aster-permissions-v4.md",
+            "section": 8,
+            "quote": "Aster 4.2 标准版每个知识库最多 120 份文档，企业版最多 300 份。两种版本需要按实际订阅识别。",
+            "start_char": 516,
+            "end_char": 571
+          }
+        ]
+      }
+    ],
+    "answer_check": false
+  },
+  {
+    "id": "r011",
+    "category": "paraphrase",
+    "question": "Orion 新版缓存客户端连哪个口，建连最多等几秒？",
+    "split": "dev",
+    "fact_family": "orion-connect",
+    "expected_behavior": "answer",
+    "expected_points": [
+      "6388",
+      "4秒"
+    ],
+    "evidence_groups": [
+      {
+        "alternatives": [
+          {
+            "document": "orion-cache-v3.md",
+            "section": 1,
+            "quote": "Orion 3.0 的缓存服务监听端口为 6388，连接超时为 4 秒；客户端需要同时设置这两个参数。端口不是应用 HTTP 端口，超时仅指建立连接的等待时间。",
+            "start_char": 29,
+            "end_char": 109
+          }
+        ]
+      }
+    ],
+    "answer_check": false
+  },
+  {
+    "id": "r012",
+    "category": "paraphrase",
+    "question": "Orion 3.0 作业失败后最多再尝试几回，每回隔多久？",
+    "split": "dev",
+    "fact_family": "orion-retry",
+    "expected_behavior": "answer",
+    "expected_points": [
+      "3次",
+      "12秒"
+    ],
+    "evidence_groups": [
+      {
+        "alternatives": [
+          {
+            "document": "orion-worker-v3.md",
+            "section": 2,
+            "quote": "Orion 3.0 普通任务最多重试 3 次，每次间隔 12 秒。达到重试上限后进入失败队列，不得无限重试。",
+            "start_char": 102,
+            "end_char": 156
+          }
+        ]
+      }
+    ],
+    "answer_check": false
+  },
+  {
+    "id": "r013",
+    "category": "paraphrase",
+    "question": "Orion 新版任务进程一开始开几个执行线程，最多能开多少？",
+    "split": "dev",
+    "fact_family": "orion-threads",
+    "expected_behavior": "answer",
+    "expected_points": [
+      "4",
+      "12"
+    ],
+    "evidence_groups": [
+      {
+        "alternatives": [
+          {
+            "document": "orion-worker-v3.md",
+            "section": 1,
+            "quote": "Orion 3.0 工作进程默认启动 4 个线程，单进程线程上限为 12。调整线程数后需要重启工作进程，不能只重启监控组件。",
+            "start_char": 29,
+            "end_char": 91
+          }
+        ]
+      }
+    ],
+    "answer_check": false
+  },
+  {
+    "id": "r014",
+    "category": "paraphrase",
+    "question": "Orion 3.0 查到的正常结果与查无结果的缓存寿命一样吗，分别多久？",
+    "split": "dev",
+    "fact_family": "orion-ttl",
+    "expected_behavior": "answer",
+    "expected_points": [
+      "20分钟",
+      "30秒"
+    ],
+    "evidence_groups": [
+      {
+        "alternatives": [
+          {
+            "document": "orion-cache-v3.md",
+            "section": 4,
+            "quote": "Orion 3.0 缓存普通条目保留 20 分钟，空结果条目保留 30 秒。空结果使用独立过期策略，不能按普通条目的时间保留。",
+            "start_char": 256,
+            "end_char": 319
+          }
+        ]
+      }
+    ],
+    "answer_check": false
+  },
+  {
+    "id": "r015",
+    "category": "paraphrase",
+    "question": "Atlas 2.4 接收连接的默认端口和允许切流的探针地址是什么？",
+    "split": "test",
+    "fact_family": "atlas-ready",
+    "expected_behavior": "answer",
+    "expected_points": [
+      "8200",
+      "/ready"
+    ],
+    "evidence_groups": [
+      {
+        "alternatives": [
+          {
+            "document": "atlas-deploy-v2.md",
+            "section": 2,
+            "quote": "Atlas 2.4 的默认监听端口是 8200，存活检查路径是 /live，就绪检查路径是 /ready。/live 成功只代表进程存活，接入业务流量必须以 /ready 成功为准。",
+            "start_char": 206,
+            "end_char": 297
+          }
+        ]
+      }
+    ],
+    "answer_check": true
+  },
+  {
+    "id": "r016",
+    "category": "paraphrase",
+    "question": "Atlas 新版一次下游调用等多久，会重试几回，这就是整轮时限吗？",
+    "split": "test",
+    "fact_family": "atlas-timeout",
+    "expected_behavior": "answer",
+    "expected_points": [
+      "20秒",
+      "2次",
+      "单次下游请求"
+    ],
+    "evidence_groups": [
+      {
+        "alternatives": [
+          {
+            "document": "atlas-config-v2.md",
+            "section": 1,
+            "quote": "Atlas 2.4 默认请求超时 request_timeout 为 20 秒，默认重试次数 retry_count 为 2。超时按单次下游请求计时，不能把它解释为整轮业务处理时限。",
+            "start_char": 28,
+            "end_char": 119
+          }
+        ]
+      }
+    ],
+    "answer_check": false
+  },
+  {
+    "id": "r017",
+    "category": "paraphrase",
+    "question": "Atlas 2.4 普通运行记录和操作审计记录分别过多久清理？",
+    "split": "test",
+    "fact_family": "atlas-logs",
+    "expected_behavior": "answer",
+    "expected_points": [
+      "30天",
+      "180天"
+    ],
+    "evidence_groups": [
+      {
+        "alternatives": [
+          {
+            "document": "atlas-monitor-v2.md",
+            "section": 4,
+            "quote": "日志留存为 30 天，审计日志留存为 180 天。应用日志与审计日志使用不同存储策略，不能按应用日志规则删除审计记录。",
+            "start_char": 298,
+            "end_char": 357
+          }
+        ]
+      }
+    ],
+    "answer_check": false
+  },
+  {
+    "id": "r018",
+    "category": "paraphrase",
+    "question": "Atlas 新版编辑角色能放入资料吗，有资格移除资料吗？",
+    "split": "test",
+    "fact_family": "atlas-role",
+    "expected_behavior": "answer",
+    "expected_points": [
+      "可以上传",
+      "不能删除",
+      "admin才能删除"
+    ],
+    "evidence_groups": [
+      {
+        "alternatives": [
+          {
+            "document": "atlas-auth-v2.md",
+            "section": 2,
+            "quote": "viewer 只能读取资料，editor 可以读取和上传，admin 可以管理成员、配置和删除资料。editor 不能删除资料；删除必须由 admin 执行。",
+            "start_char": 129,
+            "end_char": 208
+          }
+        ]
+      }
+    ],
+    "answer_check": false
+  },
+  {
+    "id": "r019",
+    "category": "paraphrase",
+    "question": "Aster 新版嵌入数组有几个分量，搜索与文档编码能换不同模型吗？",
+    "split": "test",
+    "fact_family": "aster-dim",
+    "expected_behavior": "answer",
+    "expected_points": [
+      "768维",
+      "同一模型版本"
+    ],
+    "evidence_groups": [
+      {
+        "alternatives": [
+          {
+            "document": "aster-index-v4.md",
+            "section": 1,
+            "quote": "Aster 4.2 使用 768 维向量，文档与查询必须使用同一模型版本。维度相同并不代表来自不同模型的向量可以混用。",
+            "start_char": 29,
+            "end_char": 88
+          }
+        ]
+      }
+    ],
+    "answer_check": true
+  },
+  {
+    "id": "r020",
+    "category": "paraphrase",
+    "question": "Aster 4.2 两种商业版本的单库资料数量天花板各是多少？",
+    "split": "test",
+    "fact_family": "aster-edition",
+    "expected_behavior": "answer",
+    "expected_points": [
+      "120",
+      "300"
+    ],
+    "evidence_groups": [
+      {
+        "alternatives": [
+          {
+            "document": "aster-permissions-v4.md",
+            "section": 8,
+            "quote": "Aster 4.2 标准版每个知识库最多 120 份文档，企业版最多 300 份。两种版本需要按实际订阅识别。",
+            "start_char": 516,
+            "end_char": 571
+          }
+        ]
+      }
+    ],
+    "answer_check": false
+  },
+  {
+    "id": "r021",
+    "category": "cross_document",
+    "question": "Orion 3.0 缓存回源的并行上限、排队上限和满队列错误码是什么？",
+    "split": "dev",
+    "fact_family": "fact-21",
+    "expected_behavior": "answer",
+    "expected_points": [
+      "8",
+      "200",
+      "C429"
+    ],
+    "evidence_groups": [
+      {
+        "alternatives": [
+          {
+            "document": "orion-cache-v3.md",
+            "section": 7,
+            "quote": "Orion 3.0 每个租户最多同时执行 8 个缓存回源任务。超过数量时请求进入有界队列，不能直接放大数据库连接池。",
+            "start_char": 474,
+            "end_char": 532
+          }
+        ]
+      },
+      {
+        "alternatives": [
+          {
+            "document": "orion-cache-v3.md",
+            "section": 8,
+            "quote": "Orion 3.0 缓存回源队列最多保存 200 个任务，满队列返回 C429。该错误表示回源拥塞，不等同于访问令牌过期。",
+            "start_char": 543,
+            "end_char": 604
+          }
+        ]
+      }
+    ],
+    "answer_check": false
+  },
+  {
+    "id": "r022",
+    "category": "cross_document",
+    "question": "Orion 3.0 缓存重建锁持续多久，任务幂等记录又保留多久？",
+    "split": "dev",
+    "fact_family": "fact-22",
+    "expected_behavior": "answer",
+    "expected_points": [
+      "45秒",
+      "48小时"
+    ],
+    "evidence_groups": [
+      {
+        "alternatives": [
+          {
+            "document": "orion-cache-v3.md",
+            "section": 3,
+            "quote": "Orion 3.0 缓存重建锁按租户隔离，有效期为 45 秒。锁释放前核对持有者标识；不能删除另一个任务取得的锁。",
+            "start_char": 188,
+            "end_char": 245
+          }
+        ]
+      },
+      {
+        "alternatives": [
+          {
+            "document": "orion-worker-v3.md",
+            "section": 3,
+            "quote": "Orion 3.0 每个任务携带唯一 job_id，幂等记录保留 48 小时。重复投递必须先检查该记录，不能仅比较任务正文。",
+            "start_char": 167,
+            "end_char": 229
+          }
+        ]
+      }
+    ],
+    "answer_check": false
+  },
+  {
+    "id": "r023",
+    "category": "cross_document",
+    "question": "Orion 3.0 停进程的等待上限、工作日志和失败任务正文保留多久？",
+    "split": "dev",
+    "fact_family": "fact-23",
+    "expected_behavior": "answer",
+    "expected_points": [
+      "90秒",
+      "21天",
+      "72小时"
+    ],
+    "evidence_groups": [
+      {
+        "alternatives": [
+          {
+            "document": "orion-worker-v3.md",
+            "section": 5,
+            "quote": "Orion 3.0 停止工作进程时先停止领取新任务，再等待在途任务完成，最长等待 90 秒。超时任务登记后重新投递。",
+            "start_char": 307,
+            "end_char": 365
+          }
+        ]
+      },
+      {
+        "alternatives": [
+          {
+            "document": "orion-worker-v3.md",
+            "section": 7,
+            "quote": "Orion 3.0 工作进程日志保留 21 天，失败队列中的任务正文保留 72 小时。两种保留时间针对不同对象。",
+            "start_char": 442,
+            "end_char": 498
+          }
+        ]
+      }
+    ],
+    "answer_check": false
+  },
+  {
+    "id": "r024",
+    "category": "cross_document",
+    "question": "Atlas 2.4 上线需要什么依赖顺序、认证方式和完整备份内容？",
+    "split": "test",
+    "fact_family": "fact-24",
+    "expected_behavior": "answer",
+    "expected_points": [
+      "PostgreSQL15→Redis7.2→Atlas",
+      "生产OIDC",
+      "数据库和附件"
+    ],
+    "evidence_groups": [
+      {
+        "alternatives": [
+          {
+            "document": "atlas-deploy-v2.md",
+            "section": 3,
+            "quote": "Atlas 2.4 的启动顺序是 PostgreSQL 15、Redis 7.2、Atlas 应用。就绪检查同时验证数据库连接、Redis 连接和本机索引加载，任何一项失败均返回 503。",
+            "start_char": 309,
+            "end_char": 403
+          }
+        ]
+      },
+      {
+        "alternatives": [
+          {
+            "document": "atlas-auth-v2.md",
+            "section": 1,
+            "quote": "Atlas 2.4 生产环境必须使用 OIDC，开发环境可以使用静态 Token。OIDC 访问令牌有效期为 30 分钟，刷新令牌有效期为 8 小时。过期访问令牌返回 401。",
+            "start_char": 29,
+            "end_char": 117
+          }
+        ]
+      },
+      {
+        "alternatives": [
+          {
+            "document": "atlas-backup-v2.md",
+            "section": 1,
+            "quote": "Atlas 2.4 每 6 小时创建一次备份，保留 14 天。每次备份同时包含 PostgreSQL 数据库和附件目录，缺少任意部分的快照不能用于完整恢复。",
+            "start_char": 29,
+            "end_char": 107
+          }
+        ]
+      }
+    ],
+    "answer_check": true
+  },
+  {
+    "id": "r025",
+    "category": "cross_document",
+    "question": "Atlas 2.4 E201 要查什么，数据库版本要求及修复后的切流条件是什么？",
+    "split": "test",
+    "fact_family": "fact-25",
+    "expected_behavior": "answer",
+    "expected_points": [
+      "database.url和网络",
+      "PostgreSQL15",
+      "/ready"
+    ],
+    "evidence_groups": [
+      {
+        "alternatives": [
+          {
+            "document": "atlas-incident-v2.md",
+            "section": 1,
+            "quote": "Atlas 2.4 启动报 E201 表示数据库连接失败，先核对 database.url、网络连通性和 PostgreSQL 版本。E202 表示 Redis 连接失败，先核对 Redis 地址、认证和版本。",
+            "start_char": 30,
+            "end_char": 135
+          }
+        ]
+      },
+      {
+        "alternatives": [
+          {
+            "document": "atlas-deploy-v2.md",
+            "section": 3,
+            "quote": "Atlas 2.4 的启动顺序是 PostgreSQL 15、Redis 7.2、Atlas 应用。就绪检查同时验证数据库连接、Redis 连接和本机索引加载，任何一项失败均返回 503。",
+            "start_char": 309,
+            "end_char": 403
+          }
+        ]
+      },
+      {
+        "alternatives": [
+          {
+            "document": "atlas-deploy-v2.md",
+            "section": 2,
+            "quote": "Atlas 2.4 的默认监听端口是 8200，存活检查路径是 /live，就绪检查路径是 /ready。/live 成功只代表进程存活，接入业务流量必须以 /ready 成功为准。",
+            "start_char": 206,
+            "end_char": 297
+          }
+        ]
+      }
+    ],
+    "answer_check": true
+  },
+  {
+    "id": "r026",
+    "category": "cross_document",
+    "question": "Atlas 2.4 备份如何暂停和恢复写入，恢复时的快照与校验要求是什么？",
+    "split": "test",
+    "fact_family": "fact-26",
+    "expected_behavior": "answer",
+    "expected_points": [
+      "暂停写入",
+      "SHA-256后恢复写入",
+      "同一快照数据库和附件"
+    ],
+    "evidence_groups": [
+      {
+        "alternatives": [
+          {
+            "document": "atlas-backup-v2.md",
+            "section": 2,
+            "quote": "备份任务开始时先暂停写入，然后记录数据库快照标识，再复制数据库和附件，完成 SHA-256 校验后恢复写入。读请求在备份期间仍可使用。",
+            "start_char": 119,
+            "end_char": 186
+          }
+        ]
+      },
+      {
+        "alternatives": [
+          {
+            "document": "atlas-backup-v2.md",
+            "section": 3,
+            "quote": "恢复顺序是停止应用、恢复数据库、恢复附件目录、校验 SHA-256、启动应用、核对 /ready。必须使用同一个快照标识的数据库和附件，禁止混用两个时间点。",
+            "start_char": 198,
+            "end_char": 276
+          }
+        ]
+      }
+    ],
+    "answer_check": false
+  },
+  {
+    "id": "r027",
+    "category": "cross_document",
+    "question": "Atlas 1.8 迁到 2.4 后怎么验收，回滚怎样处理数据库、附件及新版写入？",
+    "split": "test",
+    "fact_family": "fact-27",
+    "expected_behavior": "answer",
+    "expected_points": [
+      "数量与SHA-256",
+      "/ready",
+      "恢复同一快照数据库和附件",
+      "导出新版新增数据"
+    ],
+    "evidence_groups": [
+      {
+        "alternatives": [
+          {
+            "document": "atlas-migrate-v2.md",
+            "section": 2,
+            "quote": "迁移后先核对记录数量和附件 SHA-256，再启动 2.4 应用并检查 /ready，最后切换流量。不要使用 1.8 的 /health 判断新版是否可接流量。",
+            "start_char": 140,
+            "end_char": 220
+          }
+        ]
+      },
+      {
+        "alternatives": [
+          {
+            "document": "atlas-migrate-v2.md",
+            "section": 4,
+            "quote": "回滚必须停止新版、恢复升级前同一快照的数据库和附件、启动旧版并检查 /health。已经发生的新版写入不会自动合并回旧版，应在回滚前导出新增业务数据。",
+            "start_char": 314,
+            "end_char": 389
+          }
+        ]
+      }
+    ],
+    "answer_check": true
+  },
+  {
+    "id": "r028",
+    "category": "cross_document",
+    "question": "Atlas 2.4 的延迟告警、错误率告警及解除条件分别是什么？",
+    "split": "test",
+    "fact_family": "fact-28",
+    "expected_behavior": "answer",
+    "expected_points": [
+      "P95>800毫秒5分钟",
+      "错误率>2%3分钟",
+      "正常10分钟"
+    ],
+    "evidence_groups": [
+      {
+        "alternatives": [
+          {
+            "document": "atlas-monitor-v2.md",
+            "section": 1,
+            "quote": "Atlas 2.4 将请求耗时的 P95 超过 800 毫秒并持续 5 分钟定义为延迟告警。请求错误率超过 2% 并持续 3 分钟触发错误率告警。两个规则分别计算。",
+            "start_char": 29,
+            "end_char": 111
+          }
+        ]
+      },
+      {
+        "alternatives": [
+          {
+            "document": "atlas-monitor-v2.md",
+            "section": 6,
+            "quote": "告警解除要求指标连续 10 分钟恢复正常。严重告警先由值班人员确认，再按故障手册处理；本资料没有承诺自动扩容或自动重启。",
+            "start_char": 462,
+            "end_char": 522
+          }
+        ]
+      }
+    ],
+    "answer_check": false
+  },
+  {
+    "id": "r029",
+    "category": "cross_document",
+    "question": "Aster 4.2 入库失败后如何重试，以及恢复检索前需要哪些校验？",
+    "split": "test",
+    "fact_family": "fact-29",
+    "expected_behavior": "answer",
+    "expected_points": [
+      "保留文件分块并复用标识",
+      "SHA-256",
+      "分块向量集合一致"
+    ],
+    "evidence_groups": [
+      {
+        "alternatives": [
+          {
+            "document": "aster-index-v4.md",
+            "section": 2,
+            "quote": "Aster 4.2 入库失败后保留原文件和已生成分块。先核对模型接口配置，再按现有分块标识重试，不创建另一份文档记录。",
+            "start_char": 99,
+            "end_char": 158
+          },
+          {
+            "document": "aster-index-v4.md",
+            "section": 4,
+            "quote": "Aster 4.2 入库失败后保留原文件和已生成分块。先核对模型接口配置，再按现有分块标识重试，不创建另一份文档记录。",
+            "start_char": 238,
+            "end_char": 297
+          },
+          {
+            "document": "aster-operating-notes-v4.md",
+            "section": 1,
+            "quote": "Aster 4.2 遇到向量入库错误，原文件和既有分块仍需保留。核对模型服务配置，利用原分块标识再次入库，不另建文档。",
+            "start_char": 29,
+            "end_char": 88
+          }
+        ]
+      },
+      {
+        "alternatives": [
+          {
+            "document": "aster-operating-notes-v4.md",
+            "section": 5,
+            "quote": "Aster 4.2 恢复文件后先核对 SHA-256，再验证分块集合和向量集合一致，最后开放语义检索。恢复期间仍不允许旧向量参与查询。",
+            "start_char": 312,
+            "end_char": 379
+          }
+        ]
+      }
+    ],
+    "answer_check": true
+  },
+  {
+    "id": "r030",
+    "category": "cross_document",
+    "question": "Aster 4.2 Windows 的启动命令、数据目录，以及修改日志后是否重启？",
+    "split": "test",
+    "fact_family": "fact-30",
+    "expected_behavior": "answer",
+    "expected_points": [
+      "aster.exe serve --config .\\aster.yaml",
+      ".\\workspace",
+      "需要重启"
+    ],
+    "evidence_groups": [
+      {
+        "alternatives": [
+          {
+            "document": "aster-windows-v4.md",
+            "section": 1,
+            "quote": "Aster 4.2 Windows 开发启动命令为 aster.exe serve --config .\\aster.yaml，数据目录为 .\\workspace。该模式只供本地开发。",
+            "start_char": 35,
+            "end_char": 127
+          }
+        ]
+      },
+      {
+        "alternatives": [
+          {
+            "document": "aster-windows-v4.md",
+            "section": 2,
+            "quote": "Aster 4.2 Windows 开发模式不支持热加载，修改 log.level 也必须重启；Linux 生产环境的日志热加载规则不能套用到 Windows。",
+            "start_char": 139,
+            "end_char": 219
+          }
+        ]
+      }
+    ],
+    "answer_check": false
+  },
+  {
+    "id": "r031",
+    "category": "duplicate_noise",
+    "question": "Orion 3.0 过期缓存怎么重建，锁的粒度和有效期是什么？",
+    "split": "dev",
+    "fact_family": "fact-31",
+    "expected_behavior": "answer",
+    "expected_points": [
+      "先标过期回主库",
+      "租户锁",
+      "45秒",
+      "不能清空全库"
+    ],
+    "evidence_groups": [
+      {
+        "alternatives": [
+          {
+            "document": "orion-cache-v3.md",
+            "section": 2,
+            "quote": "Orion 3.0 缓存失效后先标记条目过期，再从主数据库重建缓存。重建时必须使用租户锁，禁止先清空整个缓存库。",
+            "start_char": 122,
+            "end_char": 178
+          },
+          {
+            "document": "orion-cache-v3.md",
+            "section": 6,
+            "quote": "Orion 3.0 缓存失效后先标记条目过期，再从主数据库重建缓存。重建时必须使用租户锁，禁止先清空整个缓存库。",
+            "start_char": 407,
+            "end_char": 463
+          },
+          {
+            "document": "orion-worker-v3.md",
+            "section": 6,
+            "quote": "Orion 3.0 遇到过期缓存，应先置过期标记，持有租户锁后从主数据库重新生成条目，不能清空整个缓存库。",
+            "start_char": 378,
+            "end_char": 431
+          }
+        ]
+      },
+      {
+        "alternatives": [
+          {
+            "document": "orion-cache-v3.md",
+            "section": 3,
+            "quote": "Orion 3.0 缓存重建锁按租户隔离，有效期为 45 秒。锁释放前核对持有者标识；不能删除另一个任务取得的锁。",
+            "start_char": 188,
+            "end_char": 245
+          }
+        ]
+      }
+    ],
+    "answer_check": false
+  },
+  {
+    "id": "r032",
+    "category": "duplicate_noise",
+    "question": "Orion 3.0 过期缓存重建步骤与满回源队列后的处理是什么？",
+    "split": "dev",
+    "fact_family": "fact-32",
+    "expected_behavior": "answer",
+    "expected_points": [
+      "持租户锁回主库",
+      "C429",
+      "最多200任务"
+    ],
+    "evidence_groups": [
+      {
+        "alternatives": [
+          {
+            "document": "orion-cache-v3.md",
+            "section": 2,
+            "quote": "Orion 3.0 缓存失效后先标记条目过期，再从主数据库重建缓存。重建时必须使用租户锁，禁止先清空整个缓存库。",
+            "start_char": 122,
+            "end_char": 178
+          },
+          {
+            "document": "orion-cache-v3.md",
+            "section": 6,
+            "quote": "Orion 3.0 缓存失效后先标记条目过期，再从主数据库重建缓存。重建时必须使用租户锁，禁止先清空整个缓存库。",
+            "start_char": 407,
+            "end_char": 463
+          },
+          {
+            "document": "orion-worker-v3.md",
+            "section": 6,
+            "quote": "Orion 3.0 遇到过期缓存，应先置过期标记，持有租户锁后从主数据库重新生成条目，不能清空整个缓存库。",
+            "start_char": 378,
+            "end_char": 431
+          }
+        ]
+      },
+      {
+        "alternatives": [
+          {
+            "document": "orion-cache-v3.md",
+            "section": 8,
+            "quote": "Orion 3.0 缓存回源队列最多保存 200 个任务，满队列返回 C429。该错误表示回源拥塞，不等同于访问令牌过期。",
+            "start_char": 543,
+            "end_char": 604
+          }
+        ]
+      }
+    ],
+    "answer_check": false
+  },
+  {
+    "id": "r033",
+    "category": "duplicate_noise",
+    "question": "Orion 3.0 缓存重建怎样避免重复作业，幂等标识和保留时间是什么？",
+    "split": "dev",
+    "fact_family": "fact-33",
+    "expected_behavior": "answer",
+    "expected_points": [
+      "租户锁",
+      "job_id",
+      "48小时"
+    ],
+    "evidence_groups": [
+      {
+        "alternatives": [
+          {
+            "document": "orion-cache-v3.md",
+            "section": 2,
+            "quote": "Orion 3.0 缓存失效后先标记条目过期，再从主数据库重建缓存。重建时必须使用租户锁，禁止先清空整个缓存库。",
+            "start_char": 122,
+            "end_char": 178
+          },
+          {
+            "document": "orion-cache-v3.md",
+            "section": 6,
+            "quote": "Orion 3.0 缓存失效后先标记条目过期，再从主数据库重建缓存。重建时必须使用租户锁，禁止先清空整个缓存库。",
+            "start_char": 407,
+            "end_char": 463
+          },
+          {
+            "document": "orion-worker-v3.md",
+            "section": 6,
+            "quote": "Orion 3.0 遇到过期缓存，应先置过期标记，持有租户锁后从主数据库重新生成条目，不能清空整个缓存库。",
+            "start_char": 378,
+            "end_char": 431
+          }
+        ]
+      },
+      {
+        "alternatives": [
+          {
+            "document": "orion-worker-v3.md",
+            "section": 3,
+            "quote": "Orion 3.0 每个任务携带唯一 job_id，幂等记录保留 48 小时。重复投递必须先检查该记录，不能仅比较任务正文。",
+            "start_char": 167,
+            "end_char": 229
+          }
+        ]
+      }
+    ],
+    "answer_check": false
+  },
+  {
+    "id": "r034",
+    "category": "duplicate_noise",
+    "question": "Aster 4.2 入库失败会删原文件吗，模型鉴权失败应查什么？",
+    "split": "test",
+    "fact_family": "fact-34",
+    "expected_behavior": "answer",
+    "expected_points": [
+      "保留文件和分块",
+      "复用标识重试",
+      "密钥与地域"
+    ],
+    "evidence_groups": [
+      {
+        "alternatives": [
+          {
+            "document": "aster-index-v4.md",
+            "section": 2,
+            "quote": "Aster 4.2 入库失败后保留原文件和已生成分块。先核对模型接口配置，再按现有分块标识重试，不创建另一份文档记录。",
+            "start_char": 99,
+            "end_char": 158
+          },
+          {
+            "document": "aster-index-v4.md",
+            "section": 4,
+            "quote": "Aster 4.2 入库失败后保留原文件和已生成分块。先核对模型接口配置，再按现有分块标识重试，不创建另一份文档记录。",
+            "start_char": 238,
+            "end_char": 297
+          },
+          {
+            "document": "aster-operating-notes-v4.md",
+            "section": 1,
+            "quote": "Aster 4.2 遇到向量入库错误，原文件和既有分块仍需保留。核对模型服务配置，利用原分块标识再次入库，不另建文档。",
+            "start_char": 29,
+            "end_char": 88
+          }
+        ]
+      },
+      {
+        "alternatives": [
+          {
+            "document": "aster-index-v4.md",
+            "section": 5,
+            "quote": "Aster 4.2 的 I401 表示模型接口鉴权失败。先检查模型服务密钥和访问地域，不得删除原文档来修复鉴权。",
+            "start_char": 311,
+            "end_char": 367
+          }
+        ]
+      }
+    ],
+    "answer_check": true
+  },
+  {
+    "id": "r035",
+    "category": "duplicate_noise",
+    "question": "Aster 4.2 重新切块后索引什么时候才可用，向量维度和模型要求是什么？",
+    "split": "test",
+    "fact_family": "fact-35",
+    "expected_behavior": "answer",
+    "expected_points": [
+      "版本一致",
+      "768维",
+      "同一模型版本"
+    ],
+    "evidence_groups": [
+      {
+        "alternatives": [
+          {
+            "document": "aster-index-v4.md",
+            "section": 3,
+            "quote": "Aster 4.2 分块版本与入库版本相等才表示索引有效。重新分块后旧向量不能继续用于语义检索，必须完成新版本入库。",
+            "start_char": 169,
+            "end_char": 227
+          },
+          {
+            "document": "aster-index-v4.md",
+            "section": 8,
+            "quote": "Aster 4.2 分块版本与入库版本相等才表示索引有效。重新分块后旧向量不能继续用于语义检索，必须完成新版本入库。",
+            "start_char": 531,
+            "end_char": 589
+          },
+          {
+            "document": "aster-operating-notes-v4.md",
+            "section": 2,
+            "quote": "Aster 4.2 只有 chunk_version 与 indexed_version 一致，向量索引才可用；重新切块后必须重新完成向量写入。",
+            "start_char": 99,
+            "end_char": 171
+          }
+        ]
+      },
+      {
+        "alternatives": [
+          {
+            "document": "aster-index-v4.md",
+            "section": 1,
+            "quote": "Aster 4.2 使用 768 维向量，文档与查询必须使用同一模型版本。维度相同并不代表来自不同模型的向量可以混用。",
+            "start_char": 29,
+            "end_char": 88
+          }
+        ]
+      }
+    ],
+    "answer_check": true
+  },
+  {
+    "id": "r036",
+    "category": "duplicate_noise",
+    "question": "Aster 4.2 检索如何限制知识库范围，contributor 可以删除吗？",
+    "split": "test",
+    "fact_family": "fact-36",
+    "expected_behavior": "answer",
+    "expected_points": [
+      "成员范围和归属校验",
+      "不能删除",
+      "owner可删除"
+    ],
+    "evidence_groups": [
+      {
+        "alternatives": [
+          {
+            "document": "aster-permissions-v4.md",
+            "section": 1,
+            "quote": "Aster 4.2 检索仅允许访问当前知识库的成员文档；指定 document_ids 还要校验它们确实属于当前知识库。",
+            "start_char": 32,
+            "end_char": 92
+          },
+          {
+            "document": "aster-permissions-v4.md",
+            "section": 4,
+            "quote": "Aster 4.2 检索仅允许访问当前知识库的成员文档；指定 document_ids 还要校验它们确实属于当前知识库。",
+            "start_char": 249,
+            "end_char": 309
+          },
+          {
+            "document": "aster-operating-notes-v4.md",
+            "section": 4,
+            "quote": "Aster 4.2 搜索范围来自本知识库成员，用户指定文档也不能跳过成员归属校验。",
+            "start_char": 260,
+            "end_char": 301
+          }
+        ]
+      },
+      {
+        "alternatives": [
+          {
+            "document": "aster-permissions-v4.md",
+            "section": 2,
+            "quote": "Aster 4.2 reader 只能读取，contributor 可以上传但不能删除，owner 可以删除和管理成员。角色授权按知识库分别维护。",
+            "start_char": 103,
+            "end_char": 176
+          }
+        ]
+      }
+    ],
+    "answer_check": false
+  },
+  {
+    "id": "r037",
+    "category": "duplicate_noise",
+    "question": "Aster 4.2 重复入库用什么身份更新，I422 怎么处理？",
+    "split": "test",
+    "fact_family": "fact-37",
+    "expected_behavior": "answer",
+    "expected_points": [
+      "document_id和chunk_id",
+      "核对模型及768维",
+      "不能截断旧向量"
+    ],
+    "evidence_groups": [
+      {
+        "alternatives": [
+          {
+            "document": "aster-index-v4.md",
+            "section": 7,
+            "quote": "Aster 4.2 使用 document_id 和 chunk_id 共同构成向量记录身份，重试时更新相同记录而不是追加新记录。",
+            "start_char": 455,
+            "end_char": 520
+          },
+          {
+            "document": "aster-operating-notes-v4.md",
+            "section": 3,
+            "quote": "Aster 4.2 向量记录由 document_id 加 chunk_id 标识，重复执行写入应更新同一记录，避免持续增加重复向量。",
+            "start_char": 182,
+            "end_char": 249
+          }
+        ]
+      },
+      {
+        "alternatives": [
+          {
+            "document": "aster-index-v4.md",
+            "section": 6,
+            "quote": "Aster 4.2 的 I422 表示向量维度不匹配。应核对查询和文档的模型版本以及 768 维配置，不能用截断旧向量来补救。",
+            "start_char": 381,
+            "end_char": 444
+          }
+        ]
+      }
+    ],
+    "answer_check": false
+  },
+  {
+    "id": "r038",
+    "category": "duplicate_noise",
+    "question": "Aster 4.2 文档移出一个知识库后还能被它检索吗，其他知识库会怎样？",
+    "split": "test",
+    "fact_family": "fact-38",
+    "expected_behavior": "answer",
+    "expected_points": [
+      "本库不能检索",
+      "保留原文件向量",
+      "其他关联库仍可使用"
+    ],
+    "evidence_groups": [
+      {
+        "alternatives": [
+          {
+            "document": "aster-permissions-v4.md",
+            "section": 1,
+            "quote": "Aster 4.2 检索仅允许访问当前知识库的成员文档；指定 document_ids 还要校验它们确实属于当前知识库。",
+            "start_char": 32,
+            "end_char": 92
+          },
+          {
+            "document": "aster-permissions-v4.md",
+            "section": 4,
+            "quote": "Aster 4.2 检索仅允许访问当前知识库的成员文档；指定 document_ids 还要校验它们确实属于当前知识库。",
+            "start_char": 249,
+            "end_char": 309
+          },
+          {
+            "document": "aster-operating-notes-v4.md",
+            "section": 4,
+            "quote": "Aster 4.2 搜索范围来自本知识库成员，用户指定文档也不能跳过成员归属校验。",
+            "start_char": 260,
+            "end_char": 301
+          }
+        ]
+      },
+      {
+        "alternatives": [
+          {
+            "document": "aster-permissions-v4.md",
+            "section": 5,
+            "quote": "Aster 4.2 文档移出知识库后保留原文件和向量，但不能再从该知识库检索；其他仍有成员关联的知识库可以继续使用。",
+            "start_char": 320,
+            "end_char": 378
+          }
+        ]
+      }
+    ],
+    "answer_check": true
+  },
+  {
+    "id": "r039",
+    "category": "duplicate_noise",
+    "question": "Aster 4.2 入库失败后重试要另建记录吗，重新分块后旧向量能否继续查询？",
+    "split": "test",
+    "fact_family": "fact-39",
+    "expected_behavior": "answer",
+    "expected_points": [
+      "不另建记录",
+      "版本一致才可用"
+    ],
+    "evidence_groups": [
+      {
+        "alternatives": [
+          {
+            "document": "aster-index-v4.md",
+            "section": 2,
+            "quote": "Aster 4.2 入库失败后保留原文件和已生成分块。先核对模型接口配置，再按现有分块标识重试，不创建另一份文档记录。",
+            "start_char": 99,
+            "end_char": 158
+          },
+          {
+            "document": "aster-index-v4.md",
+            "section": 4,
+            "quote": "Aster 4.2 入库失败后保留原文件和已生成分块。先核对模型接口配置，再按现有分块标识重试，不创建另一份文档记录。",
+            "start_char": 238,
+            "end_char": 297
+          },
+          {
+            "document": "aster-operating-notes-v4.md",
+            "section": 1,
+            "quote": "Aster 4.2 遇到向量入库错误，原文件和既有分块仍需保留。核对模型服务配置，利用原分块标识再次入库，不另建文档。",
+            "start_char": 29,
+            "end_char": 88
+          }
+        ]
+      },
+      {
+        "alternatives": [
+          {
+            "document": "aster-index-v4.md",
+            "section": 3,
+            "quote": "Aster 4.2 分块版本与入库版本相等才表示索引有效。重新分块后旧向量不能继续用于语义检索，必须完成新版本入库。",
+            "start_char": 169,
+            "end_char": 227
+          },
+          {
+            "document": "aster-index-v4.md",
+            "section": 8,
+            "quote": "Aster 4.2 分块版本与入库版本相等才表示索引有效。重新分块后旧向量不能继续用于语义检索，必须完成新版本入库。",
+            "start_char": 531,
+            "end_char": 589
+          },
+          {
+            "document": "aster-operating-notes-v4.md",
+            "section": 2,
+            "quote": "Aster 4.2 只有 chunk_version 与 indexed_version 一致，向量索引才可用；重新切块后必须重新完成向量写入。",
+            "start_char": 99,
+            "end_char": 171
+          }
+        ]
+      }
+    ],
+    "answer_check": false
+  },
+  {
+    "id": "r040",
+    "category": "duplicate_noise",
+    "question": "Aster 4.2 比较知识库范围限制与向量更新身份，两者分别校验什么？",
+    "split": "test",
+    "fact_family": "fact-40",
+    "expected_behavior": "answer",
+    "expected_points": [
+      "校验成员归属",
+      "document_id和chunk_id"
+    ],
+    "evidence_groups": [
+      {
+        "alternatives": [
+          {
+            "document": "aster-permissions-v4.md",
+            "section": 1,
+            "quote": "Aster 4.2 检索仅允许访问当前知识库的成员文档；指定 document_ids 还要校验它们确实属于当前知识库。",
+            "start_char": 32,
+            "end_char": 92
+          },
+          {
+            "document": "aster-permissions-v4.md",
+            "section": 4,
+            "quote": "Aster 4.2 检索仅允许访问当前知识库的成员文档；指定 document_ids 还要校验它们确实属于当前知识库。",
+            "start_char": 249,
+            "end_char": 309
+          },
+          {
+            "document": "aster-operating-notes-v4.md",
+            "section": 4,
+            "quote": "Aster 4.2 搜索范围来自本知识库成员，用户指定文档也不能跳过成员归属校验。",
+            "start_char": 260,
+            "end_char": 301
+          }
+        ]
+      },
+      {
+        "alternatives": [
+          {
+            "document": "aster-index-v4.md",
+            "section": 7,
+            "quote": "Aster 4.2 使用 document_id 和 chunk_id 共同构成向量记录身份，重试时更新相同记录而不是追加新记录。",
+            "start_char": 455,
+            "end_char": 520
+          },
+          {
+            "document": "aster-operating-notes-v4.md",
+            "section": 3,
+            "quote": "Aster 4.2 向量记录由 document_id 加 chunk_id 标识，重复执行写入应更新同一记录，避免持续增加重复向量。",
+            "start_char": 182,
+            "end_char": 249
+          }
+        ]
+      }
+    ],
+    "answer_check": true
+  },
+  {
+    "id": "r041",
+    "category": "version_exception",
+    "question": "Orion 1.1 和 3.0 缓存端口与连接超时分别是什么？",
+    "split": "dev",
+    "fact_family": "fact-41",
+    "expected_behavior": "answer",
+    "expected_points": [
+      "6377/9秒",
+      "6388/4秒"
+    ],
+    "evidence_groups": [
+      {
+        "alternatives": [
+          {
+            "document": "orion-archive-v1.md",
+            "section": 1,
+            "quote": "Orion 1.1 缓存端口为 6377，连接超时为 9 秒；这些参数不适用于 Orion 3.0。",
+            "start_char": 29,
+            "end_char": 79
+          }
+        ]
+      },
+      {
+        "alternatives": [
+          {
+            "document": "orion-cache-v3.md",
+            "section": 1,
+            "quote": "Orion 3.0 的缓存服务监听端口为 6388，连接超时为 4 秒；客户端需要同时设置这两个参数。端口不是应用 HTTP 端口，超时仅指建立连接的等待时间。",
+            "start_char": 29,
+            "end_char": 109
+          }
+        ]
+      }
+    ],
+    "answer_check": false
+  },
+  {
+    "id": "r042",
+    "category": "version_exception",
+    "question": "Orion 3.0 Linux 与 Windows 修改 worker.log_level 都能热加载吗？",
+    "split": "dev",
+    "fact_family": "fact-42",
+    "expected_behavior": "answer",
+    "expected_points": [
+      "Linux可以",
+      "Windows必须重启"
+    ],
+    "evidence_groups": [
+      {
+        "alternatives": [
+          {
+            "document": "orion-worker-v3.md",
+            "section": 8,
+            "quote": "Orion 3.0 在 Linux 生产环境支持热加载 worker.log_level；连接地址和线程数修改都必须重启。",
+            "start_char": 514,
+            "end_char": 575
+          }
+        ]
+      },
+      {
+        "alternatives": [
+          {
+            "document": "orion-worker-v3.md",
+            "section": 9,
+            "quote": "Orion 3.0 Windows 开发环境不支持任何配置热加载，修改 worker.log_level 同样必须重启工作进程。",
+            "start_char": 592,
+            "end_char": 656
+          }
+        ]
+      }
+    ],
+    "answer_check": false
+  },
+  {
+    "id": "r043",
+    "category": "version_exception",
+    "question": "Atlas 2.4 Windows 和 Linux 修改 log.level 是否都不需要重启？",
+    "split": "test",
+    "fact_family": "fact-43",
+    "expected_behavior": "answer",
+    "expected_points": [
+      "Linux需启用reload才可热加载",
+      "Windows必须重启"
+    ],
+    "evidence_groups": [
+      {
+        "alternatives": [
+          {
+            "document": "atlas-config-v2.md",
+            "section": 3,
+            "quote": "日志级别 log.level 与读取限流 read_limit 可以热加载；数据库地址 database.url、监听端口 server.port 和认证模式 auth.mode 的变更必须重启应用。",
+            "start_char": 238,
+            "end_char": 338
+          }
+        ]
+      },
+      {
+        "alternatives": [
+          {
+            "document": "atlas-config-v2.md",
+            "section": 4,
+            "quote": "开启配置热加载需要 reload.enabled=true，并且只支持 Linux 生产模式。Windows 开发模式不支持热加载，任何配置修改都需要重启进程。",
+            "start_char": 350,
+            "end_char": 430
+          }
+        ]
+      }
+    ],
+    "answer_check": true
+  },
+  {
+    "id": "r044",
+    "category": "version_exception",
+    "question": "Atlas 1.8 和 2.4 备份频率、保留时间与备份内容有什么区别？",
+    "split": "test",
+    "fact_family": "fact-44",
+    "expected_behavior": "answer",
+    "expected_points": [
+      "24小时/7天/仅数据库",
+      "6小时/14天/数据库附件"
+    ],
+    "evidence_groups": [
+      {
+        "alternatives": [
+          {
+            "document": "atlas-deploy-v1.md",
+            "section": 4,
+            "quote": "Atlas 1.8 的备份每 24 小时执行一次，保留 7 天，只备份数据库。附件应由运维另行复制。该规则不得套用于 2.4 版本。",
+            "start_char": 366,
+            "end_char": 432
+          }
+        ]
+      },
+      {
+        "alternatives": [
+          {
+            "document": "atlas-backup-v2.md",
+            "section": 1,
+            "quote": "Atlas 2.4 每 6 小时创建一次备份，保留 14 天。每次备份同时包含 PostgreSQL 数据库和附件目录，缺少任意部分的快照不能用于完整恢复。",
+            "start_char": 29,
+            "end_char": 107
+          }
+        ]
+      }
+    ],
+    "answer_check": false
+  },
+  {
+    "id": "r045",
+    "category": "version_exception",
+    "question": "Aster 2.0 与 4.2 的向量维度和知识库文档上限分别是什么？",
+    "split": "test",
+    "fact_family": "fact-45",
+    "expected_behavior": "answer",
+    "expected_points": [
+      "384/60",
+      "768/标准120企业300"
+    ],
+    "evidence_groups": [
+      {
+        "alternatives": [
+          {
+            "document": "aster-archive-v2.md",
+            "section": 1,
+            "quote": "Aster 2.0 使用 384 维向量；4.2 使用 768 维，两个版本的向量库不能直接混用。",
+            "start_char": 26,
+            "end_char": 75
+          }
+        ]
+      },
+      {
+        "alternatives": [
+          {
+            "document": "aster-archive-v2.md",
+            "section": 3,
+            "quote": "Aster 2.0 每个知识库最多 60 份文档，不区分标准版与企业版；该限制不适用于 4.2。",
+            "start_char": 146,
+            "end_char": 194
+          }
+        ]
+      },
+      {
+        "alternatives": [
+          {
+            "document": "aster-index-v4.md",
+            "section": 1,
+            "quote": "Aster 4.2 使用 768 维向量，文档与查询必须使用同一模型版本。维度相同并不代表来自不同模型的向量可以混用。",
+            "start_char": 29,
+            "end_char": 88
+          }
+        ]
+      },
+      {
+        "alternatives": [
+          {
+            "document": "aster-permissions-v4.md",
+            "section": 8,
+            "quote": "Aster 4.2 标准版每个知识库最多 120 份文档，企业版最多 300 份。两种版本需要按实际订阅识别。",
+            "start_char": 516,
+            "end_char": 571
+          }
+        ]
+      }
+    ],
+    "answer_check": true
+  },
+  {
+    "id": "r046",
+    "category": "version_exception",
+    "question": "Aster 4.2 Linux 和 Windows 修改 log.level 是否都能热加载？",
+    "split": "test",
+    "fact_family": "fact-46",
+    "expected_behavior": "answer",
+    "expected_points": [
+      "Linux可以",
+      "Windows必须重启"
+    ],
+    "evidence_groups": [
+      {
+        "alternatives": [
+          {
+            "document": "aster-operating-notes-v4.md",
+            "section": 9,
+            "quote": "Aster 4.2 Linux 生产模式允许热加载 log.level；向量模型名、向量维度和存储目录修改均需重启并检查索引。",
+            "start_char": 591,
+            "end_char": 654
+          }
+        ]
+      },
+      {
+        "alternatives": [
+          {
+            "document": "aster-windows-v4.md",
+            "section": 2,
+            "quote": "Aster 4.2 Windows 开发模式不支持热加载，修改 log.level 也必须重启；Linux 生产环境的日志热加载规则不能套用到 Windows。",
+            "start_char": 139,
+            "end_char": 219
+          }
+        ]
+      }
+    ],
+    "answer_check": true
+  },
+  {
+    "id": "r047",
+    "category": "version_exception",
+    "question": "Atlas 2.4 和 Nebula 2.4 的默认端口与就绪路径一样吗？",
+    "split": "test",
+    "fact_family": "fact-47",
+    "expected_behavior": "answer",
+    "expected_points": [
+      "Atlas8200/ready",
+      "Nebula9200/status"
+    ],
+    "evidence_groups": [
+      {
+        "alternatives": [
+          {
+            "document": "atlas-deploy-v2.md",
+            "section": 2,
+            "quote": "Atlas 2.4 的默认监听端口是 8200，存活检查路径是 /live，就绪检查路径是 /ready。/live 成功只代表进程存活，接入业务流量必须以 /ready 成功为准。",
+            "start_char": 206,
+            "end_char": 297
+          }
+        ]
+      },
+      {
+        "alternatives": [
+          {
+            "document": "nebula-deploy-v2.md",
+            "section": 1,
+            "quote": "Nebula 2.4 与 Atlas 是不同产品。Nebula 默认端口 9200，就绪路径 /status，支持 Windows Server 2022 生产部署，启动命令 nebula start。不能用于回答 Atlas 的配置。",
+            "start_char": 35,
+            "end_char": 153
+          }
+        ]
+      }
+    ],
+    "answer_check": false
+  },
+  {
+    "id": "r048",
+    "category": "version_exception",
+    "question": "Atlas 2.4 磁盘已达到85%且队列积压，可以直接S17吗，满足条件时要怎么收尾？",
+    "split": "test",
+    "fact_family": "fact-48",
+    "expected_behavior": "answer",
+    "expected_points": [
+      "禁止直接S17先清理或扩容",
+      "恢复3线程",
+      "ready与读写测试再恢复写入"
+    ],
+    "evidence_groups": [
+      {
+        "alternatives": [
+          {
+            "document": "atlas-incident-v2.md",
+            "section": 3,
+            "quote": "S17 应急操作仅用于索引队列积压并且磁盘使用率低于 85% 的情况。若磁盘达到 85%，应先清理日志或扩容磁盘，禁止直接执行 S17。",
+            "start_char": 227,
+            "end_char": 295
+          }
+        ]
+      },
+      {
+        "alternatives": [
+          {
+            "document": "atlas-incident-v2.md",
+            "section": 5,
+            "quote": "S17 完成后将线程数恢复为 3，核对 /ready 与一条读写测试，再恢复写入。若 10 分钟后队列仍不下降，停止操作并升级给值班负责人，不继续提高线程数。",
+            "start_char": 399,
+            "end_char": 478
+          }
+        ]
+      }
+    ],
+    "answer_check": true
+  },
+  {
+    "id": "r049",
+    "category": "unanswerable",
+    "question": "Orion 3.0 的缓存重建保证多少秒完成？",
+    "split": "dev",
+    "fact_family": "fact-49",
+    "expected_behavior": "refuse",
+    "expected_points": [
+      "资料没有提供所问承诺或数值，不猜测"
+    ],
+    "evidence_groups": [],
+    "answer_check": false
+  },
+  {
+    "id": "r050",
+    "category": "unanswerable",
+    "question": "Orion 3.0 商业订阅每月多少钱？",
+    "split": "dev",
+    "fact_family": "fact-50",
+    "expected_behavior": "refuse",
+    "expected_points": [
+      "资料没有提供所问承诺或数值，不猜测"
+    ],
+    "evidence_groups": [],
+    "answer_check": false
+  },
+  {
+    "id": "r051",
+    "category": "unanswerable",
+    "question": "Atlas 2.4 承诺恢复数据最多需要几分钟？",
+    "split": "test",
+    "fact_family": "fact-51",
+    "expected_behavior": "refuse",
+    "expected_points": [
+      "资料没有提供所问承诺或数值，不猜测"
+    ],
+    "evidence_groups": [],
+    "answer_check": false
+  },
+  {
+    "id": "r052",
+    "category": "unanswerable",
+    "question": "Atlas 2.4 8核16GB保证多少QPS？",
+    "split": "test",
+    "fact_family": "fact-52",
+    "expected_behavior": "refuse",
+    "expected_points": [
+      "资料没有提供所问承诺或数值，不猜测"
+    ],
+    "evidence_groups": [],
+    "answer_check": false
+  },
+  {
+    "id": "r053",
+    "category": "unanswerable",
+    "question": "Aster 4.2 客服保证几分钟响应？",
+    "split": "test",
+    "fact_family": "fact-53",
+    "expected_behavior": "refuse",
+    "expected_points": [
+      "资料没有提供所问承诺或数值，不猜测"
+    ],
+    "evidence_groups": [],
+    "answer_check": true
+  },
+  {
+    "id": "r054",
+    "category": "unanswerable",
+    "question": "Atlas 2.4 故障退款比例是多少？",
+    "split": "test",
+    "fact_family": "fact-54",
+    "expected_behavior": "refuse",
+    "expected_points": [
+      "资料没有提供所问承诺或数值，不猜测"
+    ],
+    "evidence_groups": [],
+    "answer_check": true
+  },
+  {
+    "id": "r055",
+    "category": "clarification",
+    "question": "Orion 缓存应该配置哪个端口？",
+    "split": "dev",
+    "fact_family": "fact-55",
+    "expected_behavior": "clarify",
+    "expected_points": [
+      "先确认Orion版本"
+    ],
+    "evidence_groups": [],
+    "answer_check": false
+  },
+  {
+    "id": "r056",
+    "category": "clarification",
+    "question": "Orion 3.0 改日志级别需要重启吗？",
+    "split": "dev",
+    "fact_family": "fact-56",
+    "expected_behavior": "clarify",
+    "expected_points": [
+      "先确认Linux生产还是Windows开发"
+    ],
+    "evidence_groups": [],
+    "answer_check": false
+  },
+  {
+    "id": "r057",
+    "category": "clarification",
+    "question": "Atlas 默认监听端口是多少？",
+    "split": "test",
+    "fact_family": "fact-57",
+    "expected_behavior": "clarify",
+    "expected_points": [
+      "先确认Atlas版本"
+    ],
+    "evidence_groups": [],
+    "answer_check": true
+  },
+  {
+    "id": "r058",
+    "category": "clarification",
+    "question": "Atlas 2.4 改日志级别要重启吗？",
+    "split": "test",
+    "fact_family": "fact-58",
+    "expected_behavior": "clarify",
+    "expected_points": [
+      "先确认操作系统和运行环境"
+    ],
+    "evidence_groups": [],
+    "answer_check": false
+  },
+  {
+    "id": "r059",
+    "category": "clarification",
+    "question": "Aster 4.2 一个知识库最多可以加多少份文档？",
+    "split": "test",
+    "fact_family": "fact-59",
+    "expected_behavior": "clarify",
+    "expected_points": [
+      "先确认标准版还是企业版"
+    ],
+    "evidence_groups": [],
+    "answer_check": true
+  },
+  {
+    "id": "r060",
+    "category": "clarification",
+    "question": "2.4 的就绪检查路径是什么？",
+    "split": "test",
+    "fact_family": "fact-60",
+    "expected_behavior": "clarify",
+    "expected_points": [
+      "先确认Atlas还是Nebula"
+    ],
+    "evidence_groups": [],
+    "answer_check": false
+  }
+]

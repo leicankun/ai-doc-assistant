@@ -8,32 +8,20 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from sqlalchemy import (
     create_engine,
-    Integer,
-    String,
-    ForeignKey,
     select,
-    event,
 )
-from sqlalchemy.orm import DeclarativeBase, mapped_column, Session
+from sqlalchemy.orm import DeclarativeBase, Session
 
-from config import DB_PATH
+from config import database_url
+from storage.schema import metadata
 
 
-# 创建数据库引擎，echo=True 会在终端显示执行的 SQL
+# ORM Session 使用普通事务引擎。
 engine = create_engine(
-    f"sqlite:///{DB_PATH.as_posix()}",
-    echo=True,
+    database_url(),
+    pool_pre_ping=True,
+    hide_parameters=True,
 )
-
-
-# SQLite 每次建立连接时，开启外键约束检查
-@event.listens_for(engine, "connect")
-def enable_foreign_keys(dbapi_connection, connection_record):
-    cursor = dbapi_connection.cursor()
-    try:
-        cursor.execute("PRAGMA foreign_keys=ON")
-    finally:
-        cursor.close()
 
 
 # 数据库模型的公共基类
@@ -43,32 +31,17 @@ class Base(DeclarativeBase):
 
 # 聊天会话表
 class ChatSession(Base):
-    __tablename__ = "chat_sessions"
-
-    id = mapped_column(Integer, primary_key=True)
-    title = mapped_column(String, nullable=False)
+    __table__ = metadata.tables["chat_sessions"]
 
 
 # 聊天消息表
 class ChatMessage(Base):
-    __tablename__ = "chat_messages"
-
-    id = mapped_column(Integer, primary_key=True)
-
-    # 关联聊天会话表的 ID
-    session_id = mapped_column(
-        Integer,
-        ForeignKey("chat_sessions.id"),
-        nullable=False,
-    )
-
-    role = mapped_column(String, nullable=False)
-    content = mapped_column(String, nullable=False)
+    __table__ = metadata.tables["chat_messages"]
 
 
 if __name__ == "__main__":
     # 创建不存在的表，不会清空已有数据
-    Base.metadata.create_all(engine)
+    metadata.create_all(engine, tables=[ChatSession.__table__, ChatMessage.__table__])
 
     with Session(engine) as db_session:
         # 1. 创建聊天会话

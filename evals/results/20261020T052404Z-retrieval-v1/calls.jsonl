@@ -1,0 +1,1 @@
+{"phase": "setup", "id": null, "kind": "embedding", "model": "text-embedding-v4", "success": false, "error_type": "APITimeoutError", "seconds": 30.052}
